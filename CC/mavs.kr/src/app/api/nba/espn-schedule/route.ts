@@ -109,14 +109,14 @@ export async function GET(request: NextRequest) {
       // 하지만 실제로는 더 정확한 변환이 필요하므로 +15시간 사용
       const kstTime = usTime + (15 * 60 * 60 * 1000);
       const kstDate = new Date(kstTime);
-      
+
       // 날짜와 시간을 올바르게 추출
       const year = kstDate.getUTCFullYear();
       const month = String(kstDate.getUTCMonth() + 1).padStart(2, '0');
       const day = String(kstDate.getUTCDate()).padStart(2, '0');
       const hours = String(kstDate.getUTCHours()).padStart(2, '0');
       const minutes = String(kstDate.getUTCMinutes()).padStart(2, '0');
-      
+
       const gameDateKst = `${year}-${month}-${day}`;
       const gameTimeKst = `${hours}:${minutes}`;
 

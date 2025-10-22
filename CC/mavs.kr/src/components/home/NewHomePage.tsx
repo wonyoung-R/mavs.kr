@@ -11,7 +11,6 @@ import { NewsArticle } from '@/types/news';
 import { LiveBoxScoreBanner } from '@/components/nba/LiveBoxScoreBanner';
 import { MavericksGameSlider } from '@/components/nba/MavericksGameSlider';
 import { LiveScoresCard } from '@/components/nba/LiveScoresCard';
-import { InstagramFloatingButton } from '@/components/instagram/InstagramFloatingButton';
 
 interface MavericksGame {
   game_id: string;
@@ -193,7 +192,7 @@ export default function NewHomePage() {
                     <div className="w-8 h-8 bg-blue-600/20 rounded-lg flex items-center justify-center">
                       <Clock className="w-4 h-4 text-blue-400" />
                     </div>
-                    <span>MAVS Schedule</span>
+                    <span>Mavericks Schedule</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -457,8 +456,6 @@ export default function NewHomePage() {
         }
       `}</style>
 
-      {/* Instagram 플로팅 버튼 */}
-      <InstagramFloatingButton />
     </div>
   );
 }

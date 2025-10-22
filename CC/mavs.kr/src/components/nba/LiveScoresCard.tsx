@@ -30,13 +30,31 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
   const [games, setGames] = useState<LiveGame[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(true);
 
   useEffect(() => {
     fetchLiveScores();
-    // 1분마다 자동 새로고침
-    const interval = setInterval(fetchLiveScores, 60000);
+    
+    // 자동 업데이트 시작
+    const interval = setInterval(() => {
+      // 현재 시간이 오후 2시 이후이고 모든 경기가 종료되었으면 업데이트 중단
+      const now = new Date();
+      const currentHour = now.getHours();
+      
+      if (currentHour >= 14) {
+        const hasLiveGames = games.some(game => game.is_live && !game.is_finished);
+        if (!hasLiveGames) {
+          setIsUpdating(false);
+          clearInterval(interval);
+          return;
+        }
+      }
+      
+      fetchLiveScores();
+    }, 60000);
+    
     return () => clearInterval(interval);
-  }, []);
+  }, [games]);
 
   const fetchLiveScores = async () => {
     try {
@@ -49,6 +67,12 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
       if (data.success) {
         setGames(data.data.all_games || []);
         setError(null);
+        
+        // 모든 경기가 종료되었는지 확인
+        const allGamesFinished = data.data.all_games?.every((game: LiveGame) => game.is_finished) || false;
+        if (allGamesFinished) {
+          setIsUpdating(false);
+        }
       } else {
         throw new Error(data.message || 'Failed to fetch live scores');
       }
@@ -123,7 +147,15 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
         <CardTitle className="flex items-center justify-between text-white">
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-green-400" />
-            <span>실시간 점수</span>
+            <div className="flex flex-col">
+              <span>실시간 점수</span>
+              {isUpdating && (
+                <span className="text-xs text-green-400 flex items-center space-x-1">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span>자동 업데이트 중</span>
+                </span>
+              )}
+            </div>
           </div>
           <Button
             onClick={fetchLiveScores}

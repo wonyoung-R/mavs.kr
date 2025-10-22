@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; MAVS.KR Bot/1.0)'
       },
-      next: { revalidate: 600 } // 10분 캐시
+      next: { revalidate: 1800 } // 30분 캐시
     });
 
     if (!response.ok) {
