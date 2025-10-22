@@ -31,30 +31,24 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(true);
+  const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     fetchLiveScores();
     
     // 자동 업데이트 시작
-    const interval = setInterval(() => {
-      // 현재 시간이 오후 2시 이후이고 모든 경기가 종료되었으면 업데이트 중단
-      const now = new Date();
-      const currentHour = now.getHours();
-      
-      if (currentHour >= 14) {
-        const hasLiveGames = games.some(game => game.is_live && !game.is_finished);
-        if (!hasLiveGames) {
-          setIsUpdating(false);
-          clearInterval(interval);
-          return;
-        }
-      }
-      
+    const id = setInterval(() => {
       fetchLiveScores();
     }, 60000);
     
-    return () => clearInterval(interval);
-  }, [games]);
+    setIntervalId(id);
+    
+    return () => {
+      if (id) {
+        clearInterval(id);
+      }
+    };
+  }, []);
 
   const fetchLiveScores = async () => {
     try {
@@ -65,13 +59,21 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
 
       const data = await response.json();
       if (data.success) {
-        setGames(data.data.all_games || []);
+        const newGames = data.data.all_games || [];
+        setGames(newGames);
         setError(null);
         
         // 모든 경기가 종료되었는지 확인
-        const allGamesFinished = data.data.all_games?.every((game: LiveGame) => game.is_finished) || false;
-        if (allGamesFinished) {
+        const allGamesFinished = newGames.every((game: LiveGame) => game.is_finished);
+        const currentHour = new Date().getHours();
+        
+        // 오후 2시 이후이고 모든 경기가 종료되었으면 업데이트 중단
+        if (currentHour >= 14 && allGamesFinished) {
           setIsUpdating(false);
+          if (intervalId) {
+            clearInterval(intervalId);
+            setIntervalId(null);
+          }
         }
       } else {
         throw new Error(data.message || 'Failed to fetch live scores');
