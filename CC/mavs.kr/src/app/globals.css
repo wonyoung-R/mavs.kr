@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #1a1a1a;
+  --primary: #3182f6;
+  --primary-dark: #1e40af;
+  --secondary: #f8fafc;
+  --border: #e2e8f0;
+  --text-muted: #64748b;
+  --card-bg: #ffffff;
+  --card-border: #e2e8f0;
+  --toss-blue: #3182f6;
+  --toss-blue-light: #e3f2fd;
+  --toss-gray-50: #f8fafc;
+  --toss-gray-100: #f1f5f9;
+  --toss-gray-200: #e2e8f0;
+  --toss-gray-300: #cbd5e1;
+  --toss-gray-400: #94a3b8;
+  --toss-gray-500: #64748b;
+  --toss-gray-600: #475569;
+  --toss-gray-700: #334155;
+  --toss-gray-800: #1e293b;
+  --toss-gray-900: #0f172a;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+/* 로딩 도트 애니메이션 */
+.loading-dots span {
+  animation-delay: calc(var(--delay) * 150ms);
+}
+
+/* 모달 백드롭 블러 */
+.modal-backdrop {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}

@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  username      String    @unique
+  password      String?
+  name          String?
+  image         String?
+  role          Role      @default(USER)
+  points        Int       @default(0)
+  badges        Badge[]
+  posts         Post[]
+  comments      Comment[]
+  votes         Vote[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([email])
+  @@index([username])
+}
+
+model News {
+  id            String    @id @default(cuid())
+  title         String
+  titleKr       String?
+  content       String    @db.Text
+  contentKr     String?   @db.Text
+  summary       String?
+  summaryKr     String?   @db.Text
+  source        NewsSource
+  sourceUrl     String
+  author        String?
+  imageUrl      String?
+  publishedAt   DateTime
+  crawledAt     DateTime  @default(now())
+  viewCount     Int       @default(0)
+  tags          Tag[]
+
+  @@index([source, publishedAt])
+  @@index([crawledAt])
+}
+
+model Game {
+  id            String    @id @default(cuid())
+  gameId        String    @unique
+  homeTeam      String
+  awayTeam      String
+  homeScore     Int?
+  awayScore     Int?
+  status        GameStatus
+  scheduledAt   DateTime
+  quarter       Int?
+  timeRemaining String?
+  broadcasts    String[]
+  stats         Json?
+  highlights    String[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([scheduledAt])
+  @@index([status])
+}
+
+model Post {
+  id            String    @id @default(cuid())
+  title         String
+  content       String    @db.Text
+  category      ForumCategory
+  author        User      @relation(fields: [authorId], references: [id])
+  authorId      String
+  viewCount     Int       @default(0)
+  isPinned      Boolean   @default(false)
+  isLocked      Boolean   @default(false)
+  comments      Comment[]
+  votes         Vote[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([category, createdAt])
+  @@index([authorId])
+}
+
+model Comment {
+  id            String    @id @default(cuid())
+  content       String    @db.Text
+  post          Post      @relation(fields: [postId], references: [id])
+  postId        String
+  author        User      @relation(fields: [authorId], references: [id])
+  authorId      String
+  parentId      String?
+  parent        Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies       Comment[] @relation("CommentReplies")
+  votes         Vote[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([postId])
+  @@index([authorId])
+}
+
+model Vote {
+  id        String   @id @default(cuid())
+  type      VoteType
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  post      Post?    @relation(fields: [postId], references: [id])
+  postId    String?
+  comment   Comment? @relation(fields: [commentId], references: [id])
+  commentId String?
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+  @@unique([userId, commentId])
+}
+
+model Tag {
+  id    String @id @default(cuid())
+  name  String @unique
+  news  News[]
+}
+
+model Badge {
+  id          String @id @default(cuid())
+  name        String
+  description String
+  icon        String
+  users       User[]
+}
+
+enum Role {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+enum NewsSource {
+  ESPN
+  MAVS_MONEYBALL
+  SMOKING_CUBAN
+}
+
+enum GameStatus {
+  SCHEDULED
+  LIVE
+  FINAL
+  POSTPONED
+}
+
+enum ForumCategory {
+  GAME_THREAD
+  GENERAL
+  TRADE_RUMORS
+  ANALYSIS
+}
+
+enum VoteType {
+  UPVOTE
+  DOWNVOTE
+}
