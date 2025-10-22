@@ -35,14 +35,14 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
 
   useEffect(() => {
     fetchLiveScores();
-    
+
     // 자동 업데이트 시작
     const id = setInterval(() => {
       fetchLiveScores();
     }, 60000);
-    
+
     setIntervalId(id);
-    
+
     return () => {
       if (id) {
         clearInterval(id);
@@ -62,11 +62,11 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
         const newGames = data.data.all_games || [];
         setGames(newGames);
         setError(null);
-        
+
         // 모든 경기가 종료되었는지 확인
         const allGamesFinished = newGames.every((game: LiveGame) => game.is_finished);
         const currentHour = new Date().getHours();
-        
+
         // 오후 2시 이후이고 모든 경기가 종료되었으면 업데이트 중단
         if (currentHour >= 14 && allGamesFinished) {
           setIsUpdating(false);
