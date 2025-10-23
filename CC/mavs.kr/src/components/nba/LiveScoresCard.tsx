@@ -144,8 +144,8 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
           </div>
         ) : games.length > 0 ? (
           (() => {
-            console.log('🏀 Live scores games:', games.map(g => ({ 
-              home: g.home_team, 
+            console.log('🏀 Live scores games:', games.map(g => ({
+              home: g.home_team,
               away: g.away_team,
               homeLogo: getTeamLogo(g.home_team),
               awayLogo: getTeamLogo(g.away_team)
@@ -183,7 +183,7 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
             >
               <div className="flex items-center space-x-3">
                 <img
-                  src={getTeamLogo(game.away_team)}
+                  src={`${getTeamLogo(game.away_team)}?v=${Date.now()}`}
                   alt={game.away_team}
                   className="w-6 h-6 object-contain flex-shrink-0"
                   style={{
@@ -213,18 +213,10 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
                   }}
                 />
                 <div className="text-center">
-                  <div className={`text-sm font-medium ${
-                    game.is_mavs_game ? 'text-blue-300' :
-                    game.is_live ? 'text-green-300' :
-                    game.is_finished ? 'text-slate-400' : 'text-white'
-                  }`}>
+                  <div className="text-sm font-medium text-white">
                     {game.away_team}
                   </div>
-                  <div className={`text-xs ${
-                    game.is_mavs_game ? 'text-blue-400' :
-                    game.is_live ? 'text-green-400' :
-                    game.is_finished ? 'text-slate-500' : 'text-slate-400'
-                  }`}>
+                  <div className="text-xs text-slate-400">
                     {game.away_score}
                   </div>
                 </div>
@@ -234,23 +226,15 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
                   game.is_finished ? 'text-slate-500' : 'text-slate-500'
                 }`}>@</span>
                 <div className="text-center">
-                  <div className={`text-sm font-medium ${
-                    game.is_mavs_game ? 'text-blue-300' :
-                    game.is_live ? 'text-green-300' :
-                    game.is_finished ? 'text-slate-400' : 'text-white'
-                  }`}>
+                  <div className="text-sm font-medium text-white">
                     {game.home_team}
                   </div>
-                  <div className={`text-xs ${
-                    game.is_mavs_game ? 'text-blue-400' :
-                    game.is_live ? 'text-green-400' :
-                    game.is_finished ? 'text-slate-500' : 'text-slate-400'
-                  }`}>
+                  <div className="text-xs text-slate-400">
                     {game.home_score}
                   </div>
                 </div>
                 <img
-                  src={getTeamLogo(game.home_team)}
+                  src={`${getTeamLogo(game.home_team)}?v=${Date.now()}`}
                   alt={game.home_team}
                   className="w-6 h-6 object-contain flex-shrink-0"
                   style={{
