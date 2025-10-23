@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Clock, MapPin, Trophy, Users, TrendingUp, Play, Calendar, Target } from 'lucide-react';
+import { getTeamLogo } from '@/lib/utils/team-logos';
 
 interface MavericksGame {
   game_id: string;
@@ -48,11 +49,11 @@ export function MavericksGameCenter() {
   const fetchMavericksData = async () => {
     try {
       setLoading(true);
-      
+
       // 다음 경기 정보 가져오기
       const scheduleResponse = await fetch('/api/nba/espn-schedule');
       const scheduleData = await scheduleResponse.json();
-      
+
       if (scheduleData.success && scheduleData.data.upcoming_games.length > 0) {
         setNextGame(scheduleData.data.upcoming_games[0]);
       }
@@ -60,7 +61,7 @@ export function MavericksGameCenter() {
       // 라이브 경기 확인
       const liveResponse = await fetch('/api/nba/live-scores');
       const liveData = await liveResponse.json();
-      
+
       if (liveData.success) {
         const mavsLiveGame = liveData.data.all_games.find((game: any) => game.is_mavs_game && game.is_live);
         if (mavsLiveGame) {
@@ -87,41 +88,6 @@ export function MavericksGameCenter() {
     }
   };
 
-  const getTeamLogo = (teamName: string) => {
-    const teamLogos: { [key: string]: string } = {
-      'Mavericks': '/images/teams/mavericks.svg',
-      'Lakers': '/images/teams/lakers.svg',
-      'Warriors': '/images/teams/warriors.svg',
-      'Thunder': '/images/teams/thunder.svg',
-      'Rockets': '/images/teams/rockets.svg',
-      'Spurs': '/images/teams/spurs.svg',
-      'Nuggets': '/images/teams/nuggets.svg',
-      'Jazz': '/images/teams/jazz.svg',
-      'Timberwolves': '/images/teams/timberwolves.svg',
-      'Suns': '/images/teams/suns.svg',
-      'Kings': '/images/teams/kings.svg',
-      'Clippers': '/images/teams/clippers.svg',
-      'Trail Blazers': '/images/teams/trailblazers.svg',
-      'Pelicans': '/images/teams/pelicans.svg',
-      'Grizzlies': '/images/teams/grizzlies.svg',
-      'Celtics': '/images/teams/celtics.svg',
-      'Heat': '/images/teams/heat.svg',
-      'Bucks': '/images/teams/bucks.svg',
-      '76ers': '/images/teams/76ers.svg',
-      'Nets': '/images/teams/nets.svg',
-      'Knicks': '/images/teams/knicks.svg',
-      'Raptors': '/images/teams/raptors.svg',
-      'Bulls': '/images/teams/bulls.svg',
-      'Cavaliers': '/images/teams/cavaliers.svg',
-      'Pistons': '/images/teams/pistons.svg',
-      'Pacers': '/images/teams/pacers.svg',
-      'Hawks': '/images/teams/hawks.svg',
-      'Hornets': '/images/teams/hornets.svg',
-      'Magic': '/images/teams/magic.svg',
-      'Wizards': '/images/teams/wizards.svg'
-    };
-    return teamLogos[teamName] || '/images/teams/mavericks.svg';
-  };
 
   const getStatusText = (game: MavericksGame) => {
     if (game.status === 'live') {
@@ -296,7 +262,7 @@ export function MavericksGameCenter() {
               <Trophy className="w-8 h-8 text-yellow-400" />
               <span>2024-25 시즌 통계</span>
             </h2>
-            
+
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               {/* 승패 기록 */}
               <Card className="bg-gradient-to-br from-blue-900/50 to-gray-900/50 border-blue-500/20">
@@ -374,3 +340,4 @@ export function MavericksGameCenter() {
     </div>
   );
 }
+

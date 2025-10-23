@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { getTeamLogo } from '@/lib/utils/team-logos';
 import {
   Clock,
   Play,
@@ -106,16 +107,6 @@ export function LiveBoxScoreBanner() {
     return 'bg-blue-100 text-blue-800';
   };
 
-  const getTeamLogo = (teamName: string) => {
-    const logoMap: { [key: string]: string } = {
-      'Dallas Mavericks': '/images/logos/mavericks.png',
-      'Los Angeles Lakers': '/images/logos/lakers.png',
-      'Golden State Warriors': '/images/logos/warriors.png',
-      'Denver Nuggets': '/images/logos/nuggets.png',
-      'Phoenix Suns': '/images/logos/suns.png',
-    };
-    return logoMap[teamName] || null;
-  };
 
   const formatTeamName = (teamName: string) => {
     // Shorten team names for banner display

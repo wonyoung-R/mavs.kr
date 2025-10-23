@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { getTeamLogo } from '@/lib/utils/team-logos';
 import {
   ChevronLeft,
   ChevronRight,
@@ -126,16 +127,6 @@ export function MavericksGameSlider() {
     }
   };
 
-  const getTeamLogo = (teamName: string) => {
-    const logoMap: { [key: string]: string } = {
-      'Dallas Mavericks': '/images/logos/mavericks.png',
-      'Los Angeles Lakers': '/images/logos/lakers.png',
-      'Golden State Warriors': '/images/logos/warriors.png',
-      'Denver Nuggets': '/images/logos/nuggets.png',
-      'Phoenix Suns': '/images/logos/suns.png',
-    };
-    return logoMap[teamName] || null;
-  };
 
   const formatScore = (score: number | null) => {
     return score !== null ? score.toString() : '-';

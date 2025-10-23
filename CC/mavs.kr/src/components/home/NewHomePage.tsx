@@ -11,6 +11,7 @@ import { NewsArticle } from '@/types/news';
 import { LiveBoxScoreBanner } from '@/components/nba/LiveBoxScoreBanner';
 import { MavericksGameSlider } from '@/components/nba/MavericksGameSlider';
 import { LiveScoresCard } from '@/components/nba/LiveScoresCard';
+import { getTeamLogo } from '@/lib/utils/team-logos';
 
 interface MavericksGame {
   game_id: string;
@@ -47,45 +48,6 @@ export default function NewHomePage() {
     fetchNBAData();
   }, []);
 
-  const getTeamLogo = (teamName: string) => {
-    const teamLogos: { [key: string]: string } = {
-      'Mavericks': '/images/teams/mavericks.svg',
-      'Lakers': '/images/teams/lakers.svg',
-      'Warriors': '/images/teams/warriors.svg',
-      'Thunder': '/images/teams/thunder.svg',
-      'Rockets': '/images/teams/rockets.svg',
-      'Spurs': '/images/teams/spurs.svg',
-      'San Antonio Spurs': '/images/teams/spurs.svg',
-      'Nuggets': '/images/teams/nuggets.svg',
-      'Jazz': '/images/teams/jazz.svg',
-      'Trail Blazers': '/images/teams/trailblazers.svg',
-      'Suns': '/images/teams/suns.svg',
-      'Kings': '/images/teams/kings.svg',
-      'Clippers': '/images/teams/clippers.svg',
-      'Timberwolves': '/images/teams/timberwolves.svg',
-      'Pelicans': '/images/teams/pelicans.svg',
-      'Grizzlies': '/images/teams/grizzlies.svg',
-      'Celtics': '/images/teams/celtics.svg',
-      'Heat': '/images/teams/heat.svg',
-      'Bucks': '/images/teams/bucks.svg',
-      '76ers': '/images/teams/76ers.svg',
-      'Nets': '/images/teams/nets.svg',
-      'Knicks': '/images/teams/knicks.svg',
-      'Raptors': '/images/teams/raptors.svg',
-      'Toronto Raptors': '/images/teams/raptors.svg',
-      'Hawks': '/images/teams/hawks.svg',
-      'Hornets': '/images/teams/hornets.svg',
-      'Magic': '/images/teams/magic.svg',
-      'Wizards': '/images/teams/wizards.svg',
-      'Washington Wizards': '/images/teams/wizards.svg',
-      'Pistons': '/images/teams/pistons.svg',
-      'Cavaliers': '/images/teams/cavaliers.svg',
-      'Pacers': '/images/teams/pacers.svg',
-      'Bulls': '/images/teams/bulls.svg',
-    };
-
-    return teamLogos[teamName] || '/images/teams/mavericks.svg';
-  };
 
   const fetchNBAData = async () => {
     try {

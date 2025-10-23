@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Clock, ExternalLink, RefreshCw, Play, CheckCircle, Calendar } from 'lucide-react';
+import { getTeamLogo } from '@/lib/utils/team-logos';
 
 interface LiveGame {
   game_id: string;
@@ -86,43 +87,6 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
     }
   };
 
-  const getTeamLogo = (teamName: string) => {
-    // 팀 이름을 기반으로 로고 이미지 경로 반환
-    const teamLogos: { [key: string]: string } = {
-      'Mavericks': '/images/teams/mavericks.svg',
-      'Lakers': '/images/teams/lakers.svg',
-      'Warriors': '/images/teams/warriors.svg',
-      'Thunder': '/images/teams/thunder.svg',
-      'Rockets': '/images/teams/rockets.svg',
-      'Spurs': '/images/teams/spurs.svg',
-      'Nuggets': '/images/teams/nuggets.svg',
-      'Jazz': '/images/teams/jazz.svg',
-      'Trail Blazers': '/images/teams/trailblazers.svg',
-      'Suns': '/images/teams/suns.svg',
-      'Kings': '/images/teams/kings.svg',
-      'Clippers': '/images/teams/clippers.svg',
-      'Timberwolves': '/images/teams/timberwolves.svg',
-      'Pelicans': '/images/teams/pelicans.svg',
-      'Grizzlies': '/images/teams/grizzlies.svg',
-      'Celtics': '/images/teams/celtics.svg',
-      'Heat': '/images/teams/heat.svg',
-      'Bucks': '/images/teams/bucks.svg',
-      '76ers': '/images/teams/76ers.svg',
-      'Nets': '/images/teams/nets.svg',
-      'Knicks': '/images/teams/knicks.svg',
-      'Raptors': '/images/teams/raptors.svg',
-      'Hawks': '/images/teams/hawks.svg',
-      'Hornets': '/images/teams/hornets.svg',
-      'Magic': '/images/teams/magic.svg',
-      'Wizards': '/images/teams/wizards.svg',
-      'Pistons': '/images/teams/pistons.svg',
-      'Cavaliers': '/images/teams/cavaliers.svg',
-      'Pacers': '/images/teams/pacers.svg',
-      'Bulls': '/images/teams/bulls.svg',
-    };
-
-    return teamLogos[teamName] || '/images/teams/mavericks.svg'; // 기본값으로 매버릭스 로고
-  };
 
   const getStatusText = (game: LiveGame) => {
     if (game.is_finished) return '종료';

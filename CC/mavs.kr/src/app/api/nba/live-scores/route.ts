@@ -70,7 +70,7 @@ function mapTeamName(espnTeamName: string): string {
     'Minnesota Timberwolves': 'Timberwolves',
     'New Orleans Pelicans': 'Pelicans',
     'Memphis Grizzlies': 'Grizzlies',
-    
+
     // 동부 컨퍼런스
     'Boston Celtics': 'Celtics',
     'Miami Heat': 'Heat',
@@ -88,7 +88,7 @@ function mapTeamName(espnTeamName: string): string {
     'Orlando Magic': 'Magic',
     'Washington Wizards': 'Wizards',
   };
-  
+
   return teamMapping[espnTeamName] || espnTeamName;
 }
 
@@ -131,7 +131,7 @@ export async function GET(request: NextRequest) {
 
       const homeTeamName = mapTeamName(homeTeam.team.name || homeTeam.team.shortDisplayName || 'TBD');
       const awayTeamName = mapTeamName(awayTeam.team.name || awayTeam.team.shortDisplayName || 'TBD');
-      
+
       // 디버깅을 위한 로그
       console.log('Team names mapping:', {
         home: { original: homeTeam.team.name, mapped: homeTeamName },
