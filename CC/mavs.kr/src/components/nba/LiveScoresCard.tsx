@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Clock, ExternalLink, RefreshCw } from 'lucide-react';
+import { Clock, ExternalLink, RefreshCw, Play, CheckCircle, Calendar } from 'lucide-react';
 
 interface LiveGame {
   game_id: string;
@@ -137,6 +137,7 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
   };
 
   const getStatusColor = (game: LiveGame) => {
+    if (game.is_mavs_game) return 'text-blue-400';
     if (game.is_finished) return 'text-slate-400';
     if (game.is_live) return 'text-green-400';
     return 'text-blue-400';
@@ -178,12 +179,33 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
             </div>
           </div>
         ) : games.length > 0 ? (
-          games.slice(0, 5).map((game) => (
+          games
+            .sort((a, b) => {
+              // 1. 댈러스 경기를 최상단으로
+              if (a.is_mavs_game && !b.is_mavs_game) return -1;
+              if (!a.is_mavs_game && b.is_mavs_game) return 1;
+              
+              // 2. 진행 중인 경기를 상단으로
+              if (a.is_live && !b.is_live) return -1;
+              if (!a.is_live && b.is_live) return 1;
+              
+              // 3. 종료된 경기를 하단으로
+              if (a.is_finished && !b.is_finished) return 1;
+              if (!a.is_finished && b.is_finished) return -1;
+              
+              // 4. 같은 상태라면 시간순으로 정렬
+              return new Date(a.game_time_kst).getTime() - new Date(b.game_time_kst).getTime();
+            })
+            .map((game) => (
             <div
               key={game.game_id}
-              className={`flex items-center justify-between py-3 px-3 rounded-lg ${
+              className={`flex items-center justify-between py-3 px-3 rounded-lg transition-all duration-200 ${
                 game.is_mavs_game
                   ? 'bg-gradient-to-r from-blue-600/20 to-blue-700/20 border border-blue-500/30'
+                  : game.is_live
+                  ? 'bg-gradient-to-r from-green-600/10 to-green-700/10 border border-green-500/20'
+                  : game.is_finished
+                  ? 'bg-slate-700/20 opacity-75'
                   : 'bg-slate-700/30'
               }`}
             >
@@ -203,25 +225,37 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
                 />
                 <div className="text-center">
                   <div className={`text-sm font-medium ${
-                    game.is_mavs_game ? 'text-blue-300' : 'text-white'
+                    game.is_mavs_game ? 'text-blue-300' : 
+                    game.is_live ? 'text-green-300' :
+                    game.is_finished ? 'text-slate-400' : 'text-white'
                   }`}>
                     {game.away_team}
                   </div>
                   <div className={`text-xs ${
-                    game.is_mavs_game ? 'text-blue-400' : 'text-slate-400'
+                    game.is_mavs_game ? 'text-blue-400' : 
+                    game.is_live ? 'text-green-400' :
+                    game.is_finished ? 'text-slate-500' : 'text-slate-400'
                   }`}>
                     {game.away_score}
                   </div>
                 </div>
-                <span className="text-slate-500">@</span>
+                <span className={`${
+                  game.is_mavs_game ? 'text-blue-400' : 
+                  game.is_live ? 'text-green-400' :
+                  game.is_finished ? 'text-slate-500' : 'text-slate-500'
+                }`}>@</span>
                 <div className="text-center">
                   <div className={`text-sm font-medium ${
-                    game.is_mavs_game ? 'text-blue-300' : 'text-white'
+                    game.is_mavs_game ? 'text-blue-300' : 
+                    game.is_live ? 'text-green-300' :
+                    game.is_finished ? 'text-slate-400' : 'text-white'
                   }`}>
                     {game.home_team}
                   </div>
                   <div className={`text-xs ${
-                    game.is_mavs_game ? 'text-blue-400' : 'text-slate-400'
+                    game.is_mavs_game ? 'text-blue-400' : 
+                    game.is_live ? 'text-green-400' :
+                    game.is_finished ? 'text-slate-500' : 'text-slate-400'
                   }`}>
                     {game.home_score}
                   </div>
@@ -241,8 +275,11 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
                 />
               </div>
               <div className="text-right">
-                <div className={`text-xs font-medium ${getStatusColor(game)}`}>
-                  {getStatusText(game)}
+                <div className={`text-xs font-medium flex items-center justify-end space-x-1 ${getStatusColor(game)}`}>
+                  {game.is_live && <Play className="w-3 h-3" />}
+                  {game.is_finished && <CheckCircle className="w-3 h-3" />}
+                  {!game.is_live && !game.is_finished && <Calendar className="w-3 h-3" />}
+                  <span>{getStatusText(game)}</span>
                 </div>
               </div>
             </div>
