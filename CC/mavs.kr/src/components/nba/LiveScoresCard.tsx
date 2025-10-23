@@ -143,7 +143,15 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
             </div>
           </div>
         ) : games.length > 0 ? (
-          games
+          (() => {
+            console.log('🏀 Live scores games:', games.map(g => ({ 
+              home: g.home_team, 
+              away: g.away_team,
+              homeLogo: getTeamLogo(g.home_team),
+              awayLogo: getTeamLogo(g.away_team)
+            })));
+            return games;
+          })()
             .sort((a, b) => {
               // 1. 댈러스 경기를 최상단으로
               if (a.is_mavs_game && !b.is_mavs_game) return -1;
@@ -178,19 +186,23 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
                   src={getTeamLogo(game.away_team)}
                   alt={game.away_team}
                   className="w-6 h-6 object-contain flex-shrink-0"
-                  style={{ 
-                    minWidth: '24px', 
+                  style={{
+                    minWidth: '24px',
                     minHeight: '24px',
                     display: 'block',
                     visibility: 'visible'
                   }}
                   onError={(e) => {
+                    const target = e.target as HTMLImageElement;
                     console.error('❌ Image load error for away team:', {
                       teamName: game.away_team,
                       logoPath: getTeamLogo(game.away_team),
-                      imageSrc: (e.target as HTMLImageElement).src
+                      imageSrc: target.src,
+                      naturalWidth: target.naturalWidth,
+                      naturalHeight: target.naturalHeight,
+                      complete: target.complete,
+                      error: e
                     });
-                    const target = e.target as HTMLImageElement;
                     target.style.display = 'none';
                   }}
                   onLoad={() => {
@@ -241,19 +253,23 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
                   src={getTeamLogo(game.home_team)}
                   alt={game.home_team}
                   className="w-6 h-6 object-contain flex-shrink-0"
-                  style={{ 
-                    minWidth: '24px', 
+                  style={{
+                    minWidth: '24px',
                     minHeight: '24px',
                     display: 'block',
                     visibility: 'visible'
                   }}
                   onError={(e) => {
+                    const target = e.target as HTMLImageElement;
                     console.error('❌ Image load error for home team:', {
                       teamName: game.home_team,
                       logoPath: getTeamLogo(game.home_team),
-                      imageSrc: (e.target as HTMLImageElement).src
+                      imageSrc: target.src,
+                      naturalWidth: target.naturalWidth,
+                      naturalHeight: target.naturalHeight,
+                      complete: target.complete,
+                      error: e
                     });
-                    const target = e.target as HTMLImageElement;
                     target.style.display = 'none';
                   }}
                   onLoad={() => {
