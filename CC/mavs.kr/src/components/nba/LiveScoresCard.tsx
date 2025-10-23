@@ -178,7 +178,12 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
                   src={getTeamLogo(game.away_team)}
                   alt={game.away_team}
                   className="w-6 h-6 object-contain flex-shrink-0"
-                  style={{ minWidth: '24px', minHeight: '24px' }}
+                  style={{ 
+                    minWidth: '24px', 
+                    minHeight: '24px',
+                    display: 'block',
+                    visibility: 'visible'
+                  }}
                   onError={(e) => {
                     console.error('❌ Image load error for away team:', {
                       teamName: game.away_team,
@@ -236,7 +241,12 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
                   src={getTeamLogo(game.home_team)}
                   alt={game.home_team}
                   className="w-6 h-6 object-contain flex-shrink-0"
-                  style={{ minWidth: '24px', minHeight: '24px' }}
+                  style={{ 
+                    minWidth: '24px', 
+                    minHeight: '24px',
+                    display: 'block',
+                    visibility: 'visible'
+                  }}
                   onError={(e) => {
                     console.error('❌ Image load error for home team:', {
                       teamName: game.home_team,
