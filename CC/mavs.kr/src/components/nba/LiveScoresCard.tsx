@@ -184,15 +184,15 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
               // 1. 댈러스 경기를 최상단으로
               if (a.is_mavs_game && !b.is_mavs_game) return -1;
               if (!a.is_mavs_game && b.is_mavs_game) return 1;
-              
+
               // 2. 진행 중인 경기를 상단으로
               if (a.is_live && !b.is_live) return -1;
               if (!a.is_live && b.is_live) return 1;
-              
+
               // 3. 종료된 경기를 하단으로
               if (a.is_finished && !b.is_finished) return 1;
               if (!a.is_finished && b.is_finished) return -1;
-              
+
               // 4. 같은 상태라면 시간순으로 정렬
               return new Date(a.game_time_kst).getTime() - new Date(b.game_time_kst).getTime();
             })
@@ -213,26 +213,34 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
                 <img
                   src={getTeamLogo(game.away_team)}
                   alt={game.away_team}
-                  className="w-6 h-6 object-contain"
+                  className="w-6 h-6 object-contain flex-shrink-0"
+                  style={{ minWidth: '24px', minHeight: '24px' }}
                   onError={(e) => {
-                    console.log('Image load error for away team:', game.away_team, getTeamLogo(game.away_team));
+                    console.error('❌ Image load error for away team:', {
+                      teamName: game.away_team,
+                      logoPath: getTeamLogo(game.away_team),
+                      imageSrc: (e.target as HTMLImageElement).src
+                    });
                     const target = e.target as HTMLImageElement;
                     target.style.display = 'none';
                   }}
                   onLoad={() => {
-                    console.log('Image loaded successfully for away team:', game.away_team, getTeamLogo(game.away_team));
+                    console.log('✅ Image loaded successfully for away team:', {
+                      teamName: game.away_team,
+                      logoPath: getTeamLogo(game.away_team)
+                    });
                   }}
                 />
                 <div className="text-center">
                   <div className={`text-sm font-medium ${
-                    game.is_mavs_game ? 'text-blue-300' : 
+                    game.is_mavs_game ? 'text-blue-300' :
                     game.is_live ? 'text-green-300' :
                     game.is_finished ? 'text-slate-400' : 'text-white'
                   }`}>
                     {game.away_team}
                   </div>
                   <div className={`text-xs ${
-                    game.is_mavs_game ? 'text-blue-400' : 
+                    game.is_mavs_game ? 'text-blue-400' :
                     game.is_live ? 'text-green-400' :
                     game.is_finished ? 'text-slate-500' : 'text-slate-400'
                   }`}>
@@ -240,20 +248,20 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
                   </div>
                 </div>
                 <span className={`${
-                  game.is_mavs_game ? 'text-blue-400' : 
+                  game.is_mavs_game ? 'text-blue-400' :
                   game.is_live ? 'text-green-400' :
                   game.is_finished ? 'text-slate-500' : 'text-slate-500'
                 }`}>@</span>
                 <div className="text-center">
                   <div className={`text-sm font-medium ${
-                    game.is_mavs_game ? 'text-blue-300' : 
+                    game.is_mavs_game ? 'text-blue-300' :
                     game.is_live ? 'text-green-300' :
                     game.is_finished ? 'text-slate-400' : 'text-white'
                   }`}>
                     {game.home_team}
                   </div>
                   <div className={`text-xs ${
-                    game.is_mavs_game ? 'text-blue-400' : 
+                    game.is_mavs_game ? 'text-blue-400' :
                     game.is_live ? 'text-green-400' :
                     game.is_finished ? 'text-slate-500' : 'text-slate-400'
                   }`}>
@@ -263,14 +271,22 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
                 <img
                   src={getTeamLogo(game.home_team)}
                   alt={game.home_team}
-                  className="w-6 h-6 object-contain"
+                  className="w-6 h-6 object-contain flex-shrink-0"
+                  style={{ minWidth: '24px', minHeight: '24px' }}
                   onError={(e) => {
-                    console.log('Image load error for home team:', game.home_team, getTeamLogo(game.home_team));
+                    console.error('❌ Image load error for home team:', {
+                      teamName: game.home_team,
+                      logoPath: getTeamLogo(game.home_team),
+                      imageSrc: (e.target as HTMLImageElement).src
+                    });
                     const target = e.target as HTMLImageElement;
                     target.style.display = 'none';
                   }}
                   onLoad={() => {
-                    console.log('Image loaded successfully for home team:', game.home_team, getTeamLogo(game.home_team));
+                    console.log('✅ Image loaded successfully for home team:', {
+                      teamName: game.home_team,
+                      logoPath: getTeamLogo(game.home_team)
+                    });
                   }}
                 />
               </div>
