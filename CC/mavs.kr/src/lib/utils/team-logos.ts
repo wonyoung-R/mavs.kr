@@ -4,16 +4,16 @@
 export const getTeamLogo = (teamName: string): string => {
   const teamLogos: { [key: string]: string } = {
     // 서부 컨퍼런스
-    'Mavericks': '/images/teams/mavericks.svg',
-    'Lakers': '/images/teams/lakers.svg',
-    'Warriors': '/images/teams/warriors.svg',
+    'Mavericks': '/images/logos/mavericks.png',
+    'Lakers': '/images/logos/lakers.png',
+    'Warriors': '/images/logos/warriors.png',
     'Thunder': '/images/teams/thunder.svg',
     'Rockets': '/images/teams/rockets.svg',
     'Spurs': '/images/teams/spurs.svg',
-    'Nuggets': '/images/teams/nuggets.svg',
+    'Nuggets': '/images/logos/nuggets.png',
     'Jazz': '/images/teams/jazz.svg',
     'Trail Blazers': '/images/teams/trailblazers.svg',
-    'Suns': '/images/teams/suns.svg',
+    'Suns': '/images/logos/suns.png',
     'Kings': '/images/teams/kings.svg',
     'Clippers': '/images/teams/clippers.svg',
     'Timberwolves': '/images/teams/timberwolves.svg',
@@ -38,16 +38,16 @@ export const getTeamLogo = (teamName: string): string => {
     'Wizards': '/images/teams/wizards.svg',
     
     // 전체 이름 매핑 (API에서 이렇게 올 수도 있으니)
-    'Dallas Mavericks': '/images/teams/mavericks.svg',
-    'Los Angeles Lakers': '/images/teams/lakers.svg',
-    'Golden State Warriors': '/images/teams/warriors.svg',
+    'Dallas Mavericks': '/images/logos/mavericks.png',
+    'Los Angeles Lakers': '/images/logos/lakers.png',
+    'Golden State Warriors': '/images/logos/warriors.png',
     'Oklahoma City Thunder': '/images/teams/thunder.svg',
     'Houston Rockets': '/images/teams/rockets.svg',
     'San Antonio Spurs': '/images/teams/spurs.svg',
-    'Denver Nuggets': '/images/teams/nuggets.svg',
+    'Denver Nuggets': '/images/logos/nuggets.png',
     'Utah Jazz': '/images/teams/jazz.svg',
     'Portland Trail Blazers': '/images/teams/trailblazers.svg',
-    'Phoenix Suns': '/images/teams/suns.svg',
+    'Phoenix Suns': '/images/logos/suns.png',
     'Sacramento Kings': '/images/teams/kings.svg',
     'LA Clippers': '/images/teams/clippers.svg',
     'Los Angeles Clippers': '/images/teams/clippers.svg',
@@ -72,7 +72,7 @@ export const getTeamLogo = (teamName: string): string => {
   };
   
   // 기본 fallback - 매버릭스 로고
-  return teamLogos[teamName] || '/images/teams/mavericks.svg';
+  return teamLogos[teamName] || '/images/logos/mavericks.png';
 };
 
 // 팀 이름 정규화 함수 (선택사항)
