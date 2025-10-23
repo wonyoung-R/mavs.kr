@@ -50,6 +50,48 @@ interface ProcessedLiveGame {
   broadcast: string[];
 }
 
+// ESPN API 팀 이름을 우리 시스템의 팀 이름으로 매핑
+function mapTeamName(espnTeamName: string): string {
+  const teamMapping: { [key: string]: string } = {
+    // 서부 컨퍼런스
+    'Dallas Mavericks': 'Mavericks',
+    'Los Angeles Lakers': 'Lakers',
+    'Golden State Warriors': 'Warriors',
+    'Oklahoma City Thunder': 'Thunder',
+    'Houston Rockets': 'Rockets',
+    'San Antonio Spurs': 'Spurs',
+    'Denver Nuggets': 'Nuggets',
+    'Utah Jazz': 'Jazz',
+    'Portland Trail Blazers': 'Trail Blazers',
+    'Phoenix Suns': 'Suns',
+    'Sacramento Kings': 'Kings',
+    'LA Clippers': 'Clippers',
+    'Los Angeles Clippers': 'Clippers',
+    'Minnesota Timberwolves': 'Timberwolves',
+    'New Orleans Pelicans': 'Pelicans',
+    'Memphis Grizzlies': 'Grizzlies',
+    
+    // 동부 컨퍼런스
+    'Boston Celtics': 'Celtics',
+    'Miami Heat': 'Heat',
+    'Milwaukee Bucks': 'Bucks',
+    'Philadelphia 76ers': '76ers',
+    'Brooklyn Nets': 'Nets',
+    'New York Knicks': 'Knicks',
+    'Toronto Raptors': 'Raptors',
+    'Chicago Bulls': 'Bulls',
+    'Cleveland Cavaliers': 'Cavaliers',
+    'Detroit Pistons': 'Pistons',
+    'Indiana Pacers': 'Pacers',
+    'Atlanta Hawks': 'Hawks',
+    'Charlotte Hornets': 'Hornets',
+    'Orlando Magic': 'Magic',
+    'Washington Wizards': 'Wizards',
+  };
+  
+  return teamMapping[espnTeamName] || espnTeamName;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -87,10 +129,19 @@ export async function GET(request: NextRequest) {
       const isFinished = competition.status.type.completed;
       const isLive = competition.status.type.name === 'STATUS_IN_PROGRESS';
 
+      const homeTeamName = mapTeamName(homeTeam.team.name || homeTeam.team.shortDisplayName || 'TBD');
+      const awayTeamName = mapTeamName(awayTeam.team.name || awayTeam.team.shortDisplayName || 'TBD');
+      
+      // 디버깅을 위한 로그
+      console.log('Team names mapping:', {
+        home: { original: homeTeam.team.name, mapped: homeTeamName },
+        away: { original: awayTeam.team.name, mapped: awayTeamName }
+      });
+
       return {
         game_id: game.id,
-        home_team: homeTeam.team.name || homeTeam.team.shortDisplayName || 'TBD',
-        away_team: awayTeam.team.name || awayTeam.team.shortDisplayName || 'TBD',
+        home_team: homeTeamName,
+        away_team: awayTeamName,
         home_score: homeTeam.score ? parseInt(homeTeam.score) : 0,
         away_score: awayTeam.score ? parseInt(awayTeam.score) : 0,
         status: competition.status.type.name,
