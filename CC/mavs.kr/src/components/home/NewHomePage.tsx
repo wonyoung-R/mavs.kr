@@ -36,6 +36,8 @@ export default function NewHomePage() {
   const [initialNews, setInitialNews] = useState<NewsArticle[]>([]);
   const [upcomingGames, setUpcomingGames] = useState<MavericksGame[]>([]);
   const [loadingGames, setLoadingGames] = useState(true);
+  const [todaysMavsGame, setTodaysMavsGame] = useState<any>(null);
+  const [loadingTodaysGame, setLoadingTodaysGame] = useState(true);
 
   useEffect(() => {
     // 초기 뉴스 데이터 로드 (번역 포함)
@@ -46,6 +48,9 @@ export default function NewHomePage() {
 
     // NBA 데이터 로드
     fetchNBAData();
+    
+    // 오늘 댈러스 경기 확인
+    fetchTodaysMavsGame();
   }, []);
 
 
@@ -68,8 +73,113 @@ export default function NewHomePage() {
     }
   };
 
+  const fetchTodaysMavsGame = async () => {
+    try {
+      const response = await fetch('/api/nba/live-scores');
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        // 댈러스 경기 찾기
+        const mavsGame = data.data.all_games?.find((game: any) => game.is_mavs_game);
+        setTodaysMavsGame(mavsGame || null);
+      }
+      setLoadingTodaysGame(false);
+    } catch (error) {
+      console.error('Failed to fetch today\'s Mavs game:', error);
+      setLoadingTodaysGame(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+      {/* Mavericks Game Hero Section */}
+      {!loadingTodaysGame && todaysMavsGame && (
+        <section className="bg-gradient-to-r from-blue-600/20 to-blue-800/30 border-b border-blue-500/30 pt-20 pb-8 px-4">
+          <div className="container mx-auto max-w-7xl">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="text-center"
+            >
+              <div className="flex items-center justify-center space-x-8 mb-6">
+                {/* Away Team */}
+                <div className="flex flex-col items-center space-y-3">
+                  <img
+                    src={`${getTeamLogo(todaysMavsGame.away_team)}?v=${Date.now()}`}
+                    alt={todaysMavsGame.away_team}
+                    className="w-16 h-16 md:w-20 md:h-20 object-contain"
+                  />
+                  <div className="text-center">
+                    <div className="text-lg md:text-xl font-bold text-white">
+                      {todaysMavsGame.away_team}
+                    </div>
+                    <div className="text-3xl md:text-4xl font-bold text-blue-300">
+                      {todaysMavsGame.away_score}
+                    </div>
+                  </div>
+                </div>
+
+                {/* VS */}
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="text-2xl md:text-3xl font-bold text-blue-400">VS</div>
+                  <div className="text-sm text-blue-300">
+                    {todaysMavsGame.is_live ? (
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                        <span>{todaysMavsGame.period}Q {todaysMavsGame.time_remaining}</span>
+                      </div>
+                    ) : todaysMavsGame.is_finished ? (
+                      <span className="text-slate-400">종료</span>
+                    ) : (
+                      <span>{todaysMavsGame.game_time_kst}</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Home Team */}
+                <div className="flex flex-col items-center space-y-3">
+                  <img
+                    src={`${getTeamLogo(todaysMavsGame.home_team)}?v=${Date.now()}`}
+                    alt={todaysMavsGame.home_team}
+                    className="w-16 h-16 md:w-20 md:h-20 object-contain"
+                  />
+                  <div className="text-center">
+                    <div className="text-lg md:text-xl font-bold text-white">
+                      {todaysMavsGame.home_team}
+                    </div>
+                    <div className="text-3xl md:text-4xl font-bold text-blue-300">
+                      {todaysMavsGame.home_score}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Game Status */}
+              <div className="text-center">
+                {todaysMavsGame.is_live && (
+                  <div className="inline-flex items-center space-x-2 bg-green-600/20 px-4 py-2 rounded-full border border-green-500/30">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span className="text-green-300 font-medium">LIVE</span>
+                  </div>
+                )}
+                {todaysMavsGame.is_finished && (
+                  <div className="inline-flex items-center space-x-2 bg-slate-600/20 px-4 py-2 rounded-full border border-slate-500/30">
+                    <span className="text-slate-300 font-medium">경기 종료</span>
+                  </div>
+                )}
+                {!todaysMavsGame.is_live && !todaysMavsGame.is_finished && (
+                  <div className="inline-flex items-center space-x-2 bg-blue-600/20 px-4 py-2 rounded-full border border-blue-500/30">
+                    <Clock className="w-4 h-4 text-blue-300" />
+                    <span className="text-blue-300 font-medium">경기 예정</span>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        </section>
+      )}
+
       {/* Hero Section with MagneticText */}
       <section className="hero-bg pt-24 pb-12 px-4 relative overflow-hidden">
         {/* Background Pattern */}
