@@ -185,6 +185,47 @@ npm run db:seed
 #### 웹소켓
 - `NEXT_PUBLIC_SOCKET_URL`: 웹소켓 서버 URL
 
+## 🌿 브랜치 전략
+
+이 프로젝트는 Git Flow를 기반으로 한 브랜치 전략을 사용합니다:
+
+### 주요 브랜치
+- **`main`**: 운영 환경 (Production)
+  - 실제 서비스 중인 안정적인 코드
+  - 배포 URL: `https://mavs.kr`
+  - 직접 커밋 금지, PR을 통한 병합만 허용
+
+- **`develop`**: 개발 환경 (Development)
+  - 다음 릴리스를 위한 개발 코드
+  - 배포 URL: `https://dev.mavs.kr` 또는 `https://mavs-kr-dev.vercel.app`
+  - 기능 브랜치들이 병합되는 메인 개발 브랜치
+
+### 작업 흐름
+1. `develop` 브랜치에서 새로운 기능 브랜치 생성
+   ```bash
+   git checkout develop
+   git pull origin develop
+   git checkout -b feature/your-feature-name
+   ```
+
+2. 작업 완료 후 `develop` 브랜치로 PR 생성
+   ```bash
+   git add .
+   git commit -m "feat: add your feature"
+   git push origin feature/your-feature-name
+   ```
+
+3. 코드 리뷰 후 `develop`에 병합
+
+4. `develop`에서 충분히 테스트 후 `main`으로 PR 생성하여 배포
+
+### 브랜치 네이밍 규칙
+- `feature/기능명`: 새로운 기능 개발
+- `fix/버그명`: 버그 수정
+- `hotfix/긴급수정명`: 운영 환경 긴급 수정
+- `refactor/리팩토링명`: 코드 리팩토링
+- `docs/문서명`: 문서 작업
+
 ## 🤝 기여하기
 
 1. Fork the Project
