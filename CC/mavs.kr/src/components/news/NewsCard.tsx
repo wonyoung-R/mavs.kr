@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { NewsArticle } from '@/types/news';
-import { formatDistanceToNow } from 'date-fns';
-import { ko } from 'date-fns/locale';
-import { ExternalLink, MessageCircle, ThumbsUp, Eye, FileText, ChevronRight } from 'lucide-react';
+import { ExternalLink, MessageCircle, ThumbsUp, Eye, ChevronRight } from 'lucide-react';
 import { isEnglishText } from '@/lib/translation/simple-translator';
 import { SummaryModal } from './SummaryModal';
 import { NewsModal } from './NewsModal';
+import { SourceBadge } from './SourceBadge';
+import { formatTimeAgo } from '@/lib/utils/news-utils';
 
 interface NewsCardProps {
   article: NewsArticle;
@@ -20,21 +20,7 @@ export function NewsCard({ article }: NewsCardProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const timeAgo = (() => {
-    try {
-      const publishedDate = new Date(article.published);
-      if (isNaN(publishedDate.getTime())) {
-        return '시간 정보 없음';
-      }
-      return formatDistanceToNow(publishedDate, {
-        addSuffix: true,
-        locale: ko
-      });
-    } catch (error) {
-      console.error('Date parsing error:', error);
-      return '시간 정보 없음';
-    }
-  })();
+  const timeAgo = formatTimeAgo(article.published);
 
 
   const handleSummarize = async () => {
@@ -46,10 +32,7 @@ export function NewsCard({ article }: NewsCardProps) {
       const response = await fetch('/api/news/summarize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          url: article.url,
-          title: article.title
-        })
+        body: JSON.stringify({ url: article.url, title: article.title })
       });
 
       if (!response.ok) throw new Error('Failed to summarize');
@@ -73,37 +56,6 @@ export function NewsCard({ article }: NewsCardProps) {
   const handleCardClick = (e: React.MouseEvent) => {
     e.preventDefault();
     setIsNewsModalOpen(true);
-  };
-
-
-  const getSourceColor = (source: string) => {
-    switch (source.toLowerCase()) {
-      case 'espn':
-        return 'text-red-300 bg-red-600/20 border-red-500/30';
-      case 'reddit':
-        return 'text-orange-300 bg-orange-600/20 border-orange-500/30';
-      case 'the smoking cuban':
-        return 'text-blue-300 bg-blue-600/20 border-blue-500/30';
-      case '네이버 스포츠':
-        return 'text-green-300 bg-green-600/20 border-green-500/30';
-      default:
-        return 'text-slate-300 bg-slate-600/20 border-slate-500/30';
-    }
-  };
-
-  const getSourceIcon = (source: string) => {
-    switch (source.toLowerCase()) {
-      case 'espn':
-        return '📺';
-      case 'reddit':
-        return '🔗';
-      case 'the smoking cuban':
-        return '📰';
-      case '네이버 스포츠':
-        return '🇰🇷';
-      default:
-        return '📄';
-    }
   };
 
   return (
@@ -153,9 +105,7 @@ export function NewsCard({ article }: NewsCardProps) {
             <div className="flex-1 min-w-0">
               {/* 소스 및 시간 */}
               <div className="flex items-center gap-2 mb-3">
-                <span className={`text-xs px-2 py-1 rounded-full border ${getSourceColor(article.source)}`}>
-                  {getSourceIcon(article.source)} {article.source}
-                </span>
+                <SourceBadge source={article.source} />
                 {article.flair && (
                   <>
                     <span className="text-slate-500">•</span>

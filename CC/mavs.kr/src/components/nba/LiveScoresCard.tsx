@@ -1,7 +1,7 @@
 // src/components/nba/LiveScoresCard.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Clock, ExternalLink, RefreshCw, Play, CheckCircle, Calendar } from 'lucide-react';
@@ -32,26 +32,9 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(true);
-  const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    fetchLiveScores();
-
-    // 자동 업데이트 시작
-    const id = setInterval(() => {
-      fetchLiveScores();
-    }, 60000);
-
-    setIntervalId(id);
-
-    return () => {
-      if (id) {
-        clearInterval(id);
-      }
-    };
-  }, []);
-
-  const fetchLiveScores = async () => {
+  const fetchLiveScores = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/nba/live-scores');
@@ -71,9 +54,9 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
         // 오후 2시 이후이고 모든 경기가 종료되었으면 업데이트 중단
         if (currentHour >= 14 && allGamesFinished) {
           setIsUpdating(false);
-          if (intervalId) {
-            clearInterval(intervalId);
-            setIntervalId(null);
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
           }
         }
       } else {
@@ -85,8 +68,22 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
+  useEffect(() => {
+    fetchLiveScores();
+
+    // 자동 업데이트 시작
+    intervalRef.current = setInterval(() => {
+      fetchLiveScores();
+    }, 60000);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [fetchLiveScores]);
 
   const getStatusText = (game: LiveGame) => {
     if (game.is_finished) return '종료';
@@ -143,15 +140,7 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
             </div>
           </div>
         ) : games.length > 0 ? (
-          (() => {
-            console.log('🏀 Live scores games:', games.map(g => ({
-              home: g.home_team,
-              away: g.away_team,
-              homeLogo: getTeamLogo(g.home_team),
-              awayLogo: getTeamLogo(g.away_team)
-            })));
-            return games;
-          })()
+          games
             .sort((a, b) => {
               // 1. 댈러스 경기를 최상단으로
               if (a.is_mavs_game && !b.is_mavs_game) return -1;
@@ -182,36 +171,36 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
               }`}
             >
               <div className="flex items-center space-x-3">
-                <img
-                  src={`${getTeamLogo(game.away_team)}?v=${Date.now()}`}
-                  alt={game.away_team}
-                  className="w-6 h-6 object-contain flex-shrink-0"
-                  style={{
-                    minWidth: '24px',
-                    minHeight: '24px',
-                    display: 'block',
-                    visibility: 'visible'
-                  }}
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    console.error('❌ Image load error for away team:', {
-                      teamName: game.away_team,
-                      logoPath: getTeamLogo(game.away_team),
-                      imageSrc: target.src,
-                      naturalWidth: target.naturalWidth,
-                      naturalHeight: target.naturalHeight,
-                      complete: target.complete,
-                      error: e
-                    });
-                    target.style.display = 'none';
-                  }}
-                  onLoad={() => {
-                    console.log('✅ Image loaded successfully for away team:', {
-                      teamName: game.away_team,
-                      logoPath: getTeamLogo(game.away_team)
-                    });
-                  }}
-                />
+                {(() => {
+                  const awayLogo = getTeamLogo(game.away_team);
+                  return awayLogo ? (
+                    <img
+                      src={awayLogo}
+                      alt={game.away_team}
+                      className="w-6 h-6 object-contain flex-shrink-0"
+                      style={{
+                        minWidth: '24px',
+                        minHeight: '24px',
+                        display: 'block',
+                        visibility: 'visible'
+                      }}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        console.warn('Image load error for away team:', {
+                          teamName: game.away_team,
+                          logoPath: awayLogo
+                        });
+                        target.style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <div className="w-6 h-6 rounded-full bg-slate-600 flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs text-white font-bold">
+                        {game.away_team.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  );
+                })()}
                 <div className="text-center">
                   <div className="text-sm font-medium text-white">
                     {game.away_team}
@@ -233,36 +222,36 @@ export function LiveScoresCard({ className = '' }: LiveScoresCardProps) {
                     {game.home_score}
                   </div>
                 </div>
-                <img
-                  src={`${getTeamLogo(game.home_team)}?v=${Date.now()}`}
-                  alt={game.home_team}
-                  className="w-6 h-6 object-contain flex-shrink-0"
-                  style={{
-                    minWidth: '24px',
-                    minHeight: '24px',
-                    display: 'block',
-                    visibility: 'visible'
-                  }}
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    console.error('❌ Image load error for home team:', {
-                      teamName: game.home_team,
-                      logoPath: getTeamLogo(game.home_team),
-                      imageSrc: target.src,
-                      naturalWidth: target.naturalWidth,
-                      naturalHeight: target.naturalHeight,
-                      complete: target.complete,
-                      error: e
-                    });
-                    target.style.display = 'none';
-                  }}
-                  onLoad={() => {
-                    console.log('✅ Image loaded successfully for home team:', {
-                      teamName: game.home_team,
-                      logoPath: getTeamLogo(game.home_team)
-                    });
-                  }}
-                />
+                {(() => {
+                  const homeLogo = getTeamLogo(game.home_team);
+                  return homeLogo ? (
+                    <img
+                      src={homeLogo}
+                      alt={game.home_team}
+                      className="w-6 h-6 object-contain flex-shrink-0"
+                      style={{
+                        minWidth: '24px',
+                        minHeight: '24px',
+                        display: 'block',
+                        visibility: 'visible'
+                      }}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        console.warn('Image load error for home team:', {
+                          teamName: game.home_team,
+                          logoPath: homeLogo
+                        });
+                        target.style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <div className="w-6 h-6 rounded-full bg-slate-600 flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs text-white font-bold">
+                        {game.home_team.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  );
+                })()}
               </div>
               <div className="text-right">
                 <div className={`text-xs font-medium flex items-center justify-end space-x-1 ${getStatusColor(game)}`}>

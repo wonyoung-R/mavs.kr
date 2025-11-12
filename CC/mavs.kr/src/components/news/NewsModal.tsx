@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { NewsArticle } from '@/types/news';
-import { formatDistanceToNow } from 'date-fns';
-import { ko } from 'date-fns/locale';
-import { X, ExternalLink, Calendar, User, MessageCircle, ThumbsUp, Eye, FileText, Share2 } from 'lucide-react';
+import { X, ExternalLink, MessageCircle, ThumbsUp, Eye, Share2 } from 'lucide-react';
 import { isEnglishText } from '@/lib/translation/simple-translator';
+import { getSourceColor, getSourceIcon, formatTimeAgo } from '@/lib/utils/news-utils';
 
 interface NewsModalProps {
   isOpen: boolean;
@@ -111,52 +110,7 @@ export function NewsModal({ isOpen, onClose, article }: NewsModalProps) {
     }
   };
 
-  const timeAgo = (() => {
-    if (!article) return '';
-    try {
-      const publishedDate = new Date(article.published);
-      if (isNaN(publishedDate.getTime())) {
-        return '시간 정보 없음';
-      }
-      return formatDistanceToNow(publishedDate, {
-        addSuffix: true,
-        locale: ko
-      });
-    } catch (error) {
-      console.error('Date parsing error:', error);
-      return '시간 정보 없음';
-    }
-  })();
-
-  const getSourceColor = (source: string) => {
-    switch (source.toLowerCase()) {
-      case 'espn':
-        return 'text-red-500 bg-red-50 border-red-200';
-      case 'reddit':
-        return 'text-orange-500 bg-orange-50 border-orange-200';
-      case 'the smoking cuban':
-        return 'text-toss-blue bg-toss-blue-light border-toss-blue/20';
-      case '네이버 스포츠':
-        return 'text-green-500 bg-green-50 border-green-200';
-      default:
-        return 'text-toss-gray-500 bg-toss-gray-50 border-toss-gray-200';
-    }
-  };
-
-  const getSourceIcon = (source: string) => {
-    switch (source.toLowerCase()) {
-      case 'espn':
-        return '📺';
-      case 'reddit':
-        return '🔗';
-      case 'the smoking cuban':
-        return '📰';
-      case '네이버 스포츠':
-        return '🇰🇷';
-      default:
-        return '📄';
-    }
-  };
+  const timeAgo = article ? formatTimeAgo(article.published) : '';
 
   const handleShare = async () => {
     if (!article) return;
@@ -199,7 +153,7 @@ export function NewsModal({ isOpen, onClose, article }: NewsModalProps) {
         <div className="sticky top-0 bg-toss-white border-b border-toss-gray-200 rounded-toss-xl-t">
           <div className="flex items-center justify-between p-6">
             <div className="flex items-center gap-3">
-              <span className={`text-sm px-3 py-1 rounded-full border ${getSourceColor(article.source)}`}>
+              <span className={`text-sm px-3 py-1 rounded-full ${getSourceColor(article.source)}`}>
                 {getSourceIcon(article.source)} {article.source}
               </span>
               <span className="text-sm text-toss-gray-500">{timeAgo}</span>

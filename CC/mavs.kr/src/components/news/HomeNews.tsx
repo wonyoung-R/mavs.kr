@@ -3,85 +3,94 @@
 import { useState, useEffect } from 'react';
 import { NewsArticle } from '@/types/news';
 import { Button } from '@/components/ui/Button';
-import { ArrowRight, Clock } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { useNews } from '@/hooks/useNews';
+import { SourceBadge } from './SourceBadge';
+import { TimeBadge } from './TimeBadge';
+import { isEnglishText } from '@/lib/translation/simple-translator';
 
 interface HomeNewsProps {
   initialData?: NewsArticle[];
 }
 
 export function HomeNews({ initialData = [] }: HomeNewsProps) {
-  const [news, setNews] = useState<NewsArticle[]>(initialData.slice(0, 5)); // 최신 5개만
-  const [loading, setLoading] = useState(false);
+  const { news, loading } = useNews({
+    initialData: initialData.slice(0, 5),
+    autoRefresh: false,
+    limit: 5,
+  });
 
+  const [translatedNews, setTranslatedNews] = useState<NewsArticle[]>(news);
+
+  // news가 변경될 때 translatedNews도 업데이트
   useEffect(() => {
-    if (initialData.length === 0) {
-      fetchNews();
+    setTranslatedNews(news);
+  }, [news]);
+
+  // 영어 제목 번역
+  useEffect(() => {
+    const translateTitles = async () => {
+      const articlesToTranslate = news.filter(
+        article => isEnglishText(article.title) && !article.titleKr
+      );
+
+      if (articlesToTranslate.length === 0) {
+        setTranslatedNews(news);
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/news/translate-batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            articles: articlesToTranslate.map(a => ({ title: a.title }))
+          })
+        });
+
+        if (!response.ok) {
+          setTranslatedNews(news);
+          return;
+        }
+
+        const data = await response.json();
+        if (data.success && data.articles) {
+          // 번역 결과를 원본 뉴스에 매핑
+          const translationMap = new Map<string, string>();
+          let translationIndex = 0;
+
+          articlesToTranslate.forEach(article => {
+            if (data.articles[translationIndex]?.titleKr) {
+              translationMap.set(article.title, data.articles[translationIndex].titleKr);
+              translationIndex++;
+            }
+          });
+
+          const updatedNews = news.map(article => {
+            if (translationMap.has(article.title)) {
+              return {
+                ...article,
+                titleKr: translationMap.get(article.title) || article.title
+              };
+            }
+            return article;
+          });
+
+          setTranslatedNews(updatedNews);
+        } else {
+          setTranslatedNews(news);
+        }
+      } catch (error) {
+        console.error('Translation error:', error);
+        setTranslatedNews(news);
+      }
+    };
+
+    if (news.length > 0) {
+      translateTitles();
     }
-  }, []);
-
-
-
-  const fetchNews = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/news/all?limit=5&translate=true');
-
-      if (!response.ok) throw new Error('Failed to fetch news');
-
-      const data = await response.json();
-      setNews(data.articles?.slice(0, 5) || []);
-    } catch (err) {
-      console.error('News fetch error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getSourceColor = (source: string) => {
-    switch (source.toLowerCase()) {
-      case 'espn':
-        return 'text-red-300 bg-red-500/20 border border-red-500/30';
-      case 'reddit':
-        return 'text-orange-300 bg-orange-500/20 border border-orange-500/30';
-      case 'the smoking cuban':
-        return 'text-blue-300 bg-blue-500/20 border border-blue-500/30';
-      case '네이버 스포츠':
-        return 'text-green-300 bg-green-500/20 border border-green-500/30';
-      default:
-        return 'text-slate-300 bg-slate-500/20 border border-slate-500/30';
-    }
-  };
-
-  const getSourceIcon = (source: string) => {
-    switch (source.toLowerCase()) {
-      case 'espn':
-        return '📺';
-      case 'reddit':
-        return '🔗';
-      case 'the smoking cuban':
-        return '📰';
-      case '네이버 스포츠':
-        return '🇰🇷';
-      default:
-        return '📄';
-    }
-  };
-
-  const formatTimeAgo = (published: string) => {
-    try {
-      const date = new Date(published);
-      const now = new Date();
-      const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-
-      if (diffInHours < 1) return '방금 전';
-      if (diffInHours < 24) return `${diffInHours}시간 전`;
-      const diffInDays = Math.floor(diffInHours / 24);
-      return `${diffInDays}일 전`;
-    } catch {
-      return '시간 정보 없음';
-    }
-  };
+  }, [news]);
 
   if (loading && news.length === 0) {
     return (
@@ -105,7 +114,7 @@ export function HomeNews({ initialData = [] }: HomeNewsProps) {
   return (
     <div className="space-y-4 md:space-y-6">
       {/* 뉴스 목록 */}
-      {news.map((article, index) => (
+      {translatedNews.map((article, index) => (
         <div key={article.id || index} className="bg-slate-700/30 rounded-xl p-3 md:p-5 hover:bg-slate-600/40 transition-all duration-300 hover:scale-[1.02] border border-slate-600/30">
           {/* 모바일 버전 - 제목만 표시 */}
           <div className="md:hidden">
@@ -119,9 +128,7 @@ export function HomeNews({ initialData = [] }: HomeNewsProps) {
             <div className="space-y-3">
               <div className="flex items-start justify-between">
                 <div className="flex items-start space-x-4 flex-1 min-w-0">
-                  <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${getSourceColor(article.source)}`}>
-                    {getSourceIcon(article.source)} {article.source}
-                  </span>
+                  <SourceBadge source={article.source} className="text-xs px-3 py-1.5" />
                   <div className="flex-1 min-w-0">
                     <h3 className="text-white font-semibold text-lg leading-relaxed mb-2">
                       {article.titleKr || article.title}
@@ -133,10 +140,7 @@ export function HomeNews({ initialData = [] }: HomeNewsProps) {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center space-x-2 text-xs text-slate-400 ml-4 bg-slate-800/50 px-3 py-1.5 rounded-full">
-                  <Clock className="w-3 h-3" />
-                  <span>{formatTimeAgo(article.published)}</span>
-                </div>
+                <TimeBadge published={article.published} className="ml-4" />
               </div>
             </div>
           </div>

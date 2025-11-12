@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { News, NewsSource } from '@/types/news';
-import { formatRelativeTime } from '@/lib/utils/format';
+import { getSourceColor } from '@/lib/utils/news-utils';
 
 interface NewsCarouselProps {
   news?: News[];
@@ -84,7 +84,8 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
     setCurrentIndex((prev) => (prev - 1 + currentNews.length) % currentNews.length);
   };
 
-  const getSourceColor = (source: string) => {
+  // Note: This uses News type with different source enum, keeping separate function
+  const getSourceColorClass = (source: string) => {
     switch (source) {
       case 'ESPN':
         return 'bg-red-600/20 text-red-400';
@@ -115,11 +116,11 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
                   <div className="absolute bottom-4 left-4 z-20">
                     <div className="flex items-center space-x-2 mb-2">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${getSourceColor(currentNews[currentIndex].source)}`}>
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${getSourceColorClass(currentNews[currentIndex].source)}`}>
                         {currentNews[currentIndex].source}
                       </span>
                       <span className="text-xs text-gray-400">
-                        {formatRelativeTime(currentNews[currentIndex].publishedAt)}
+                        {new Date(currentNews[currentIndex].publishedAt).toLocaleDateString('ko-KR')}
                       </span>
                     </div>
                     <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">
@@ -206,13 +207,13 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
           >
             <Card className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 border-gray-700/50 hover:border-gray-600/50 transition-all duration-300 cursor-pointer group">
               <div className="aspect-video bg-gradient-to-br from-gray-800 to-gray-900 rounded-t-lg mb-3"></div>
-              <CardContent className="p-4">
+                <CardContent className="p-4">
                 <div className="flex items-center space-x-2 mb-2">
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${getSourceColor(article.source)}`}>
+                  <span className={`px-2 py-1 rounded text-xs font-medium ${getSourceColorClass(article.source)}`}>
                     {article.source}
                   </span>
                   <span className="text-xs text-gray-500">
-                    {formatRelativeTime(article.publishedAt)}
+                    {new Date(article.publishedAt).toLocaleDateString('ko-KR')}
                   </span>
                 </div>
                 <h4 className="font-bold text-white group-hover:text-blue-400 transition-colors line-clamp-2">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -52,7 +52,7 @@ export function LiveBoxScoreBanner() {
   const [currentGameIndex, setCurrentGameIndex] = useState(0);
   const [maxVisibleGames] = useState(3); // 최대 표시할 경기 수
 
-  const fetchBoxScores = async (showLoading = true) => {
+  const fetchBoxScores = useCallback(async (showLoading = true) => {
     try {
       if (showLoading) setLoading(true);
       setError(null);
@@ -73,11 +73,11 @@ export function LiveBoxScoreBanner() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchBoxScores();
-  }, []);
+  }, [fetchBoxScores]);
 
   useEffect(() => {
     if (!autoRefresh) return;
@@ -87,7 +87,7 @@ export function LiveBoxScoreBanner() {
     }, 60000); // Refresh every minute
 
     return () => clearInterval(interval);
-  }, [autoRefresh]);
+  }, [autoRefresh, fetchBoxScores]);
 
   const getStatusIcon = (game: GameSummary) => {
     if (game.is_finished) return <CheckCircle className="w-4 h-4 text-green-500" />;
