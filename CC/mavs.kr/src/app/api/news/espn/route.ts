@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
       headers: {
         'User-Agent': 'MAVS.KR News Bot 1.0'
       },
-      next: { revalidate: 1800 } // 30분 캐시
+      next: { revalidate: 300 } // 5분 캐시
     });
 
     if (!response.ok) {

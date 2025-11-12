@@ -48,7 +48,7 @@ export default function NewHomePage() {
 
     // NBA 데이터 로드
     fetchNBAData();
-    
+
     // 오늘 댈러스 경기 확인
     fetchTodaysMavsGame();
   }, []);
