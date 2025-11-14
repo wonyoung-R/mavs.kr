@@ -28,9 +28,27 @@
 
 ## 📦 설치 및 실행
 
+### 🚀 새 PC에서 처음 시작하는 경우
+
+**자동 설치 스크립트 사용** (권장):
+
+```bash
+# macOS/Linux
+bash setup.sh
+
+# Windows
+setup.bat
+```
+
+또는 **[SETUP_GUIDE.md](./SETUP_GUIDE.md)** 문서를 참조하세요. (상세한 단계별 가이드 포함)
+
+---
+
+### ⚡ 빠른 시작 (이미 개발 환경이 있는 경우)
+
 ### 1. 프로젝트 클론
 ```bash
-git clone <repository-url>
+git clone https://github.com/wonyoung-R/mavs.kr.git
 cd mavs.kr
 ```
 
@@ -39,25 +57,31 @@ cd mavs.kr
 npm install
 ```
 
-### 3. 환경 변수 설정
+### 3. Docker 시작
 ```bash
-cp .env.example .env.local
-# .env.local 파일을 편집하여 필요한 환경 변수들을 설정하세요
+docker-compose up -d
 ```
 
-### 4. 데이터베이스 설정
+### 4. 환경 변수 설정
+```bash
+# .env.local 파일 생성 후 환경 변수 설정
+cp .env.example .env.local  # (존재하는 경우)
+# 또는 수동으로 .env.local 파일 생성
+```
+
+### 5. 데이터베이스 설정
 ```bash
 # Prisma 클라이언트 생성
 npm run db:generate
 
 # 데이터베이스 마이그레이션
-npm run db:migrate
+npm run db:push
 
 # 시드 데이터 삽입 (선택사항)
 npm run db:seed
 ```
 
-### 5. 개발 서버 실행
+### 6. 개발 서버 실행
 ```bash
 npm run dev
 ```
