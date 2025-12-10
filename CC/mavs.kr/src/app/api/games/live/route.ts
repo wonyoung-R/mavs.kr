@@ -1,10 +1,10 @@
 // src/app/api/games/live/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { nbaApiClient } from '@/lib/api/nba-client';
-import { prisma } from '@/lib/db/prisma';
-import { Game } from '@/types/game';
+// import { prisma } from '@/lib/db/prisma';
+// import { Game } from '@/types/game';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Get live games from NBA API
     const liveGames = await nbaApiClient.getLiveGames();

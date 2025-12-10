@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { masterNewsCrawler } from '@/lib/crawler/news-crawler';
 import { prisma } from '@/lib/db/prisma';
-import { News } from '@/types/news';
+// import { News } from '@/types/news';
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
               content: article.content!,
               contentKr: article.contentKr || article.content!,
               summary: article.summary,
-              source: article.source!,
+              source: article.source! as any,
               sourceUrl: article.sourceUrl!,
               author: article.author,
               imageUrl: article.imageUrl,

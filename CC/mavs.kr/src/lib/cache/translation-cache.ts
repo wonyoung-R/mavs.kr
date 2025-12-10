@@ -15,7 +15,7 @@ class TranslationCache {
       // 특수 문자를 제거하고 안전한 문자열로 변환
       const safeText = text.replace(/[^\w\s]/g, '').replace(/\s+/g, '_');
       return btoa(encodeURIComponent(safeText)).replace(/[^a-zA-Z0-9]/g, '');
-    } catch (error) {
+    } catch {
       // 해시 생성 실패 시 간단한 키 생성
       return text.replace(/[^a-zA-Z0-9]/g, '').substring(0, 50);
     }

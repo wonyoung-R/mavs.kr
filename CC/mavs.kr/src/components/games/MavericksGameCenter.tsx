@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Clock, MapPin, Trophy, Users, TrendingUp, Play, Calendar, Target } from 'lucide-react';
+import { Calendar, Trophy, MapPin, Target, Users, TrendingUp, Play } from 'lucide-react';
 import { getTeamLogo } from '@/lib/utils/team-logos';
 
 interface MavericksGame {
@@ -340,4 +339,3 @@ export function MavericksGameCenter() {
     </div>
   );
 }
-

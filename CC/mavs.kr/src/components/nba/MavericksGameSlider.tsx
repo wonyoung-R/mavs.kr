@@ -238,7 +238,7 @@ export function MavericksGameSlider() {
                       className="w-12 h-12 object-contain"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
-                        e.currentTarget.nextElementSibling!.style.display = 'flex';
+                        (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
                       }}
                     />
                     <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center hidden">
@@ -259,9 +259,8 @@ export function MavericksGameSlider() {
                   {formatScore(currentGame.mavs_score)}
                 </div>
                 {currentGame.result && (
-                  <div className={`text-xs font-medium ${
-                    currentGame.result === 'W' ? 'text-green-600' : 'text-red-600'
-                  }`}>
+                  <div className={`text-xs font-medium ${currentGame.result === 'W' ? 'text-green-600' : 'text-red-600'
+                    }`}>
                     {currentGame.result === 'W' ? '승' : '패'}
                   </div>
                 )}
@@ -301,7 +300,7 @@ export function MavericksGameSlider() {
                       className="w-12 h-12 object-contain"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
-                        e.currentTarget.nextElementSibling!.style.display = 'flex';
+                        (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
                       }}
                     />
                     <div className="w-16 h-16 bg-gray-600 rounded-full flex items-center justify-center hidden">
@@ -330,9 +329,8 @@ export function MavericksGameSlider() {
                   {formatScore(currentGame.opponent_score)}
                 </div>
                 {currentGame.result && (
-                  <div className={`text-xs font-medium ${
-                    currentGame.result === 'W' ? 'text-red-600' : 'text-green-600'
-                  }`}>
+                  <div className={`text-xs font-medium ${currentGame.result === 'W' ? 'text-red-600' : 'text-green-600'
+                    }`}>
                     {currentGame.result === 'W' ? '패' : '승'}
                   </div>
                 )}
@@ -369,9 +367,8 @@ export function MavericksGameSlider() {
           <button
             key={index}
             onClick={() => setCurrentIndex(index)}
-            className={`w-2 h-2 rounded-full transition-colors ${
-              index === currentIndex ? 'bg-blue-500' : 'bg-gray-300'
-            }`}
+            className={`w-2 h-2 rounded-full transition-colors ${index === currentIndex ? 'bg-blue-500' : 'bg-gray-300'
+              }`}
           />
         ))}
       </div>

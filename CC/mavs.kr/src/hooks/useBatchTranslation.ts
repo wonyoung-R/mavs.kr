@@ -1,6 +1,6 @@
 // src/hooks/useBatchTranslation.ts
 import { useState, useEffect } from 'react';
-import { translationCache } from '@/lib/cache/translation-cache';
+// import { translationCache } from '@/lib/cache/translation-cache';
 
 interface UseBatchTranslationProps {
   articles: Array<{ id: string; title: string; source: string }>;

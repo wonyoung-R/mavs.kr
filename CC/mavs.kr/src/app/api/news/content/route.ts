@@ -27,7 +27,6 @@ export async function POST(request: NextRequest) {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
       },
-      timeout: 10000,
     });
 
     if (!response.ok) {
@@ -95,7 +94,7 @@ export async function POST(request: NextRequest) {
       });
 
       // 텍스트 추출
-      content = contentElement.textContent || contentElement.innerText || '';
+      content = contentElement.textContent || '';
 
       // 정리
       content = content

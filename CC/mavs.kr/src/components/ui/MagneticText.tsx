@@ -61,9 +61,9 @@ export function MagneticText({
     if (chars.length === 0) return;
 
     // GSAP quickSetter로 성능 최적화
-    const xSetter = gsap.quickSetter(chars, 'x', 'px');
-    const ySetter = gsap.quickSetter(chars, 'y', 'px');
-    const rotationSetter = gsap.quickSetter(chars, 'rotation', 'deg');
+    // const xSetter = gsap.quickSetter(chars, 'x', 'px');
+    // const ySetter = gsap.quickSetter(chars, 'y', 'px');
+    // const rotationSetter = gsap.quickSetter(chars, 'rotation', 'deg');
 
     let mouseX = 0;
     let mouseY = 0;
@@ -103,7 +103,7 @@ export function MagneticText({
     const animateChars = () => {
       if (!isMouseOver) return;
 
-      chars.forEach((char, index) => {
+      chars.forEach((char) => {
         const charRect = char.getBoundingClientRect();
         const containerRect = container.getBoundingClientRect();
 

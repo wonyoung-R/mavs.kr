@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     console.log('Starting news update cron job...');
 
     // 모든 뉴스 소스 업데이트
-    const sources = ['espn', 'reddit', 'tsc'];
+    const sources = ['espn', 'mavsmoneyball', 'tsc'];
     const updates = await Promise.allSettled(
       sources.map(async (source) => {
         try {
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
           return { source, articles: data.articles || [], success: true };
         } catch (error) {
           console.error(`Error updating ${source}:`, error);
-          return { source, articles: [], success: false, error: error.message };
+          return { source, articles: [], success: false, error: error instanceof Error ? error.message : String(error) };
         }
       })
     );

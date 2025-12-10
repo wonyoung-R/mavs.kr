@@ -1,99 +1,86 @@
 // src/app/api/cron/crawl-news/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { masterNewsCrawler } from '@/lib/crawler/news-crawler';
-import { prisma } from '@/lib/db/prisma';
-import { summarizeWithGemini } from '@/lib/api/gemini';
+// Cron endpoint for automated news crawling with translation
+// Call this from Vercel Cron, GitHub Actions, or external scheduler
 
-export async function GET(request: NextRequest) {
+import { NextResponse } from 'next/server';
+import { saveNewsToSupabase } from '@/lib/services/news-service';
+import { translateAndUpdateNews } from '@/lib/services/news-translation-service';
+import { NewsArticle } from '@/types/news';
+
+export const dynamic = 'force-dynamic';
+export const maxDuration = 120; // 120 seconds timeout (for translation)
+
+export async function GET(request: Request) {
+  // Verify cron secret (optional security)
+  const authHeader = request.headers.get('authorization');
+  const cronSecret = process.env.CRON_SECRET;
+
+  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  console.log('🕐 Cron job started: crawl-news');
+
   try {
-    // Verify this is a cron request
-    const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
 
-    console.log('Starting scheduled news crawl...');
+    // Fetch from all news sources
+    const sources = [
+      { name: 'espn', endpoint: `${baseUrl}/api/news/espn?limit=10` },
+      { name: 'mmb', endpoint: `${baseUrl}/api/news/mavsmoneyball?limit=10` },
+      { name: 'tsc', endpoint: `${baseUrl}/api/news/smoking-cuban?limit=10` },
+      { name: 'naver', endpoint: `${baseUrl}/api/news/naver?limit=10` },
+    ];
 
-    // Crawl news from all sources
-    const articles = await masterNewsCrawler.crawlAllSources();
+    const allArticles: Partial<NewsArticle>[] = [];
 
-    // Save new articles to database
-    let savedCount = 0;
-    let skippedCount = 0;
-
-    for (const article of articles) {
+    for (const source of sources) {
       try {
-        // Check if article already exists
-        const existingArticle = await prisma.news.findFirst({
-          where: {
-            sourceUrl: article.sourceUrl,
-          },
-        });
+        const response = await fetch(source.endpoint);
+        const data = await response.json();
 
-        if (!existingArticle && article.title && article.content) {
-          // Generate AI summary if Gemini API is available
-          let summary = null;
-          let summaryKr = null;
-
-          if (process.env.GEMINI_API_KEY) {
-            try {
-              summaryKr = await summarizeWithGemini(article.title!, article.content!);
-              summary = summaryKr; // AI 요약은 이미 한국어로 생성됨
-            } catch (summaryError) {
-              console.error('Summary generation failed for article:', article.title, summaryError);
-            }
-          }
-
-          await prisma.news.create({
-            data: {
-              title: article.title,
-              titleKr: article.titleKr || article.title,
-              content: article.content,
-              contentKr: article.contentKr || article.content,
-              summary: summary,
-              summaryKr: summaryKr,
-              source: article.source!,
-              sourceUrl: article.sourceUrl!,
-              author: article.author,
-              imageUrl: article.imageUrl,
-              publishedAt: article.publishedAt!,
-              crawledAt: article.crawledAt!,
-            },
-          });
-          savedCount++;
-        } else {
-          skippedCount++;
+        if (data.articles) {
+          allArticles.push(...data.articles);
+          console.log(`✅ ${source.name}: ${data.articles.length} articles`);
         }
-      } catch (error) {
-        console.error('Failed to save article:', article.title, error);
+      } catch (err) {
+        console.error(`❌ Failed to fetch ${source.name}:`, err);
       }
     }
 
-    console.log(`News crawl completed: ${savedCount} saved, ${skippedCount} skipped`);
+    // Save to Supabase
+    const saveResult = await saveNewsToSupabase(allArticles);
+    console.log(`💾 Saved: ${saveResult.saved}, Errors: ${saveResult.errors}`);
+
+    // Translate untranslated news
+    const translateResult = await translateAndUpdateNews();
+    console.log(`🌐 Translated: ${translateResult.translated}, Errors: ${translateResult.errors}`);
+
+    console.log('🕐 Cron job complete');
 
     return NextResponse.json({
       success: true,
-      data: {
-        crawled: articles.length,
-        saved: savedCount,
-        skipped: skippedCount,
+      message: 'News crawl and translation completed',
+      result: {
+        crawl: {
+          total: allArticles.length,
+          saved: saveResult.saved,
+          errors: saveResult.errors,
+        },
+        translation: {
+          translated: translateResult.translated,
+          errors: translateResult.errors,
+        },
       },
-      message: 'Scheduled news crawl completed successfully',
+      timestamp: new Date().toISOString(),
     });
-  } catch (error) {
-    console.error('Error in scheduled news crawl:', error);
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to crawl news',
-        message: 'Scheduled news crawl failed',
-      },
-      { status: 500 }
-    );
+  } catch (error) {
+    console.error('Cron job error:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Crawl failed',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    }, { status: 500 });
   }
 }
-

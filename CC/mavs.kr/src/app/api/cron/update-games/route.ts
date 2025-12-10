@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
             quarter: game.quarter,
             timeRemaining: game.timeRemaining,
             broadcasts: game.broadcasts,
-            stats: game.stats,
+            stats: game.stats as any,
             highlights: game.highlights,
           },
         });

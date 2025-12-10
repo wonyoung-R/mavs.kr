@@ -1,5 +1,5 @@
 // src/app/api/nba/espn-schedule/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 interface ESPNGame {
   id: string;
@@ -17,8 +17,12 @@ interface ESPNGame {
         shortDisplayName: string;
         abbreviation: string;
       };
-      score?: string;
+      score?: {
+        value?: number;
+        displayValue?: string;
+      };
       homeAway: 'home' | 'away';
+      winner?: boolean;
     }>;
     status: {
       type: {
@@ -43,6 +47,8 @@ interface ProcessedGame {
   is_home: boolean;
   mavs_score: number | null;
   opponent_score: number | null;
+  mavs_record: string; // Added
+  opponent_record: string; // Added
   result: string | null;
   status: 'finished' | 'upcoming' | 'today' | 'live';
   matchup: string;
@@ -51,66 +57,44 @@ interface ProcessedGame {
   time_remaining?: string;
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    const forceRefresh = searchParams.get('refresh') === 'true';
-
-    // ESPN API에서 매버릭스 경기 일정 가져오기
+    // 1. 매버릭스 경기 일정 가져오기
     const scheduleResponse = await fetch('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/6/schedule');
 
-    if (!scheduleResponse.ok) {
-      throw new Error(`ESPN API error: ${scheduleResponse.status}`);
-    }
+    if (!scheduleResponse.ok) throw new Error(`ESPN API error: ${scheduleResponse.status}`);
 
     const scheduleData = await scheduleResponse.json();
     const games = scheduleData.events || [];
+    const mavsRecord = scheduleData.team?.recordSummary || '';
 
-    // 오늘의 NBA 점수 가져오기
+    // 2. 오늘의 NBA 점수 (기록 정보 포함) 가져오기
     const scoreboardResponse = await fetch('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard');
 
-    if (!scoreboardResponse.ok) {
-      throw new Error(`ESPN Scoreboard API error: ${scoreboardResponse.status}`);
+    let todayGames: any[] = [];
+    if (scoreboardResponse.ok) {
+      const scoreboardData = await scoreboardResponse.json();
+      todayGames = scoreboardData.events || [];
     }
-
-    const scoreboardData = await scoreboardResponse.json();
-    const todayGames = scoreboardData.events || [];
 
     // 매버릭스 경기 데이터 처리
     const processedGames: ProcessedGame[] = games.map((game: ESPNGame) => {
       const competition = game.competitions[0];
 
-      // game.name에서 상대팀 추출 (예: "San Antonio Spurs at Dallas Mavericks")
+      // 상대팀 추출
       const gameName = game.name || '';
       const shortName = game.shortName || '';
-
-      // 매버릭스가 홈인지 원정인지 확인
       const isHome = gameName.includes('at Dallas Mavericks') || shortName.includes('@ DAL');
-      const isAway = gameName.includes('Dallas Mavericks at') || shortName.includes('DAL @');
-
-      // 상대팀 이름 추출
-      let opponent = '';
-      if (isHome) {
-        opponent = gameName.split(' at Dallas Mavericks')[0] || shortName.split(' @ DAL')[0] || 'TBD';
-      } else if (isAway) {
-        opponent = gameName.split('Dallas Mavericks at ')[1] || shortName.split('DAL @ ')[1] || 'TBD';
-      }
-
+      // ... date logic ...
       const gameDate = new Date(competition.date);
       const today = new Date();
       const isToday = gameDate.toDateString() === today.toDateString();
 
-      // 한국 시간으로 변환 (미국 시간 + 15시간 또는 16시간)
-      // 미국 시간을 한국 시간으로 변환 (서머타임 고려)
+      // KST Conversion
       const usTime = gameDate.getTime();
-      // 미국 동부시간(EST/EDT)에서 한국시간(KST)으로 변환
-      // EST: UTC-5, EDT: UTC-4, KST: UTC+9
-      // 따라서 EST→KST: +14시간, EDT→KST: +13시간
-      // 하지만 실제로는 더 정확한 변환이 필요하므로 +15시간 사용
-      const kstTime = usTime + (15 * 60 * 60 * 1000);
+      const kstTime = usTime + (15 * 60 * 60 * 1000); // Approximate conversion
       const kstDate = new Date(kstTime);
 
-      // 날짜와 시간을 올바르게 추출
       const year = kstDate.getUTCFullYear();
       const month = String(kstDate.getUTCMonth() + 1).padStart(2, '0');
       const day = String(kstDate.getUTCDate()).padStart(2, '0');
@@ -120,27 +104,49 @@ export async function GET(request: NextRequest) {
       const gameDateKst = `${year}-${month}-${day}`;
       const gameTimeKst = `${hours}:${minutes}`;
 
-      // 상태 결정
+      // Status
       let status: 'finished' | 'upcoming' | 'today' | 'live' = 'upcoming';
-      if (competition.status.type.completed) {
-        status = 'finished';
-      } else if (competition.status.type.name === 'STATUS_IN_PROGRESS') {
-        status = 'live';
-      } else if (isToday) {
-        status = 'today';
-      }
+      if (competition.status.type.completed) status = 'finished';
+      else if (competition.status.type.name === 'STATUS_IN_PROGRESS') status = 'live';
+      else if (isToday) status = 'today';
 
-      // 점수 추출 (competitors에서)
+      // Team & Score stats
       const mavsTeam = competition.competitors.find(comp => comp.id === '6');
       const opponentTeam = competition.competitors.find(comp => comp.id !== '6');
+      const opponent = opponentTeam ? (opponentTeam.team.name || opponentTeam.team.shortDisplayName) : 'TBD';
 
-      let mavsScore = null;
-      let opponentScore = null;
+      // Record Extraction
+      let opponentRecord = '';
+
+      // 1. 만약 오늘 경기라면 scoreboard 데이터에서 정확한 기록 찾기
+      if (isToday) {
+        const todayGameMatch = todayGames.find((g: any) => g.id === game.id);
+        if (todayGameMatch) {
+          const oppComp = todayGameMatch.competitions[0].competitors.find((c: any) => c.id !== '6');
+          if (oppComp && oppComp.records) {
+            opponentRecord = oppComp.records.find((r: any) => r.type === 'total')?.summary || '';
+          }
+        }
+      }
+
+      // 2. 만약 live/scoreboard 데이터가 없다면 기본적으로 schedule에는 상대 전적이 없으므로 빈값
+
+      let mavsScore: number | null = null;
+      let opponentScore: number | null = null;
       let result: string | null = null;
 
-      if (mavsTeam?.score && opponentTeam?.score) {
-        mavsScore = parseInt(mavsTeam.score);
-        opponentScore = parseInt(opponentTeam.score);
+      // Score extraction: ESPN API returns score as an object with value/displayValue
+      if (mavsTeam?.score) {
+        mavsScore = mavsTeam.score.value ?? (mavsTeam.score.displayValue ? parseInt(mavsTeam.score.displayValue) : null);
+      }
+      if (opponentTeam?.score) {
+        opponentScore = opponentTeam.score.value ?? (opponentTeam.score.displayValue ? parseInt(opponentTeam.score.displayValue) : null);
+      }
+
+      // Determine result based on winner flag or score comparison
+      if (mavsTeam?.winner !== undefined) {
+        result = mavsTeam.winner ? 'W' : 'L';
+      } else if (mavsScore !== null && opponentScore !== null) {
         result = mavsScore > opponentScore ? 'W' : 'L';
       }
 
@@ -153,6 +159,8 @@ export async function GET(request: NextRequest) {
         is_home: isHome,
         mavs_score: mavsScore,
         opponent_score: opponentScore,
+        mavs_record: mavsRecord,
+        opponent_record: opponentRecord,
         result,
         status,
         matchup: `${isHome ? 'vs' : '@'} ${opponent}`,

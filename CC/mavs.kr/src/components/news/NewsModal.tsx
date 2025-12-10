@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { NewsArticle } from '@/types/news';
-import { X, ExternalLink, MessageCircle, ThumbsUp, Eye, Share2 } from 'lucide-react';
-import { isEnglishText } from '@/lib/translation/simple-translator';
+import { X, ExternalLink, MessageCircle, ThumbsUp, Eye, Share2, Languages } from 'lucide-react';
 import { getSourceColor, getSourceIcon, formatTimeAgo } from '@/lib/utils/news-utils';
 
 interface NewsModalProps {
@@ -15,20 +15,26 @@ interface NewsModalProps {
 export function NewsModal({ isOpen, onClose, article }: NewsModalProps) {
   const [translatedTitle, setTranslatedTitle] = useState<string>('');
   const [translatedContent, setTranslatedContent] = useState<string>('');
-  const [isTranslating, setIsTranslating] = useState(false);
   const [isContentLoading, setIsContentLoading] = useState(false);
   const [articleContent, setArticleContent] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
 
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   useEffect(() => {
     if (isOpen && article) {
-      loadArticleContent();
-      // 이미 번역된 제목이 있으면 사용, 없으면 번역 API 호출
-      if (isEnglishText(article.title) && !article.titleKr) {
-        translateTitle();
-      } else if (article.titleKr) {
-        setTranslatedTitle(article.titleKr);
+      // 초기화
+      setTranslatedTitle(article.titleKr || '');
+      setTranslatedContent(article.contentKr || '');
+      setArticleContent(article.content || '');
+
+      // 내용이 없으면 DB에서 불러오기
+      if (!article.content) {
+        loadArticleContent();
       }
     }
   }, [isOpen, article]);
@@ -40,73 +46,28 @@ export function NewsModal({ isOpen, onClose, article }: NewsModalProps) {
     setError(null);
 
     try {
-      // 실제 뉴스 내용을 가져오는 API 호출
       const response = await fetch('/api/news/content', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: article.url })
+        body: JSON.stringify({ id: article.id, url: article.url })
       });
 
       if (!response.ok) throw new Error('Failed to load content');
 
       const data = await response.json();
-      setArticleContent(data.content || '');
 
-      // 영어 내용이면 번역
-      if (data.content && isEnglishText(data.content)) {
-        translateContent(data.content);
+      if (data.success && data.data) {
+        setArticleContent(data.data.content || '');
+        setTranslatedContent(data.data.content_kr || '');
+        if (data.data.title_kr) {
+          setTranslatedTitle(data.data.title_kr);
+        }
       }
     } catch (err) {
       setError('뉴스 내용을 불러올 수 없습니다.');
       console.error('Content loading error:', err);
     } finally {
       setIsContentLoading(false);
-    }
-  };
-
-  const translateTitle = async () => {
-    if (!article) return;
-
-    setIsTranslating(true);
-    try {
-      const response = await fetch('/api/news/translate-batch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ articles: [{ title: article.title }] })
-      });
-
-      if (!response.ok) throw new Error('Translation failed');
-
-      const data = await response.json();
-      if (data.success && data.articles?.[0]?.titleKr) {
-        setTranslatedTitle(data.articles[0].titleKr);
-      }
-    } catch (err) {
-      console.error('Title translation error:', err);
-    } finally {
-      setIsTranslating(false);
-    }
-  };
-
-  const translateContent = async (content: string) => {
-    setIsTranslating(true);
-    try {
-      const response = await fetch('/api/news/translate-batch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ articles: [{ title: content }] })
-      });
-
-      if (!response.ok) throw new Error('Translation failed');
-
-      const data = await response.json();
-      if (data.success && data.articles?.[0]?.titleKr) {
-        setTranslatedContent(data.articles[0].titleKr);
-      }
-    } catch (err) {
-      console.error('Content translation error:', err);
-    } finally {
-      setIsTranslating(false);
     }
   };
 
@@ -126,10 +87,8 @@ export function NewsModal({ isOpen, onClose, article }: NewsModalProps) {
         console.log('Share cancelled');
       }
     } else {
-      // 클립보드에 URL 복사
       try {
         await navigator.clipboard.writeText(article.url);
-        // 토스트 메시지 표시 (실제 구현에서는 토스트 컴포넌트 사용)
         alert('링크가 클립보드에 복사되었습니다.');
       } catch (err) {
         console.error('Failed to copy to clipboard');
@@ -138,9 +97,10 @@ export function NewsModal({ isOpen, onClose, article }: NewsModalProps) {
   };
 
   if (!isOpen || !article) return null;
+  if (!mounted) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-end justify-center">
       {/* 백드롭 */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-md"
@@ -150,7 +110,7 @@ export function NewsModal({ isOpen, onClose, article }: NewsModalProps) {
       {/* 모달 컨테이너 */}
       <div className="relative w-full max-w-2xl max-h-[90vh] bg-toss-white rounded-toss-xl shadow-toss-xl animate-modal-slide border border-toss-gray-200">
         {/* 헤더 */}
-        <div className="sticky top-0 bg-toss-white border-b border-toss-gray-200 rounded-toss-xl-t">
+        <div className="sticky top-0 bg-toss-white border-b border-toss-gray-200 rounded-toss-xl-t z-10">
           <div className="flex items-center justify-between p-6">
             <div className="flex items-center gap-3">
               <span className={`text-sm px-3 py-1 rounded-full ${getSourceColor(article.source)}`}>
@@ -245,38 +205,42 @@ export function NewsModal({ isOpen, onClose, article }: NewsModalProps) {
                 </div>
               ) : (
                 <div className="prose prose-gray max-w-none">
-                  {articleContent ? (
+                  {/* 한글 번역 내용 (있을 경우 우선 표시) */}
+                  {translatedContent ? (
                     <div className="space-y-4">
-                      <div className="text-toss-gray-700 leading-relaxed whitespace-pre-wrap">
-                        {articleContent}
-                      </div>
-                      {isEnglishText(articleContent) && translatedContent && (
-                        <div className="border-l-4 border-toss-blue pl-4 bg-toss-blue-light/30 p-4 rounded-lg">
-                          <h3 className="font-semibold text-toss-blue mb-2">번역된 내용</h3>
-                          <div className="text-toss-gray-700 leading-relaxed whitespace-pre-wrap">
-                            {translatedContent}
-                          </div>
+                      <div className="border-l-4 border-toss-blue pl-4 bg-toss-blue-light/10 p-4 rounded-lg">
+                        <h3 className="font-semibold text-toss-blue mb-2 flex items-center gap-2">
+                          <Languages className="w-4 h-4" />
+                          AI 번역 내용
+                        </h3>
+                        <div className="text-toss-gray-800 leading-relaxed whitespace-pre-wrap font-medium">
+                          {translatedContent}
                         </div>
-                      )}
+                      </div>
+
+                      {/* 원문 토글 또는 아래 표시 (여기서는 아래 표시) */}
+                      <details className="group mt-4">
+                        <summary className="cursor-pointer text-sm text-toss-gray-500 hover:text-toss-blue mb-2 select-none">
+                          원문 보기
+                        </summary>
+                        <div className="text-toss-gray-600 leading-relaxed whitespace-pre-wrap bg-gray-50 p-4 rounded-lg text-sm">
+                          {articleContent}
+                        </div>
+                      </details>
                     </div>
                   ) : (
-                    <div className="text-center py-8">
-                      <p className="text-toss-gray-500">뉴스 내용을 불러올 수 없습니다.</p>
+                    // 번역 내용이 없으면 원문 표시
+                    <div className="text-toss-gray-700 leading-relaxed whitespace-pre-wrap">
+                      {articleContent || (
+                        <p className="text-center text-toss-gray-500 py-8">
+                          상세 내용을 불러올 수 없습니다.
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
               )}
             </div>
-
-            {/* 번역 로딩 */}
-            {isTranslating && (
-              <div className="flex items-center justify-center py-4">
-                <div className="flex items-center gap-2 text-toss-blue">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-toss-blue"></div>
-                  <span className="text-sm">번역 중...</span>
-                </div>
-              </div>
-            )}
 
             {/* 액션 버튼들 */}
             <div className="flex gap-3 pt-4 border-t border-toss-gray-200">
@@ -300,25 +264,11 @@ export function NewsModal({ isOpen, onClose, article }: NewsModalProps) {
                   Reddit
                 </a>
               )}
-              {isEnglishText(article.title) && (
-                <button
-                  onClick={() => {
-                    if (translatedTitle) {
-                      setTranslatedTitle('');
-                    } else {
-                      translateTitle();
-                    }
-                  }}
-                  className="px-4 py-3 border border-toss-blue text-toss-blue rounded-toss hover:bg-toss-blue-light transition-colors font-medium"
-                  disabled={isTranslating}
-                >
-                  <FileText className="w-4 h-4" />
-                </button>
-              )}
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

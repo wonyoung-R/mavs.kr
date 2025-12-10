@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+// import { Button } from '@/components/ui/Button';
 import { Trophy, Target, Zap, Shield, TrendingUp, Users } from 'lucide-react';
 
 interface Player {
@@ -124,11 +124,10 @@ export default function PlayersPage() {
                   transition={{ delay: index * 0.1 }}
                 >
                   <Card
-                    className={`cursor-pointer transition-all ${
-                      selectedPlayer?.id === player.id
+                    className={`cursor-pointer transition-all ${selectedPlayer?.id === player.id
                         ? 'bg-blue-900/50 border-blue-500'
                         : 'bg-gray-900/50 border-gray-800 hover:border-gray-700'
-                    }`}
+                      }`}
                     onClick={() => setSelectedPlayer(player)}
                   >
                     <CardContent className="p-4">

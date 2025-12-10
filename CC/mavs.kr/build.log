@@ -1,0 +1,136 @@
+
+> mavs.kr@0.1.0 build
+> next build --turbopack
+
+   ▲ Next.js 15.5.3 (Turbopack)
+
+   Creating an optimized production build ...
+ ✓ Finished writing to disk in 586ms
+ ✓ Compiled successfully in 3.4s
+   Linting and checking validity of types ...
+
+./src/app/api/cron/crawl-news/route.ts
+58:41  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/api/cron/update-games/route.ts
+56:34  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/api/news/all/route.ts
+19:45  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/api/news/crawl/route.ts
+40:42  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+85:54  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/api/news/espn/route.ts
+25:66  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+34:47  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/api/news/reddit/route.ts
+26:23  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+32:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/games/MavericksGameCenter.tsx
+65:66  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+135:13  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+186:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+229:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/home/HomeView.tsx
+7:21  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+49:25  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+64:25  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/home/NewHomePage.tsx
+36:56  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+73:59  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/home/ScheduleView.tsx
+10:20  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+48:45  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+50:45  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/nba/LiveBoxScoreBanner.tsx
+289:27  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+345:27  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/nba/LiveScoresCard.tsx
+175:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+225:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/nba/MavericksGameSlider.tsx
+235:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+297:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/news/NewsCard.tsx
+19:42  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+91:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/news/NewsModal.tsx
+34:6  Warning: React Hook useEffect has missing dependencies: 'loadArticleContent' and 'translateTitle'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+184:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/news/SummaryModal.tsx
+15:12  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/ui/ScrambleText.tsx
+56:6  Warning: React Hook useEffect has a missing dependency: 'startScrambleAnimation'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/lib/api/nba-client.ts
+105:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+167:49  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/lib/cache/translation-cache.ts
+56:62  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+   Collecting page data ...
+   Generating static pages (0/32) ...
+   Generating static pages (8/32) 
+   Generating static pages (16/32) 
+   Generating static pages (24/32) 
+ ✓ Generating static pages (32/32)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                         Size  First Load JS
+┌ ○ /                            52.9 kB         179 kB
+├ ○ /_not-found                      0 B         118 kB
+├ ƒ /api/cron/crawl-news             0 B            0 B
+├ ƒ /api/cron/update-box-scores      0 B            0 B
+├ ƒ /api/cron/update-games           0 B            0 B
+├ ƒ /api/cron/update-news            0 B            0 B
+├ ƒ /api/games/live                  0 B            0 B
+├ ƒ /api/games/schedule              0 B            0 B
+├ ƒ /api/nba/box-scores              0 B            0 B
+├ ƒ /api/nba/espn-schedule           0 B            0 B
+├ ƒ /api/nba/live-scores             0 B            0 B
+├ ƒ /api/nba/mavericks-games         0 B            0 B
+├ ƒ /api/nba/standings               0 B            0 B
+├ ƒ /api/news/all                    0 B            0 B
+├ ƒ /api/news/content                0 B            0 B
+├ ƒ /api/news/crawl                  0 B            0 B
+├ ƒ /api/news/espn                   0 B            0 B
+├ ƒ /api/news/naver                  0 B            0 B
+├ ƒ /api/news/reddit                 0 B            0 B
+├ ƒ /api/news/smoking-cuban          0 B            0 B
+├ ƒ /api/news/summarize              0 B            0 B
+├ ƒ /api/news/translate-batch        0 B            0 B
+├ ƒ /api/translate                   0 B            0 B
+├ ƒ /api/translate/batch             0 B            0 B
+├ ƒ /api/translate/gemini            0 B            0 B
+├ ○ /forum                       3.13 kB         171 kB
+├ ○ /games                       3.74 kB         172 kB
+├ ○ /news                        16.3 kB         134 kB
+└ ○ /players                     2.68 kB         171 kB
++ First Load JS shared by all     132 kB
+  ├ chunks/569f8ca39997ccda.js   21.7 kB
+  ├ chunks/8082ab48faca5ea1.js   17.2 kB
+  ├ chunks/d04efc723d1783d5.js   59.2 kB
+  ├ chunks/96d7c3da38a8ad10.css  13.9 kB
+  └ other shared chunks (total)  20.3 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

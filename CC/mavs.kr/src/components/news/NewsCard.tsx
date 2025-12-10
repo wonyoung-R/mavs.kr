@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { NewsArticle } from '@/types/news';
-import { ExternalLink, MessageCircle, ThumbsUp, Eye, ChevronRight } from 'lucide-react';
-import { isEnglishText } from '@/lib/translation/simple-translator';
+import { ExternalLink, Eye, ChevronRight } from 'lucide-react';
+// import { isEnglishText } from '@/lib/translation/simple-translator';
 import { SummaryModal } from './SummaryModal';
 import { NewsModal } from './NewsModal';
 import { SourceBadge } from './SourceBadge';
@@ -55,7 +55,7 @@ export function NewsCard({ article }: NewsCardProps) {
 
   const handleCardClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    setIsNewsModalOpen(true);
+    handleSummarize();
   };
 
   return (
@@ -106,12 +106,7 @@ export function NewsCard({ article }: NewsCardProps) {
               {/* 소스 및 시간 */}
               <div className="flex items-center gap-2 mb-3">
                 <SourceBadge source={article.source} />
-                {article.flair && (
-                  <>
-                    <span className="text-slate-500">•</span>
-                    <span className="text-xs text-blue-400 font-medium">{article.flair}</span>
-                  </>
-                )}
+
                 <span className="text-slate-500">•</span>
                 <span className="text-xs text-slate-400">{timeAgo}</span>
               </div>
@@ -134,19 +129,7 @@ export function NewsCard({ article }: NewsCardProps) {
               {/* 액션 버튼들 */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4 text-xs text-slate-400">
-                  {/* Reddit 통계 */}
-                  {article.score !== undefined && (
-                    <span className="flex items-center gap-1">
-                      <ThumbsUp className="w-3 h-3" />
-                      {article.score}
-                    </span>
-                  )}
-                  {article.comments !== undefined && (
-                    <span className="flex items-center gap-1">
-                      <MessageCircle className="w-3 h-3" />
-                      {article.comments}
-                    </span>
-                  )}
+
                   <span className="flex items-center gap-1">
                     <Eye className="w-3 h-3" />
                     조회수

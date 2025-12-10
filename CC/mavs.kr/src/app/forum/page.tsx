@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { MessageCircle, Heart, Share, TrendingUp, Users, Star, Clock } from 'lucide-react';
+import { MessageCircle, Heart, Share, TrendingUp, Clock, MapPin, Tag } from 'lucide-react';
+import { SNSNewsCard } from '@/components/forum/SNSNewsCard';
 
 interface Post {
   id: string;
@@ -14,9 +15,21 @@ interface Post {
   createdAt: string;
   likes: number;
   comments: number;
-  category: string;
+  category: 'free' | 'news' | 'market' | 'sharing' | 'meetup';
   isHot?: boolean;
+  price?: number; // For market
+  location?: string; // For meetup or market
+  snsUrl?: string; // For news
 }
+
+const CATEGORIES = [
+  { id: 'all', name: '전체', icon: '🔥' },
+  { id: 'free', name: '자유게시판', icon: '🗣️' },
+  { id: 'news', name: 'MAVS NEWS', icon: '📰' },
+  { id: 'market', name: '중고장터', icon: '🛒' },
+  { id: 'sharing', name: '나눔', icon: '🎁' },
+  { id: 'meetup', name: '오프모임', icon: '🍺' },
+];
 
 export default function CommunityPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -30,57 +43,71 @@ export default function CommunityPage() {
       createdAt: '2시간 전',
       likes: 156,
       comments: 23,
-      category: '토론',
+      category: 'free',
       isHot: true
     },
     {
       id: '2',
-      title: '달라스 매버릭스의 미래 전망',
-      content: '현재 로스터 구성과 향후 트레이드 가능성을 분석해보는 컬럼입니다. 여러분의 의견을 들려주세요!',
-      author: 'MavsAnalyst',
+      title: '댈러스 매버릭스 공식 트윗',
+      content: '오늘 경기 승리 소식입니다!',
+      author: 'MavsOfficial',
       createdAt: '4시간 전',
       likes: 342,
       comments: 45,
-      category: '컬럼'
+      category: 'news',
+      snsUrl: 'https://twitter.com/dallasmavs/status/1789012345678901234'
     },
     {
       id: '3',
-      title: '어제 경기 하이라이트 모음',
-      content: 'Lakers전에서 돈치치의 클러치 플레이 모음입니다. 정말 환상적이었어요!',
+      title: '돈치치 하이라이트 영상',
+      content: '어제 경기 정말 미쳤습니다..',
       author: 'HighlightKing',
       createdAt: '6시간 전',
       likes: 89,
       comments: 12,
-      category: '하이라이트'
+      category: 'news',
+      snsUrl: 'https://youtu.be/dQw4w9WgXcQ'
     },
     {
       id: '4',
-      title: '루카 돈치치의 클러치 타임 분석',
-      content: '돈치치의 클러치 타임에서의 활약을 분석해보는 컬럼입니다. 통계와 함께 살펴보겠습니다.',
-      author: 'StatsExpert',
+      title: '[판매] 어빙 유니폼(L) 팝니다',
+      content: '사이즈 미스로 판매합니다. 택 달린 새상품입니다.',
+      author: 'Jerseyman',
       createdAt: '8시간 전',
-      likes: 67,
-      comments: 18,
-      category: '컬럼'
+      likes: 4,
+      comments: 8,
+      category: 'market',
+      price: 120000
     },
     {
       id: '5',
-      title: '키리 어빙 부상 복귀 소식',
-      content: '키리가 팀 훈련에 복귀했다는 소식이 들려왔습니다. 빨리 경기에서 봤으면 좋겠어요!',
-      author: 'KyrieFan',
+      title: '[나눔] 22-23 시즌 스케줄표 나눔해요',
+      content: '직관 갔다가 받아온건데 필요하신 분 드립니다.',
+      author: 'KindFan',
       createdAt: '10시간 전',
-      likes: 134,
-      comments: 28,
-      category: '토론'
+      likes: 24,
+      comments: 15,
+      category: 'sharing'
+    },
+    {
+      id: '6',
+      title: '이번 주말 홍대입구역 벙개 하실 분?',
+      content: '레이커스전 같이 보면서 응원해요!',
+      author: 'SeoulMav',
+      createdAt: '1일 전',
+      likes: 15,
+      comments: 32,
+      category: 'meetup',
+      location: '홍대입구역 3번 출구'
     }
   ];
 
-  const categories = [
-    { id: 'all', name: '전체', count: posts.length },
-    { id: '토론', name: '토론', count: posts.filter(p => p.category === '토론').length },
-    { id: '컬럼', name: '컬럼', count: posts.filter(p => p.category === '컬럼').length },
-    { id: '하이라이트', name: '하이라이트', count: posts.filter(p => p.category === '하이라이트').length }
-  ];
+  const categories = CATEGORIES.map(cat => ({
+    ...cat,
+    count: cat.id === 'all'
+      ? posts.length
+      : posts.filter(p => p.category === cat.id).length
+  }));
 
   const filteredPosts = selectedCategory === 'all'
     ? posts
@@ -110,13 +137,15 @@ export default function CommunityPage() {
                   <Button
                     key={category.id}
                     onClick={() => setSelectedCategory(category.id)}
-                    className={`w-full justify-between ${
-                      selectedCategory === category.id
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                    }`}
+                    className={`w-full justify-between ${selectedCategory === category.id
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                      }`}
                   >
-                    <span>{category.name}</span>
+                    <span className="flex items-center gap-2">
+                      <span>{category.icon}</span>
+                      <span>{category.name}</span>
+                    </span>
                     <span className="text-xs bg-gray-600 px-2 py-1 rounded">
                       {category.count}
                     </span>
@@ -173,7 +202,7 @@ export default function CommunityPage() {
                   <div className="flex-1">
                     <input
                       type="text"
-                      placeholder="무엇을 공유하고 싶으신가요?"
+                      placeholder={selectedCategory === 'news' ? "SNS 링크를 입력하세요 (Twitter, YouTube 등)" : "무엇을 공유하고 싶으신가요?"}
                       className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
                     />
                   </div>
@@ -207,7 +236,14 @@ export default function CommunityPage() {
                             <div className="flex items-center space-x-2">
                               <Clock className="w-3 h-3 text-gray-500" />
                               <span className="text-gray-500 text-sm">{post.createdAt}</span>
-                              <span className="text-blue-400 text-sm">#{post.category}</span>
+                              <span className="text-gray-500 text-sm">{post.createdAt}</span>
+                              <span className={`text-sm px-2 py-0.5 rounded-full ${post.category === 'news' ? 'bg-blue-900/50 text-blue-300' :
+                                post.category === 'market' ? 'bg-green-900/50 text-green-300' :
+                                  post.category === 'meetup' ? 'bg-purple-900/50 text-purple-300' :
+                                    'bg-gray-800 text-gray-400'
+                                }`}>
+                                {CATEGORIES.find(c => c.id === post.category)?.name}
+                              </span>
                               {post.isHot && (
                                 <span className="flex items-center text-red-400 text-sm">
                                   <TrendingUp className="w-3 h-3 mr-1" />
@@ -220,7 +256,27 @@ export default function CommunityPage() {
                       </div>
 
                       <h3 className="text-xl font-bold text-white mb-3">{post.title}</h3>
-                      <p className="text-gray-300 mb-4">{post.content}</p>
+                      <h3 className="text-xl font-bold text-white mb-3">{post.title}</h3>
+                      <p className="text-gray-300 mb-4 whitespace-pre-wrap">{post.content}</p>
+
+                      {/* Special Content based on Category */}
+                      {post.category === 'news' && post.snsUrl && (
+                        <SNSNewsCard url={post.snsUrl} />
+                      )}
+
+                      {(post.category === 'market' && post.price) && (
+                        <div className="mb-4 flex items-center gap-2 text-green-400 font-bold text-lg">
+                          <Tag className="w-5 h-5" />
+                          {post.price.toLocaleString()}원
+                        </div>
+                      )}
+
+                      {(post.category === 'meetup' && post.location) && (
+                        <div className="mb-4 flex items-center gap-2 text-purple-400">
+                          <MapPin className="w-4 h-4" />
+                          {post.location}
+                        </div>
+                      )}
 
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-6">

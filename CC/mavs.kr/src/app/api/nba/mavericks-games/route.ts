@@ -127,7 +127,7 @@ async function fetchMavericksGamesFromPython(command: string): Promise<Mavericks
         const result = JSON.parse(stdout);
         resolve(result);
       } catch (parseError) {
-        console.error('Failed to parse Python output:', stdout);
+        console.error('Failed to parse Python output:', stdout, parseError);
         reject(new Error('Failed to parse Python script output'));
       }
     });
@@ -140,7 +140,7 @@ async function fetchMavericksGamesFromPython(command: string): Promise<Mavericks
 }
 
 // Simple in-memory cache (in production, use Redis)
-let mavericksGamesCache: { [key: string]: { data: MavericksGamesResponse; timestamp: number } } = {};
+const mavericksGamesCache: { [key: string]: { data: MavericksGamesResponse; timestamp: number } } = {};
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 async function getCachedMavericksGames(command: string): Promise<MavericksGamesResponse | null> {

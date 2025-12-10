@@ -24,7 +24,7 @@ export enum NewsSource {
   ESPN = 'ESPN',
   MAVS_MONEYBALL = 'MAVS_MONEYBALL',
   SMOKING_CUBAN = 'SMOKING_CUBAN',
-  REDDIT = 'REDDIT',
+
   NEWS_API = 'NEWS_API',
   THE_ATHLETIC = 'THE_ATHLETIC',
 }
@@ -40,10 +40,10 @@ export interface NewsArticle {
   source: string;
   author?: string;
   categories?: string[];
-  score?: number;
-  comments?: number;
-  redditUrl?: string;
-  flair?: string;
+
+
+
+
 }
 
 export interface NewsFilter {

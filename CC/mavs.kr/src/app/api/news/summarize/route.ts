@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      originalContent: articleContent,
       ...summary
     });
 
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
 
 // 제목만으로 키포인트 생성
 function generateKeyPointsFromTitle(title: string): string[] {
-  const translatedTitle = simpleTranslate(title);
+  // const translatedTitle = simpleTranslate(title);
 
   // 제목에서 키워드 추출 및 분석
   const keywords = extractKeywords(title);
@@ -159,7 +160,7 @@ async function crawlArticle(url: string): Promise<string | null> {
     const selectors = {
       'espn.com': '.article-body, .story-body, [data-behavior="article_body"], .Article__Body, .Story__Body',
       'nba.com': '.Article_article__2Uc5f, .content-wrapper, .Article__Body, .Article__Content',
-      'reddit.com': '.Post .RichTextJSON-root, [data-test-id="post-content"], .usertext-body, .md',
+
       'thesmokingcuban.com': '.entry-content, .post-content, article .content, .article-content, .entry-body',
       'mavsmoneyball.com': '.c-entry-content, .entry-content, .post-content, .entry-body',
       'theathletic.com': '.article-content-container, .article__body, .ArticleBody, .Article__Content',
@@ -256,36 +257,34 @@ async function summarizeWithAI(title: string, content: string) {
       return fallbackSummary(title, content);
     }
 
-    const prompt = `당신은 달라스 매버릭스 팬을 위한 전문 뉴스 요약가입니다. 다음 영어 NBA 뉴스를 자연스러운 한국어로 번역하고 요약해주세요.
+    const prompt = `당신은 전문 번역가이자 NBA 뉴스 분석가입니다. 다음 영어 NBA 뉴스를 자연스러운 한국어로 완전 번역해주세요.
 
-번역 및 요약 규칙:
+번역 규칙:
 1. 제목을 자연스러운 한국어로 번역
-2. 핵심 내용을 3-5개 불릿포인트로 요약
-3. 달라스 매버릭스와 관련된 내용 중심으로
-4. 선수 이름은 한글 표기 후 괄호에 영문 병기 (예: "Luka Doncic" → "루카 돈치치(Luka Doncic)")
-5. 농구 용어는 한국어로 자연스럽게 번역
-6. 팬들이 관심 가질만한 정보 우선
-7. 간결하고 명확하게 작성
-8. 자연스러운 한국어 문장 구조 사용
-9. 순수한 텍스트만 응답하고 JSON이나 코드 블록은 포함하지 마세요
+2. 본문 전체를 자연스러운 한국어로 완전 번역
+3. 선수 이름은 한글 표기 후 괄호에 영문 병기 (예: "루카 돈치치(Luka Doncic)")
+4. 농구 용어는 한국어로 자연스럽게 번역
+5. 문장 구조를 한국어에 맞게 조정
 
-응답 형식:
-제목: [번역된 제목]
+응답 형식 (정확히 이 형식을 따라주세요):
+===제목===
+[번역된 제목]
 
-핵심 내용:
+===본문번역===
+[완전 번역된 본문 내용]
+
+===핵심요약===
 • [핵심 포인트 1]
 • [핵심 포인트 2]
 • [핵심 포인트 3]
 
-상세 요약:
-[상세 요약 내용]
+===감정===
+[positive/negative/neutral]
 
-감정: [positive/negative/neutral]
-관련도: [1-10점]
+원문 제목: ${title}
 
-제목: ${title}
-
-본문: ${content.substring(0, 3000)}`;
+원문 본문:
+${content.substring(0, 4000)}`;
 
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
@@ -326,41 +325,46 @@ async function summarizeWithAI(title: string, content: string) {
 
 // 텍스트에서 정보 추출 (JSON 파싱 실패 시)
 function extractFromText(text: string, originalTitle: string) {
-  // 간단한 텍스트 파싱 로직
-  const lines = text.split('\n').filter(line => line.trim());
-
   let translatedTitle = originalTitle;
+  let translatedContent = '';
   let keyPoints: string[] = [];
   let summary = '';
   let sentiment = 'neutral';
-  let relevanceScore = 5;
 
-  // 제목 추출 시도
-  const titleMatch = text.match(/제목[:\s]*([^\n]+)/i);
+  // 제목 추출
+  const titleMatch = text.match(/===제목===\s*([\s\S]*?)(?=\n===|$)/i);
   if (titleMatch) {
     translatedTitle = titleMatch[1].trim();
-  }
-
-  // 불릿 포인트 추출
-  const bulletMatches = text.match(/[•\-\*]\s*([^\n]+)/g);
-  if (bulletMatches) {
-    keyPoints = bulletMatches.map(match => match.replace(/^[•\-\*]\s*/, '').trim());
-  }
-
-  // 요약 추출 (상세 요약 섹션)
-  const summaryMatch = text.match(/상세 요약[:\s]*\n([\s\S]*?)(?=\n\n|감정|$)/i);
-  if (summaryMatch) {
-    summary = summaryMatch[1].trim();
   } else {
-    // 상세 요약이 없으면 첫 번째 긴 문단 사용
-    const paragraphs = text.split('\n\n').filter(p => p.trim().length > 50);
-    if (paragraphs.length > 0) {
-      summary = paragraphs[0].trim();
+    // 기존 형식 fallback
+    const oldTitleMatch = text.match(/제목[:\s]*([^\n]+)/i);
+    if (oldTitleMatch) translatedTitle = oldTitleMatch[1].trim();
+  }
+
+  // 본문 번역 추출
+  const contentMatch = text.match(/===본문번역===\s*([\s\S]*?)(?=\n===|$)/i);
+  if (contentMatch) {
+    translatedContent = contentMatch[1].trim();
+  }
+
+  // 핵심 요약 추출
+  const summaryMatch = text.match(/===핵심요약===\s*([\s\S]*?)(?=\n===|$)/i);
+  if (summaryMatch) {
+    const bulletMatches = summaryMatch[1].match(/[•\-\*]\s*([^\n]+)/g);
+    if (bulletMatches) {
+      keyPoints = bulletMatches.map(match => match.replace(/^[•\-\*]\s*/, '').trim());
+    }
+    summary = keyPoints.join(' ');
+  } else {
+    // 기존 형식 fallback
+    const bulletMatches = text.match(/[•\-\*]\s*([^\n]+)/g);
+    if (bulletMatches) {
+      keyPoints = bulletMatches.map(match => match.replace(/^[•\-\*]\s*/, '').trim());
     }
   }
 
-  // 감정 분석
-  const sentimentMatch = text.match(/감정[:\s]*([^\n]+)/i);
+  // 감정 추출
+  const sentimentMatch = text.match(/===감정===\s*([^\n]+)/i) || text.match(/감정[:\s]*([^\n]+)/i);
   if (sentimentMatch) {
     const sentimentText = sentimentMatch[1].trim().toLowerCase();
     if (sentimentText.includes('positive') || sentimentText.includes('긍정')) sentiment = 'positive';
@@ -368,19 +372,14 @@ function extractFromText(text: string, originalTitle: string) {
     else sentiment = 'neutral';
   }
 
-  // 관련도 점수 추출
-  const scoreMatch = text.match(/관련도[:\s]*(\d+)/i);
-  if (scoreMatch) {
-    relevanceScore = parseInt(scoreMatch[1]);
-  }
-
   return {
     translatedTitle,
+    translatedContent,
     keyPoints,
     summary,
     originalTitle,
     sentiment,
-    relevanceScore
+    relevanceScore: 5
   };
 }
 

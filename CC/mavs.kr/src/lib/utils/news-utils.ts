@@ -9,8 +9,9 @@ export function getSourceColor(source: string): string {
   switch (normalized) {
     case 'espn':
       return 'text-red-300 bg-red-600/20 border-red-500/30';
-    case 'reddit':
-      return 'text-orange-300 bg-orange-600/20 border-orange-500/30';
+
+    case 'mavs moneyball':
+      return 'text-amber-300 bg-amber-600/20 border-amber-500/30';
     case 'the smoking cuban':
     case 'smoking cuban':
       return 'text-blue-300 bg-blue-600/20 border-blue-500/30';
@@ -31,8 +32,9 @@ export function getSourceIcon(source: string): string {
   switch (normalized) {
     case 'espn':
       return '📺';
-    case 'reddit':
-      return '🔗';
+
+    case 'mavs moneyball':
+      return '💰';
     case 'the smoking cuban':
     case 'smoking cuban':
       return '📰';
@@ -57,8 +59,9 @@ export function filterNewsBySource(articles: NewsArticle[], source: string): New
     switch (normalized) {
       case 'espn':
         return articleSource === 'espn';
-      case 'reddit':
-        return articleSource === 'reddit';
+
+      case 'mmb':
+        return articleSource.includes('mavs moneyball');
       case 'tsc':
         return articleSource.includes('smoking cuban');
       case 'naver':
@@ -92,7 +95,7 @@ export function formatTimeAgo(published: string): string {
  * Check if an article is mobile-friendly (simplified for mobile)
  */
 export function isLongArticle(article: NewsArticle): boolean {
-  return article.description && article.description.length > 100;
+  return !!(article.description && article.description.length > 100);
 }
 
 /**
@@ -101,9 +104,7 @@ export function isLongArticle(article: NewsArticle): boolean {
 export const NEWS_FILTERS = [
   { id: 'all', label: '전체', color: 'blue' },
   { id: 'espn', label: 'ESPN', color: 'red' },
-  { id: 'reddit', label: 'Reddit', color: 'orange' },
+  { id: 'mmb', label: 'Moneyball', color: 'orange' },
   { id: 'tsc', label: 'TSC', color: 'blue' },
   { id: 'naver', label: '네이버', color: 'green' },
 ] as const;
-
-

@@ -184,9 +184,9 @@ export class NBAApiClient {
    * Transform NBA API game data to our Game type
    */
   private transformGame(nbaGame: NBAGame): Game {
-    const isMavsHome = nbaGame.home_team.full_name === 'Dallas Mavericks';
-    const mavsTeam = isMavsHome ? nbaGame.home_team : nbaGame.visitor_team;
-    const opponentTeam = isMavsHome ? nbaGame.visitor_team : nbaGame.home_team;
+    // const isMavsHome = nbaGame.home_team.full_name === 'Dallas Mavericks';
+    // const mavsTeam = isMavsHome ? nbaGame.home_team : nbaGame.visitor_team;
+    // const opponentTeam = isMavsHome ? nbaGame.visitor_team : nbaGame.home_team;
 
     return {
       id: nbaGame.id.toString(),

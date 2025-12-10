@@ -117,8 +117,8 @@ async function fetchBoxScoresFromPython(): Promise<BoxScoreResponse> {
       try {
         const result = JSON.parse(stdout);
         resolve(result);
-      } catch (parseError) {
-        console.error('Failed to parse Python output:', stdout);
+      } catch {
+        // console.error('Failed to parse Python output:', stdout);
         reject(new Error('Failed to parse Python script output'));
       }
     });

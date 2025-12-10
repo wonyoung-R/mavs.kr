@@ -1,5 +1,5 @@
 // src/app/api/nba/live-scores/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 interface LiveGame {
   id: string;
@@ -18,11 +18,19 @@ interface LiveGame {
       };
       score?: string;
       homeAway: 'home' | 'away';
+      records?: Array<{
+        name: string;
+        summary: string;
+        type: string;
+      }>;
     }>;
     status: {
       type: {
         name: string;
         completed: boolean;
+        state?: string;
+        detail?: string;
+        shortDetail?: string;
       };
       displayClock?: string;
       period?: number;
@@ -39,7 +47,10 @@ interface ProcessedLiveGame {
   away_team: string;
   home_score: number;
   away_score: number;
+  home_record: string;
+  away_record: string;
   status: string;
+  status_detail: string;
   period: number;
   time_remaining: string;
   game_time_kst: string;
@@ -92,11 +103,8 @@ function mapTeamName(espnTeamName: string): string {
   return teamMapping[espnTeamName] || espnTeamName;
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    const forceRefresh = searchParams.get('refresh') === 'true';
-
     // ESPN API에서 오늘의 NBA 점수 가져오기
     const scoreboardResponse = await fetch('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard');
 
@@ -132,11 +140,16 @@ export async function GET(request: NextRequest) {
       const homeTeamName = mapTeamName(homeTeam.team.name || homeTeam.team.shortDisplayName || 'TBD');
       const awayTeamName = mapTeamName(awayTeam.team.name || awayTeam.team.shortDisplayName || 'TBD');
 
+      // Record extraction
+      const getRecord = (team: any) => {
+        return team.records?.find((r: any) => r.type === 'total')?.summary || '';
+      };
+
       // 디버깅을 위한 로그
-      console.log('Team names mapping:', {
-        home: { original: homeTeam.team.name, mapped: homeTeamName },
-        away: { original: awayTeam.team.name, mapped: awayTeamName }
-      });
+      // console.log('Team names mapping:', {
+      //   home: { original: homeTeam.team.name, mapped: homeTeamName },
+      //   away: { original: awayTeam.team.name, mapped: awayTeamName }
+      // });
 
       return {
         game_id: game.id,
@@ -144,7 +157,10 @@ export async function GET(request: NextRequest) {
         away_team: awayTeamName,
         home_score: homeTeam.score ? parseInt(homeTeam.score) : 0,
         away_score: awayTeam.score ? parseInt(awayTeam.score) : 0,
+        home_record: getRecord(homeTeam),
+        away_record: getRecord(awayTeam),
         status: competition.status.type.name,
+        status_detail: competition.status.type.shortDetail || competition.status.type.detail || '',
         period: competition.status.period || 0,
         time_remaining: competition.status.displayClock || '',
         game_time_kst: gameTimeKst,
@@ -152,9 +168,9 @@ export async function GET(request: NextRequest) {
         is_mavs_game: isMavsGame,
         is_live: isLive,
         is_finished: isFinished,
-        broadcast: [], // ESPN API에서 방송 정보는 별도로 가져와야 함
+        broadcast: [],
       };
-    }).filter(Boolean);
+    }).filter((game): game is ProcessedLiveGame => game !== null);
 
     // 매버릭스 경기와 다른 경기 분리
     const mavsGames = processedGames.filter(game => game.is_mavs_game);

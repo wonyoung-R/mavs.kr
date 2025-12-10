@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { News, NewsSource } from '@/types/news';
-import { getSourceColor } from '@/lib/utils/news-utils';
+// import { getSourceColor } from '@/lib/utils/news-utils';
 
 interface NewsCarouselProps {
   news?: News[];
@@ -188,9 +188,8 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
             <button
               key={index}
               onClick={() => setCurrentIndex(index)}
-              className={`w-2 h-2 rounded-full transition-all duration-200 ${
-                index === currentIndex ? 'bg-blue-500' : 'bg-gray-500'
-              }`}
+              className={`w-2 h-2 rounded-full transition-all duration-200 ${index === currentIndex ? 'bg-blue-500' : 'bg-gray-500'
+                }`}
             />
           ))}
         </div>
@@ -207,7 +206,7 @@ export function NewsCarousel({ news }: NewsCarouselProps) {
           >
             <Card className="bg-gradient-to-br from-gray-900/50 to-gray-800/50 border-gray-700/50 hover:border-gray-600/50 transition-all duration-300 cursor-pointer group">
               <div className="aspect-video bg-gradient-to-br from-gray-800 to-gray-900 rounded-t-lg mb-3"></div>
-                <CardContent className="p-4">
+              <CardContent className="p-4">
                 <div className="flex items-center space-x-2 mb-2">
                   <span className={`px-2 py-1 rounded text-xs font-medium ${getSourceColorClass(article.source)}`}>
                     {article.source}

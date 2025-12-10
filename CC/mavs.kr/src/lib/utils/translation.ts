@@ -101,7 +101,7 @@ export async function translateBatch(
   targetLang: deepl.TargetLanguageCode = 'ko'
 ): Promise<string[]> {
   try {
-    const translator = getTranslator();
+    // const translator = getTranslator();
 
     // DeepL supports batch translation
     const results = await Promise.all(

@@ -256,11 +256,10 @@ export function LiveBoxScoreBanner() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ delay: index * 0.1 }}
-              className={`relative overflow-hidden rounded-xl border-2 shadow-sm hover:shadow-md transition-all duration-300 ${
-                game.is_mavs_game
-                  ? 'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-300'
-                  : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200'
-              }`}
+              className={`relative overflow-hidden rounded-xl border-2 shadow-sm hover:shadow-md transition-all duration-300 ${game.is_mavs_game
+                ? 'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-300'
+                : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200'
+                }`}
             >
               {/* Status Badge */}
               <div className="absolute top-2 right-2">
@@ -293,7 +292,7 @@ export function LiveBoxScoreBanner() {
                             className="w-6 h-6 object-contain"
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
-                              e.currentTarget.nextElementSibling!.style.display = 'flex';
+                              (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
                             }}
                           />
                           <div className="w-8 h-8 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center shadow-sm hidden">
@@ -310,11 +309,10 @@ export function LiveBoxScoreBanner() {
                         </div>
                       )}
                       <div className="flex flex-col">
-                        <span className={`text-sm font-semibold ${
-                          game.is_mavs_game && game.away_team === 'Dallas Mavericks'
-                            ? 'text-blue-600'
-                            : 'text-gray-800'
-                        }`}>
+                        <span className={`text-sm font-semibold ${game.is_mavs_game && game.away_team === 'Dallas Mavericks'
+                          ? 'text-blue-600'
+                          : 'text-gray-800'
+                          }`}>
                           {formatTeamName(game.away_team)}
                         </span>
                         <span className="text-xs text-gray-500">원정</span>
@@ -350,7 +348,7 @@ export function LiveBoxScoreBanner() {
                             className="w-6 h-6 object-contain"
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
-                              e.currentTarget.nextElementSibling!.style.display = 'flex';
+                              (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
                             }}
                           />
                           <div className="w-8 h-8 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center shadow-sm hidden">
@@ -367,11 +365,10 @@ export function LiveBoxScoreBanner() {
                         </div>
                       )}
                       <div className="flex flex-col">
-                        <span className={`text-sm font-semibold ${
-                          game.is_mavs_game && game.home_team === 'Dallas Mavericks'
-                            ? 'text-blue-600'
-                            : 'text-gray-800'
-                        }`}>
+                        <span className={`text-sm font-semibold ${game.is_mavs_game && game.home_team === 'Dallas Mavericks'
+                          ? 'text-blue-600'
+                          : 'text-gray-800'
+                          }`}>
                           {formatTeamName(game.home_team)}
                         </span>
                         <span className="text-xs text-gray-500">홈</span>

@@ -68,7 +68,7 @@ const TRANSLATION_MAP: TranslationCache = {
   'next month': '다음 달',
   'this year': '올해',
   'next year': '내년',
-  'season': '시즌',
+
 
   // 형용사/부사
   'amazing': '놀라운',

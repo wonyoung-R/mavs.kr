@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 interface TeamStanding {
   team: string;
@@ -9,16 +9,16 @@ interface TeamStanding {
   conference: 'Eastern' | 'Western';
 }
 
-interface StandingsResponse {
-  success: boolean;
-  data?: {
-    western_standings: TeamStanding[];
-    eastern_standings: TeamStanding[];
-  };
-  message?: string;
-}
+// interface StandingsResponse {
+//   success: boolean;
+//   data?: {
+//     western_standings: TeamStanding[];
+//     eastern_standings: TeamStanding[];
+//   };
+//   message?: string;
+// }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // ESPN API에서 NBA 순위 데이터 가져오기
     const standingsResponse = await fetch('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/standings');
@@ -27,7 +27,8 @@ export async function GET(request: NextRequest) {
       throw new Error(`Failed to fetch ESPN standings: ${standingsResponse.statusText}`);
     }
 
-    const standingsData = await standingsResponse.json();
+    // const standingsData = await standingsResponse.json();
+    await standingsResponse.json();
 
     // 현재 시즌 데이터가 없을 수 있으므로 임시 데이터 사용
     const mockWesternStandings: TeamStanding[] = [
