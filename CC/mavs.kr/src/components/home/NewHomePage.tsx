@@ -6,7 +6,7 @@ import { TabNavigation } from '@/components/ui/TabNavigation';
 import { HomeView } from '@/components/home/HomeView';
 import { ScheduleView } from '@/components/home/ScheduleView';
 import { NewsView } from '@/components/home/NewsView';
-import { StatsView } from '@/components/home/StatsView';
+import { ColumnView } from '@/components/home/ColumnView';
 import { CommunityView } from '@/components/home/CommunityView';
 import { NewsArticle } from '@/types/news';
 import Link from 'next/link';
@@ -205,7 +205,7 @@ export default function NewHomePage() {
     { id: 'home', label: 'Home' },
     { id: 'schedule', label: 'Schedule' },
     { id: 'news', label: 'News' },
-    { id: 'stats', label: 'Stats' },
+    { id: 'column', label: 'Column' },
     { id: 'community', label: 'Community' },
   ];
 
@@ -254,8 +254,8 @@ export default function NewHomePage() {
               initialNews={initialNews}
             />
           )}
-          {activeTab === 'stats' && (
-            <StatsView key="stats" />
+          {activeTab === 'column' && (
+            <ColumnView key="column" />
           )}
           {activeTab === 'community' && (
             <CommunityView key="community" />
