@@ -31,7 +31,7 @@ export default function MembersPage() {
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                     <div className="flex items-center gap-4 text-white">
-                        <Link href="/forum">
+                        <Link href="/?tab=community">
                             <Button variant="ghost" size="icon" className="hover:bg-white/10 text-white">
                                 <ArrowLeft className="w-5 h-5" />
                             </Button>
@@ -66,8 +66,8 @@ export default function MembersPage() {
                                 <Card key={member.id} className="bg-slate-900/50 backdrop-blur-xl border-white/10 hover:border-blue-500/30 transition-all">
                                     <CardContent className="p-4 flex items-center gap-4">
                                         <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-slate-900 ${member.rank === 1 ? 'bg-yellow-400 shadow-lg shadow-yellow-500/50' :
-                                                member.rank === 2 ? 'bg-slate-300 shadow-lg shadow-slate-400/50' :
-                                                    member.rank === 3 ? 'bg-amber-600 shadow-lg shadow-amber-600/50' : 'bg-slate-700 text-white'
+                                            member.rank === 2 ? 'bg-slate-300 shadow-lg shadow-slate-400/50' :
+                                                member.rank === 3 ? 'bg-amber-600 shadow-lg shadow-amber-600/50' : 'bg-slate-700 text-white'
                                             }`}>
                                             {member.rank}
                                         </div>

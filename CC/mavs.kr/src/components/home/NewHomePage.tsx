@@ -162,6 +162,15 @@ export default function NewHomePage() {
   const [todaysMavsGame, setTodaysMavsGame] = useState<any>(null);
   const [loadingTodaysGame, setLoadingTodaysGame] = useState(true);
 
+  // Check for tab query parameter
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    if (tab && ['home', 'schedule', 'news', 'column', 'community'].includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, []);
+
   useEffect(() => {
     fetch('/api/news/all?limit=6&translate=true')
       .then(res => res.json())
@@ -210,20 +219,39 @@ export default function NewHomePage() {
   ];
 
   return (
-    <div className="min-h-screen w-full bg-[#050510] relative flex flex-col items-center">
-      {/* Background */}
+    <div className="min-h-full w-full bg-[#050510] relative flex flex-col items-center">
+      {/* Animated Mavericks Logo Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] opacity-[0.08] animate-wave">
+          <img
+            src="https://upload.wikimedia.org/wikipedia/en/thumb/9/97/Dallas_Mavericks_logo.svg/1200px-Dallas_Mavericks_logo.svg.png"
+            alt="Mavericks Logo"
+            className="w-full h-full object-contain"
+            style={{
+              filter: 'brightness(1.5) contrast(1.2)',
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Background Gradient */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[1200px] bg-blue-600/10 rounded-full blur-[150px]" />
+      </div>
+
+      {/* Original Background */}
       <div className="absolute inset-0 z-0">
         <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-[#050510] to-[#050510]"></div>
         <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-blue-600/5 rounded-full blur-[100px] animate-pulse"></div>
       </div>
 
       {/* Top Navigation Buttons */}
-      <div className="absolute top-6 right-6 z-50 flex items-center gap-3">
+      <div className="absolute top-4 right-4 z-50 flex items-center gap-3">
         <ProfileDropdown />
       </div>
 
       {/* Navigation */}
-      <div className="relative z-50 pt-8 pb-4">
+      <div className="relative z-50 pt-4 pb-1">
         <TabNavigation
           tabs={tabs}
           activeTab={activeTab}
@@ -232,7 +260,7 @@ export default function NewHomePage() {
       </div>
 
       {/* Main Content Area */}
-      <div className="relative z-10 flex-1 w-full max-w-7xl mx-auto flex flex-col p-4 pb-20">
+      <div className="relative z-10 flex-1 w-full max-w-7xl mx-auto flex flex-col px-4 h-full justify-center">
         <AnimatePresence mode="wait">
           {activeTab === 'home' && (
             <HomeView

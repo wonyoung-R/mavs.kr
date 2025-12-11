@@ -36,16 +36,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return 'admin';
         }
 
-        // Try to fetch role from profiles table
+        // Try to fetch role from User table
         try {
             const { data, error } = await supabase
-                .from('profiles')
+                .from('User')
                 .select('role')
-                .eq('id', user.id)
+                .eq('email', user.email)
                 .single();
 
             if (!error && data?.role) {
-                return data.role as UserRole;
+                // Map Prisma Role enum to UserRole type
+                const role = data.role.toLowerCase();
+                if (role === 'admin' || role === 'columnist' || role === 'user') {
+                    return role as UserRole;
+                }
             }
         } catch {
             // Table might not exist yet, return default
@@ -118,7 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const isAdmin = userRole === 'admin';
-    const isColumnist = userRole === 'columnist';
+    const isColumnist = userRole === 'columnist' || isAdmin;
 
     return (
         <AuthContext.Provider value={{

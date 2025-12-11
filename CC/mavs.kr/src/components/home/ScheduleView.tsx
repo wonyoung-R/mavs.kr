@@ -122,10 +122,10 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
                                         </div>
 
                                         {/* Standard Matchup: Away (Left) @ Home (Right) */}
-                                        <div className="col-span-6 sm:col-span-7 flex items-center justify-between sm:justify-center gap-2 sm:gap-8 px-2 sm:px-8">
+                                        <div className="col-span-9 sm:col-span-7 flex items-center justify-between sm:justify-center gap-2 sm:gap-8 px-2 sm:px-8">
                                             {/* Away Team (Left) */}
-                                            <div className="flex flex-col items-center gap-1 w-20 sm:w-28">
-                                                <div className="relative w-12 h-12 sm:w-16 sm:h-16 drop-shadow-lg">
+                                            <div className="flex flex-col items-center gap-1 w-14 sm:w-28">
+                                                <div className="relative w-8 h-8 sm:w-16 sm:h-16 drop-shadow-lg transition-transform group-hover:scale-110 duration-300">
                                                     <Image
                                                         src={getTeamLogo(game.is_home ? game.opponent : 'Mavericks')}
                                                         alt="Away Team"
@@ -134,27 +134,27 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
                                                         unoptimized
                                                     />
                                                 </div>
-                                                <span className={`text-sm sm:text-base font-bold text-center truncate w-full ${!game.is_home ? 'text-blue-400' : 'text-gray-400'}`}>
+                                                <span className={`text-xs sm:text-base font-bold text-center truncate w-full ${!game.is_home ? 'text-blue-400' : 'text-gray-400'}`}>
                                                     {game.is_home ? game.opponent : 'DAL'}
                                                 </span>
                                             </div>
 
                                             {/* Scores or @ */}
-                                            <div className="flex flex-col items-center min-w-[80px]">
+                                            <div className="flex flex-col items-center min-w-[60px] sm:min-w-[80px]">
                                                 {game.status === 'finished' || game.status === 'live' ? (
-                                                    <div className="flex items-center gap-3 sm:gap-4 font-mono text-2xl sm:text-3xl font-bold text-white">
+                                                    <div className="flex items-center gap-2 sm:gap-4 font-mono text-xl sm:text-3xl font-bold text-white">
                                                         {/* Away Score (Left) */}
                                                         <span>{game.is_home ? game.opponent_score : game.mavs_score}</span>
-                                                        <span className="text-gray-600 text-lg">-</span>
+                                                        <span className="text-gray-600 text-sm sm:text-lg">-</span>
                                                         {/* Home Score (Right) */}
                                                         <span>{game.is_home ? game.mavs_score : game.opponent_score}</span>
                                                     </div>
                                                 ) : (
-                                                    <span className="text-xl font-bold text-gray-600">@</span>
+                                                    <span className="text-lg sm:text-xl font-bold text-gray-600">@</span>
                                                 )}
                                                 {/* Dallas-centric WIN/LOSS */}
                                                 {game.status === 'finished' && (
-                                                    <span className={`text-xs mt-1.5 font-bold px-2 py-0.5 rounded ${game.result === 'W' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                                                    <span className={`text-[10px] sm:text-xs mt-1 font-bold px-1.5 py-0.5 rounded ${game.result === 'W' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
                                                         {game.result === 'W' ? 'WIN' : 'LOSS'}
                                                     </span>
                                                 )}
@@ -164,8 +164,8 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
                                             </div>
 
                                             {/* Home Team (Right) */}
-                                            <div className="flex flex-col items-center gap-1 w-20 sm:w-28">
-                                                <div className="relative w-12 h-12 sm:w-16 sm:h-16 drop-shadow-lg">
+                                            <div className="flex flex-col items-center gap-1 w-14 sm:w-28">
+                                                <div className="relative w-8 h-8 sm:w-16 sm:h-16 drop-shadow-lg transition-transform group-hover:scale-110 duration-300">
                                                     <Image
                                                         src={getTeamLogo(game.is_home ? 'Mavericks' : game.opponent)}
                                                         alt="Home Team"
@@ -173,7 +173,7 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
                                                         className="object-contain"
                                                     />
                                                 </div>
-                                                <span className={`text-sm sm:text-base font-bold text-center truncate w-full ${game.is_home ? 'text-blue-400' : 'text-gray-400'}`}>
+                                                <span className={`text-xs sm:text-base font-bold text-center truncate w-full ${game.is_home ? 'text-blue-400' : 'text-gray-400'}`}>
                                                     {game.is_home ? 'DAL' : game.opponent}
                                                 </span>
                                             </div>

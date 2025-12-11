@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Anton } from "next/font/google";
 import "./globals.css";
 
 import { Footer } from "@/components/layout/Footer";
@@ -8,6 +8,12 @@ import { AuthProvider } from "@/contexts/AuthContext";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+});
+
+const anton = Anton({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-anton",
 });
 
 export const metadata: Metadata = {
@@ -38,10 +44,10 @@ export default function RootLayout({
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
         />
       </head>
-      <body className={`${inter.variable} font-sans antialiased bg-toss-gray-50`}>
+      <body className={`${inter.variable} ${anton.variable} font-sans antialiased bg-toss-gray-50`}>
         <AuthProvider>
-          <div className="min-h-screen flex flex-col">
-            <main className="flex-1 bg-toss-gray-50">
+          <div className="h-screen flex flex-col overflow-hidden">
+            <main className="flex-1 bg-toss-gray-50 overflow-y-auto">
               {children}
             </main>
             <Footer />

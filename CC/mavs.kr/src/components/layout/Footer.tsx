@@ -1,50 +1,25 @@
 export function Footer() {
   return (
-    <footer className="border-t bg-gray-50 dark:bg-gray-900">
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <div className="h-6 w-6 rounded-full bg-mavs-blue" />
-              <span className="text-lg font-bold text-mavs-navy">MAVS.KR</span>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              달라스 매버릭스 한국 팬 커뮤니티
+    <footer className="border-t border-white/10 bg-[#050510] text-slate-300">
+      <div className="container mx-auto px-4 py-3">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+
+          {/* Logo & Copyright */}
+          <div className="flex items-center gap-4">
+            <span className="text-lg font-bold font-mono text-white tracking-tighter">mavs.kr</span>
+            <p className="text-xs text-slate-500">
+              © {new Date().getFullYear()} MAVS.KR
             </p>
           </div>
 
-          <div className="space-y-2">
-            <h3 className="font-semibold text-mavs-navy">뉴스</h3>
-            <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-              <li><a href="/news" className="hover:text-mavs-blue">최신 뉴스</a></li>
-              <li><a href="/news/espn" className="hover:text-mavs-blue">ESPN</a></li>
-              <li><a href="/news/mavsmoneyball" className="hover:text-mavs-blue">Mavs Moneyball</a></li>
-            </ul>
+          {/* Links - Compact */}
+          <div className="flex gap-6 text-sm">
+            <a href="/news" className="text-slate-400 hover:text-blue-400 transition-colors">뉴스</a>
+            <a href="/games" className="text-slate-400 hover:text-blue-400 transition-colors">경기</a>
+            <a href="/?tab=community" className="text-slate-400 hover:text-blue-400 transition-colors">커뮤니티</a>
+            <a href="/?tab=column" className="text-slate-400 hover:text-blue-400 transition-colors">칼럼</a>
           </div>
 
-          <div className="space-y-2">
-            <h3 className="font-semibold text-mavs-navy">경기</h3>
-            <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-              <li><a href="/games/live" className="hover:text-mavs-blue">라이브 스코어</a></li>
-              <li><a href="/games/schedule" className="hover:text-mavs-blue">경기 일정</a></li>
-              <li><a href="/games/results" className="hover:text-mavs-blue">경기 결과</a></li>
-            </ul>
-          </div>
-
-          <div className="space-y-2">
-            <h3 className="font-semibold text-mavs-navy">커뮤니티</h3>
-            <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-              <li><a href="/forum" className="hover:text-mavs-blue">포럼</a></li>
-              <li><a href="/forum/game-thread" className="hover:text-mavs-blue">게임 스레드</a></li>
-              <li><a href="/forum/trade-rumors" className="hover:text-mavs-blue">트레이드 루머</a></li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
-          <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-            © 2024 MAVS.KR. All rights reserved.
-          </p>
         </div>
       </div>
     </footer>

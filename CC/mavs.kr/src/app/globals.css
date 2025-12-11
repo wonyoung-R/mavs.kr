@@ -86,3 +86,29 @@ body {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
+
+/* 깃발 펄럭이는 효과 */
+@keyframes wave {
+
+  0%,
+  100% {
+    transform: translateX(-50%) perspective(1000px) rotateY(0deg) rotateX(0deg) scale(1);
+  }
+
+  25% {
+    transform: translateX(-50%) perspective(1000px) rotateY(-5deg) rotateX(3deg) scale(1.02);
+  }
+
+  50% {
+    transform: translateX(-50%) perspective(1000px) rotateY(0deg) rotateX(-3deg) scale(1);
+  }
+
+  75% {
+    transform: translateX(-50%) perspective(1000px) rotateY(5deg) rotateX(3deg) scale(1.02);
+  }
+}
+
+.animate-wave {
+  animation: wave 6s ease-in-out infinite;
+  transform-style: preserve-3d;
+}
