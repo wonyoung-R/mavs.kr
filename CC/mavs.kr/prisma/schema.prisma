@@ -20,6 +20,7 @@ model User {
   posts         Post[]
   comments      Comment[]
   votes         Vote[]
+  likes         Like[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -69,24 +70,7 @@ model Game {
   @@index([status])
 }
 
-model Post {
-  id            String    @id @default(cuid())
-  title         String
-  content       String    @db.Text
-  category      ForumCategory
-  author        User      @relation(fields: [authorId], references: [id])
-  authorId      String
-  viewCount     Int       @default(0)
-  isPinned      Boolean   @default(false)
-  isLocked      Boolean   @default(false)
-  comments      Comment[]
-  votes         Vote[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
 
-  @@index([category, createdAt])
-  @@index([authorId])
-}
 
 model Comment {
   id            String    @id @default(cuid())
@@ -139,6 +123,7 @@ enum Role {
   USER
   MODERATOR
   ADMIN
+  COLUMNIST
 }
 
 enum NewsSource {
@@ -159,6 +144,61 @@ enum ForumCategory {
   GENERAL
   TRADE_RUMORS
   ANALYSIS
+  COLUMN
+  MARKET
+  MEETUP
+  FREE
+}
+
+enum MeetupPurpose {
+  DRINK
+  MEAL
+  THUNDER
+  EXERCISE
+  MEETING
+}
+
+model Post {
+  id            String    @id @default(cuid())
+  title         String
+  content       String    @db.Text
+  category      ForumCategory
+  author        User      @relation(fields: [authorId], references: [id])
+  authorId      String
+  viewCount     Int       @default(0)
+  isPinned      Boolean   @default(false)
+  isLocked      Boolean   @default(false)
+  comments      Comment[]
+  votes         Vote[]
+  
+  // Market specific fields
+  price         Int?
+  contactInfo   String?
+  likes         Like[]
+
+  // Meetup specific fields
+  meetupDate     DateTime?
+  meetupLocation String?
+  meetupPurpose  MeetupPurpose?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([category, createdAt])
+  @@index([authorId])
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+  @@index([userId])
+  @@index([postId])
 }
 
 enum VoteType {

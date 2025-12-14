@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 
 interface TrendingPost {
@@ -233,12 +234,14 @@ export function CommunityTrending() {
         ))}
 
         <div className="pt-4 border-t border-gray-800">
-          <Button
-            variant="outline"
-            className="w-full text-sm border-orange-500/20 text-orange-400 hover:bg-orange-500/10"
-          >
-            더 많은 게시글 보기
-          </Button>
+          <Link href="/?tab=community" className="w-full">
+            <Button
+              variant="outline"
+              className="w-full text-sm border-orange-500/20 text-orange-400 hover:bg-orange-500/10"
+            >
+              더 많은 게시글 보기
+            </Button>
+          </Link>
         </div>
       </CardContent>
     </Card>

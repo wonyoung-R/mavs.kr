@@ -3,9 +3,8 @@
 // Call this from Vercel Cron, GitHub Actions, or external scheduler
 
 import { NextResponse } from 'next/server';
-import { saveNewsToSupabase } from '@/lib/services/news-service';
-import { translateAndUpdateNews } from '@/lib/services/news-translation-service';
-import { NewsArticle } from '@/types/news';
+import { saveNewsMany, translateUntranslatedNews, NewsArticleInput } from '@/lib/services/news-prisma-service';
+import { NewsSource } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120; // 120 seconds timeout (for translation)
@@ -22,17 +21,16 @@ export async function GET(request: Request) {
   console.log('🕐 Cron job started: crawl-news');
 
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
     // Fetch from all news sources
     const sources = [
       { name: 'espn', endpoint: `${baseUrl}/api/news/espn?limit=10` },
       { name: 'mmb', endpoint: `${baseUrl}/api/news/mavsmoneyball?limit=10` },
       { name: 'tsc', endpoint: `${baseUrl}/api/news/smoking-cuban?limit=10` },
-      { name: 'naver', endpoint: `${baseUrl}/api/news/naver?limit=10` },
     ];
 
-    const allArticles: Partial<NewsArticle>[] = [];
+    const allArticles: NewsArticleInput[] = [];
 
     for (const source of sources) {
       try {
@@ -40,7 +38,17 @@ export async function GET(request: Request) {
         const data = await response.json();
 
         if (data.articles) {
-          allArticles.push(...data.articles);
+          // Transform API response to NewsArticleInput format
+          const transformed = data.articles.map((a: any) => ({
+            title: a.title,
+            content: a.description || a.content || '',
+            source: (a.source?.toUpperCase().replace(/ /g, '_') || 'ESPN') as NewsSource,
+            sourceUrl: a.url || a.sourceUrl || '',
+            author: a.author,
+            imageUrl: a.image || a.imageUrl,
+            publishedAt: new Date(a.published || a.publishedAt || Date.now()),
+          }));
+          allArticles.push(...transformed);
           console.log(`✅ ${source.name}: ${data.articles.length} articles`);
         }
       } catch (err) {
@@ -48,12 +56,12 @@ export async function GET(request: Request) {
       }
     }
 
-    // Save to Supabase
-    const saveResult = await saveNewsToSupabase(allArticles);
-    console.log(`💾 Saved: ${saveResult.saved}, Errors: ${saveResult.errors}`);
+    // Save to database via Prisma
+    const saveResult = await saveNewsMany(allArticles);
+    console.log(`💾 Saved: ${saveResult.saved}, Updated: ${saveResult.updated}, Errors: ${saveResult.errors}`);
 
-    // Translate untranslated news
-    const translateResult = await translateAndUpdateNews();
+    // Translate untranslated news (limit to 3 to avoid rate limits)
+    const translateResult = await translateUntranslatedNews(3);
     console.log(`🌐 Translated: ${translateResult.translated}, Errors: ${translateResult.errors}`);
 
     console.log('🕐 Cron job complete');
@@ -65,6 +73,7 @@ export async function GET(request: Request) {
         crawl: {
           total: allArticles.length,
           saved: saveResult.saved,
+          updated: saveResult.updated,
           errors: saveResult.errors,
         },
         translation: {

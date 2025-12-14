@@ -14,11 +14,31 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 's.espncdn.com',
+      },
+      {
+        protocol: 'https',
         hostname: 'images.unsplash.com',
       },
       {
         protocol: 'https',
         hostname: 'nycoldtrqbkevvgoajlq.supabase.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'thesmokingcuban.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.vox-cdn.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.mavsmoneyball.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.sbnation.com',
       },
     ],
     dangerouslyAllowSVG: true,

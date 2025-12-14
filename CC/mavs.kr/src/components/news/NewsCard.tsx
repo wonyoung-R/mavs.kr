@@ -50,12 +50,12 @@ export function NewsCard({ article }: NewsCardProps) {
   const handleTitleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    handleSummarize();
+    setIsNewsModalOpen(true);
   };
 
   const handleCardClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    handleSummarize();
+    setIsNewsModalOpen(true);
   };
 
   return (

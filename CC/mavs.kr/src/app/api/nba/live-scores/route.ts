@@ -125,10 +125,22 @@ export async function GET() {
 
       const gameDate = new Date(competition.date);
 
-      // 한국 시간으로 변환
-      const kstDate = new Date(gameDate.getTime() + (9 * 60 * 60 * 1000));
-      const gameDateKst = kstDate.toISOString().split('T')[0];
-      const gameTimeKst = kstDate.toTimeString().split(' ')[0].substring(0, 5);
+      // 한국 시간으로 변환 (올바른 시간대 변환)
+      const kstFormatter = new Intl.DateTimeFormat('ko-KR', {
+        timeZone: 'Asia/Seoul',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      });
+      
+      const kstParts = kstFormatter.formatToParts(gameDate);
+      const getPart = (type: string) => kstParts.find(p => p.type === type)?.value || '00';
+      
+      const gameDateKst = `${getPart('year')}-${getPart('month')}-${getPart('day')}`;
+      const gameTimeKst = `${getPart('hour')}:${getPart('minute')}`;
 
       // 매버릭스 경기인지 확인
       const isMavsGame = homeTeam.team.id === '6' || awayTeam.team.id === '6';

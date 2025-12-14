@@ -19,7 +19,8 @@
     "check-status": "./scripts/check-status.sh",
     "test:api": "tsx scripts/test-api.ts",
     "crawl:news": "curl -X POST http://localhost:3000/api/news/crawl -H 'Authorization: Bearer $CRON_SECRET'",
-    "update:games": "curl -X GET http://localhost:3000/api/cron/update-games -H 'Authorization: Bearer $CRON_SECRET'"
+    "update:games": "curl -X GET http://localhost:3000/api/cron/update-games -H 'Authorization: Bearer $CRON_SECRET'",
+    "translate:batch": "curl 'http://localhost:3000/api/batch/translate-news?limit=5&delay=10000'"
   },
   "dependencies": {
     "@google-cloud/translate": "^9.2.0",
@@ -30,8 +31,15 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-toast": "^1.2.15",
     "@react-three/fiber": "^9.3.0",
+    "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.87.0",
     "@tanstack/react-query": "^5.90.1",
+    "@tiptap/extension-image": "^3.13.0",
+    "@tiptap/extension-link": "^3.13.0",
+    "@tiptap/extension-placeholder": "^3.13.0",
+    "@tiptap/extension-youtube": "^3.13.0",
+    "@tiptap/react": "^3.13.0",
+    "@tiptap/starter-kit": "^3.13.0",
     "@types/jsdom": "^27.0.0",
     "axios": "^1.12.2",
     "bull": "^4.16.5",
@@ -52,6 +60,7 @@
     "puppeteer": "^24.22.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "react-masonry-css": "^1.0.16",
     "react-tweet": "^3.2.2",
     "recharts": "^3.2.1",
     "redis": "^5.8.2",
@@ -63,6 +72,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@tailwindcss/typography": "^0.5.19",
     "@testing-library/react": "^16.3.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^20.19.17",

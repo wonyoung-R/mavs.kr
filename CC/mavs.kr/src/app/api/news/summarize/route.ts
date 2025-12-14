@@ -63,7 +63,7 @@ function generateKeyPointsFromTitle(title: string): string[] {
 
   // 매버릭스 관련 키워드가 있으면 우선 처리
   if (keywords.includes('mavericks') || keywords.includes('dallas') || keywords.includes('mavs')) {
-    keyPoints.push('달라스 매버릭스와 관련된 뉴스입니다.');
+    keyPoints.push('댈러스 매버릭스와 관련된 뉴스입니다.');
   }
 
   // 플레이어 관련 키워드
@@ -85,7 +85,7 @@ function generateKeyPointsFromTitle(title: string): string[] {
 
   // 기본 키포인트
   if (keyPoints.length === 0) {
-    keyPoints.push('NBA 및 달라스 매버릭스 관련 뉴스입니다.');
+    keyPoints.push('NBA 및 댈러스 매버릭스 관련 뉴스입니다.');
     keyPoints.push('자세한 내용은 원문을 확인해주세요.');
   }
 
@@ -101,7 +101,7 @@ function generateSummaryFromTitle(title: string): string {
 
   // 매버릭스 관련 내용인지 확인
   if (keywords.includes('mavericks') || keywords.includes('dallas') || keywords.includes('mavs')) {
-    summary += '이 기사는 달라스 매버릭스와 관련된 뉴스입니다. ';
+    summary += '이 기사는 댈러스 매버릭스와 관련된 뉴스입니다. ';
   } else {
     summary += '이 기사는 NBA 관련 뉴스입니다. ';
   }
