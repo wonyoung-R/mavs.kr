@@ -85,21 +85,30 @@ export async function GET() {
       const gameName = game.name || '';
       const shortName = game.shortName || '';
       const isHome = gameName.includes('at Dallas Mavericks') || shortName.includes('@ DAL');
-      // ... date logic ...
+      // Parse game date (ESPN returns UTC)
       const gameDate = new Date(competition.date);
       const today = new Date();
       const isToday = gameDate.toDateString() === today.toDateString();
 
-      // KST Conversion
-      const usTime = gameDate.getTime();
-      const kstTime = usTime + (15 * 60 * 60 * 1000); // Approximate conversion
-      const kstDate = new Date(kstTime);
+      // KST Conversion - Use proper timezone conversion
+      const kstFormatter = new Intl.DateTimeFormat('ko-KR', {
+        timeZone: 'Asia/Seoul',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      });
 
-      const year = kstDate.getUTCFullYear();
-      const month = String(kstDate.getUTCMonth() + 1).padStart(2, '0');
-      const day = String(kstDate.getUTCDate()).padStart(2, '0');
-      const hours = String(kstDate.getUTCHours()).padStart(2, '0');
-      const minutes = String(kstDate.getUTCMinutes()).padStart(2, '0');
+      const kstParts = kstFormatter.formatToParts(gameDate);
+      const getPart = (type: string) => kstParts.find(p => p.type === type)?.value || '00';
+      
+      const year = getPart('year');
+      const month = getPart('month');
+      const day = getPart('day');
+      const hours = getPart('hour');
+      const minutes = getPart('minute');
 
       const gameDateKst = `${year}-${month}-${day}`;
       const gameTimeKst = `${hours}:${minutes}`;

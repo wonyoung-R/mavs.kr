@@ -22,7 +22,12 @@ export function useNews({
   const fetchNews = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/news/all?limit=${limit}&translate=true`);
+      const minLoadingTime = new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const [response] = await Promise.all([
+        fetch(`/api/news/all?limit=${limit}&translate=true`),
+        minLoadingTime
+      ]);
 
       if (!response.ok) throw new Error('Failed to fetch news');
 

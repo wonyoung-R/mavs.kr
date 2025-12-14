@@ -4,6 +4,7 @@ import "./globals.css";
 
 import { Footer } from "@/components/layout/Footer";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { InstagramFloatingButton } from "@/components/ui/InstagramFloatingButton";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -17,13 +18,19 @@ const anton = Anton({
 });
 
 export const metadata: Metadata = {
-  title: "MAVS.KR - 달라스 매버릭스 한국 팬 커뮤니티",
-  description: "달라스 매버릭스의 최신 뉴스, 경기 정보, 선수 통계, 그리고 팬 커뮤니티를 만나보세요.",
-  keywords: ["달라스 매버릭스", "Dallas Mavericks", "NBA", "루카 돈치치", "키리 어빙"],
+  title: "MAVS.KR - 댈러스 매버릭스 한국 팬 커뮤니티",
+  description: "댈러스 매버릭스의 최신 뉴스, 경기 정보, 선수 통계, 그리고 팬 커뮤니티를 만나보세요.",
+  keywords: ["댈러스 매버릭스", "Dallas Mavericks", "NBA", "루카 돈치치", "키리 어빙"],
   authors: [{ name: "MAVS.KR Team" }],
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+    apple: '/icon.svg',
+  },
   openGraph: {
-    title: "MAVS.KR - 달라스 매버릭스 한국 팬 커뮤니티",
-    description: "달라스 매버릭스의 최신 뉴스, 경기 정보, 선수 통계, 그리고 팬 커뮤니티를 만나보세요.",
+    title: "MAVS.KR - 댈러스 매버릭스 한국 팬 커뮤니티",
+    description: "댈러스 매버릭스의 최신 뉴스, 경기 정보, 선수 통계, 그리고 팬 커뮤니티를 만나보세요.",
     type: "website",
     locale: "ko_KR",
   },
@@ -44,14 +51,15 @@ export default function RootLayout({
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
         />
       </head>
-      <body className={`${inter.variable} ${anton.variable} font-sans antialiased bg-toss-gray-50`}>
+      <body className={`${inter.variable} ${anton.variable} font-sans antialiased bg-[#050510] min-h-screen`}>
         <AuthProvider>
-          <div className="h-screen flex flex-col overflow-hidden">
-            <main className="flex-1 bg-toss-gray-50 overflow-y-auto">
+          <div className="min-h-screen flex flex-col">
+            <main className="flex-1">
               {children}
             </main>
             <Footer />
           </div>
+          <InstagramFloatingButton />
         </AuthProvider>
       </body>
     </html>

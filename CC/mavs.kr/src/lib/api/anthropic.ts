@@ -27,7 +27,7 @@ export async function summarizeNewsWithAnthropic(
     throw new Error('ANTHROPIC_API_KEY is not set');
   }
 
-  const prompt = `다음 뉴스 기사를 한국어로 100자 이내로 요약해주세요. 달라스 매버릭스 팬들을 위한 사이트이므로 관련 내용에 집중해서 요약해주세요.
+  const prompt = `다음 뉴스 기사를 한국어로 100자 이내로 요약해주세요. 댈러스 매버릭스 팬들을 위한 사이트이므로 관련 내용에 집중해서 요약해주세요.
 
 제목: ${title}
 내용: ${content}

@@ -10,6 +10,7 @@ import { ColumnView } from '@/components/home/ColumnView';
 import { CommunityView } from '@/components/home/CommunityView';
 import { NewsArticle } from '@/types/news';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { LogIn, LogOut, User, ChevronDown, Settings, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -155,6 +156,8 @@ function ProfileDropdown() {
 }
 
 export default function NewHomePage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState('home');
   const [initialNews, setInitialNews] = useState<NewsArticle[]>([]);
   const [allGames, setAllGames] = useState<MavericksGame[]>([]);
@@ -162,14 +165,23 @@ export default function NewHomePage() {
   const [todaysMavsGame, setTodaysMavsGame] = useState<any>(null);
   const [loadingTodaysGame, setLoadingTodaysGame] = useState(true);
 
-  // Check for tab query parameter
+  // Handle tab change with URL update
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    // Update URL without full page reload
+    const newUrl = tabId === 'home' ? '/' : `/?tab=${tabId}`;
+    router.push(newUrl, { scroll: false });
+  };
+
+  // Check for tab query parameter on mount and when URL changes
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tab = params.get('tab');
+    const tab = searchParams.get('tab');
     if (tab && ['home', 'schedule', 'news', 'column', 'community'].includes(tab)) {
       setActiveTab(tab);
+    } else if (!tab) {
+      setActiveTab('home');
     }
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     fetch('/api/news/all?limit=6&translate=true')
@@ -183,7 +195,10 @@ export default function NewHomePage() {
 
   const fetchNBAData = async () => {
     try {
-      const gamesResponse = await fetch('/api/nba/espn-schedule');
+      const [gamesResponse] = await Promise.all([
+        fetch('/api/nba/espn-schedule'),
+        new Promise(resolve => setTimeout(resolve, 2000)) // Min 2s loading
+      ]);
       const gamesData = await gamesResponse.json();
       if (gamesData.success && gamesData.data) {
         setAllGames(gamesData.data.all_games || []);
@@ -197,7 +212,10 @@ export default function NewHomePage() {
 
   const fetchTodaysMavsGame = async () => {
     try {
-      const response = await fetch('/api/nba/live-scores');
+      const [response] = await Promise.all([
+        fetch('/api/nba/live-scores'),
+        new Promise(resolve => setTimeout(resolve, 2000)) // Min 2s loading
+      ]);
       const data = await response.json();
       if (data.success && data.data) {
         const mavsGame = data.data.all_games?.find((game: any) => game.is_mavs_game);
@@ -219,10 +237,11 @@ export default function NewHomePage() {
   ];
 
   return (
-    <div className="min-h-full w-full bg-[#050510] relative flex flex-col items-center">
-      {/* Animated Mavericks Logo Background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] opacity-[0.08] animate-wave">
+    <div className="min-h-screen w-full bg-[#050510] relative flex flex-col items-center overflow-x-hidden">
+      {/* Fixed Background Container - prevents separate scrolling */}
+      <div className="fixed inset-0 z-0 overflow-hidden">
+        {/* Animated Mavericks Logo Background */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] md:w-[800px] h-[600px] md:h-[800px] opacity-[0.08] animate-wave pointer-events-none">
           <img
             src="https://upload.wikimedia.org/wikipedia/en/thumb/9/97/Dallas_Mavericks_logo.svg/1200px-Dallas_Mavericks_logo.svg.png"
             alt="Mavericks Logo"
@@ -232,21 +251,17 @@ export default function NewHomePage() {
             }}
           />
         </div>
+
+        {/* Background Gradient */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] md:w-[1200px] h-[800px] md:h-[1200px] bg-blue-600/10 rounded-full blur-[150px] pointer-events-none" />
+
+        {/* Original Background */}
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-[#050510] to-[#050510] pointer-events-none"></div>
+        <div className="absolute bottom-0 right-0 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-blue-600/5 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
       </div>
 
-      {/* Background Gradient */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[1200px] bg-blue-600/10 rounded-full blur-[150px]" />
-      </div>
-
-      {/* Original Background */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-[#050510] to-[#050510]"></div>
-        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-blue-600/5 rounded-full blur-[100px] animate-pulse"></div>
-      </div>
-
-      {/* Top Navigation Buttons */}
-      <div className="absolute top-4 right-4 z-50 flex items-center gap-3">
+      {/* Top Navigation Buttons - Hidden on mobile (shown in hamburger menu) */}
+      <div className="hidden md:flex absolute top-4 right-4 z-50 items-center gap-3">
         <ProfileDropdown />
       </div>
 
@@ -255,7 +270,7 @@ export default function NewHomePage() {
         <TabNavigation
           tabs={tabs}
           activeTab={activeTab}
-          onTabChange={setActiveTab}
+          onTabChange={handleTabChange}
         />
       </div>
 

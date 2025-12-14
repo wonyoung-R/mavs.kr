@@ -147,6 +147,7 @@ enum ForumCategory {
   COLUMN
   MARKET
   MEETUP
+  FREE
 }
 
 enum MeetupPurpose {

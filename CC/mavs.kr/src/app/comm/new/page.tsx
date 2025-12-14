@@ -9,6 +9,7 @@ import Link from 'next/link';
 import TiptapEditor from '@/components/editor/TiptapEditor';
 import { useAuth } from '@/contexts/AuthContext';
 import { createColumn } from '@/app/actions/column';
+import { createPost } from '@/app/actions/post';
 
 function NewPostForm() {
     const router = useRouter();
@@ -21,6 +22,11 @@ function NewPostForm() {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [category, setCategory] = useState(isColumnMode ? 'COLUMN' : 'free');
+    
+    // Extra fields
+    const [price, setPrice] = useState('');
+    const [location, setLocation] = useState('');
+    
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
@@ -46,16 +52,20 @@ function NewPostForm() {
         setIsSubmitting(true);
 
         try {
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('content', content);
+            
             if (isColumnMode) {
-                const formData = new FormData();
-                formData.append('title', title);
-                formData.append('content', content);
-
                 await createColumn(formData, session?.access_token);
                 router.push('/?tab=column');
             } else {
-                // TODO: Implement regular post API logic
-                alert('일반 게시글 작성 기능은 준비 중입니다 (백엔드 연동 필요)');
+                formData.append('category', category);
+                if (category === 'market' && price) formData.append('price', price);
+                if (category === 'meetup' && location) formData.append('location', location);
+                
+                await createPost(formData, session?.access_token);
+                router.push('/comm');
             }
         } catch (error) {
             console.error(error);
@@ -112,6 +122,33 @@ function NewPostForm() {
                                         </select>
                                     </div>
                                 )}
+                                
+                                {category === 'market' && (
+                                    <div className="md:col-span-1">
+                                        <label className="block text-sm font-medium text-slate-400 mb-2">가격 (원)</label>
+                                        <input
+                                            type="number"
+                                            value={price}
+                                            onChange={(e) => setPrice(e.target.value)}
+                                            placeholder="가격 입력"
+                                            className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 placeholder-slate-500"
+                                        />
+                                    </div>
+                                )}
+                                
+                                {category === 'meetup' && (
+                                    <div className="md:col-span-1">
+                                        <label className="block text-sm font-medium text-slate-400 mb-2">장소</label>
+                                        <input
+                                            type="text"
+                                            value={location}
+                                            onChange={(e) => setLocation(e.target.value)}
+                                            placeholder="모임 장소"
+                                            className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 placeholder-slate-500"
+                                        />
+                                    </div>
+                                )}
+
                                 <div className={isColumnMode ? "md:col-span-4" : "md:col-span-3"}>
                                     <label className="block text-sm font-medium text-slate-400 mb-2">제목</label>
                                     <input
@@ -133,7 +170,7 @@ function NewPostForm() {
                                     <textarea
                                         value={content}
                                         onChange={(e) => setContent(e.target.value)}
-                                        placeholder="달라스 매버릭스 팬들과 나누고 싶은 이야기를 적어주세요."
+                                        placeholder="댈러스 매버릭스 팬들과 나누고 싶은 이야기를 적어주세요."
                                         className="w-full h-96 bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-4 text-white focus:outline-none focus:border-blue-500 placeholder-slate-500 resize-none leading-relaxed"
                                     />
                                 )}

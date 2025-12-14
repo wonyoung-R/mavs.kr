@@ -7,7 +7,7 @@ interface TranslationCache {
 const TRANSLATION_MAP: TranslationCache = {
   // 기본 농구 용어
   'Mavericks': '매버릭스',
-  'Dallas': '달라스',
+  'Dallas': '댈러스',
   'Luka Doncic': '루카 돈치치',
   'Kyrie Irving': '키리 어빙',
   'NBA': 'NBA',

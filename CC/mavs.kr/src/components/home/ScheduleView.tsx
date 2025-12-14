@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
 
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Calendar } from 'lucide-react';
+import { Calendar, Clock, MapPin, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getTeamLogo } from '@/lib/utils/team-logos';
 
 interface ScheduleViewProps {
@@ -26,25 +26,58 @@ const MONTHS = [
 
 export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
     const [selectedMonth, setSelectedMonth] = useState('');
+    const monthScrollRef = useRef<HTMLDivElement>(null);
+
+    // Navigate months with arrows
+    const scrollMonths = (direction: 'left' | 'right') => {
+        if (monthScrollRef.current) {
+            const scrollAmount = 120;
+            monthScrollRef.current.scrollBy({
+                left: direction === 'left' ? -scrollAmount : scrollAmount,
+                behavior: 'smooth'
+            });
+        }
+    };
+
+    // Get current month index for navigation
+    const currentMonthIndex = MONTHS.findIndex(m => m.id === selectedMonth);
+    const canScrollLeft = currentMonthIndex > 0;
+    const canScrollRight = currentMonthIndex < MONTHS.length - 1;
+
+    const navigateMonth = (direction: 'prev' | 'next') => {
+        const newIndex = direction === 'prev' ? currentMonthIndex - 1 : currentMonthIndex + 1;
+        if (newIndex >= 0 && newIndex < MONTHS.length) {
+            setSelectedMonth(MONTHS[newIndex].id);
+        }
+    };
+
+    // Find the next upcoming game (closest future game that hasn't been played)
+    const nextGame = useMemo(() => {
+        if (!allGames || allGames.length === 0) return null;
+        
+        const now = new Date();
+        const upcomingGames = allGames
+            .filter(game => game.status === 'upcoming' || game.status === 'today')
+            .sort((a, b) => new Date(a.game_date_kst).getTime() - new Date(b.game_date_kst).getTime());
+        
+        return upcomingGames[0] || null;
+    }, [allGames]);
 
     useEffect(() => {
         // Set current month on load
         if (!selectedMonth) {
-            const currentMonth = new Date().getMonth() + 1; // 0-indexed
+            const currentMonth = new Date().getMonth() + 1;
             const monthStr = String(currentMonth).padStart(2, '0');
-            // If current month is in our list, pick it, otherwise default to likely season start or end
             const found = MONTHS.find(m => m.id === monthStr);
             if (found) {
                 setSelectedMonth(monthStr);
             } else {
-                // If off-season (e.g. Aug), maybe show Oct or last played month
                 setSelectedMonth('10');
             }
         }
     }, [selectedMonth]);
 
     const filteredGames = allGames ? allGames.filter(game => {
-        // game.game_date_kst is "YYYY-MM-DD"
         const month = game.game_date_kst.split('-')[1];
         return month === selectedMonth;
     }) : [];
@@ -52,14 +85,115 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
     // Sort: Dates ascending
     filteredGames.sort((a, b) => new Date(a.game_date_kst).getTime() - new Date(b.game_date_kst).getTime());
 
+    // Format KST date nicely
+    const formatKSTDate = (dateStr: string) => {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('ko-KR', { 
+            month: 'long', 
+            day: 'numeric',
+            weekday: 'long'
+        });
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.5 }}
-            className="w-full max-w-4xl mx-auto p-4"
+            className="w-full max-w-4xl mx-auto p-4 space-y-6"
         >
+            {/* Next Game Banner */}
+            {!loadingGames && nextGame && (
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                >
+                    <a
+                        href={`https://www.espn.com/nba/boxscore/_/gameId/${nextGame.game_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block"
+                    >
+                        <Card className="bg-gradient-to-br from-blue-900/60 via-blue-800/40 to-purple-900/40 border-blue-500/30 rounded-2xl overflow-hidden shadow-xl hover:shadow-blue-900/30 transition-all duration-300 hover:scale-[1.02]">
+                            <CardContent className="p-6">
+                                {/* Header with Date & Time */}
+                                <div className="flex flex-col items-center mb-6">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                                        <span className="text-green-400 text-sm font-bold uppercase tracking-wider">Next Game</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 text-white">
+                                        <div className="flex items-center gap-2">
+                                            <Calendar className="w-4 h-4 text-blue-400" />
+                                            <span className="font-bold">{formatKSTDate(nextGame.game_date_kst)}</span>
+                                        </div>
+                                        <span className="text-white/30">|</span>
+                                        <div className="flex items-center gap-2">
+                                            <Clock className="w-4 h-4 text-blue-400" />
+                                            <span className="font-mono font-bold text-blue-300">{nextGame.game_time_kst} KST</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Matchup */}
+                                <div className="flex items-center justify-center gap-6 md:gap-12 mb-4">
+                                    {/* Away Team */}
+                                    <div className="flex flex-col items-center gap-2">
+                                        <div className="relative w-16 h-16 md:w-24 md:h-24 drop-shadow-2xl">
+                                            <Image
+                                                src={getTeamLogo(nextGame.is_home ? nextGame.opponent : 'Mavericks')}
+                                                alt="Away Team"
+                                                fill
+                                                className="object-contain"
+                                                unoptimized
+                                            />
+                                        </div>
+                                        <span className={`text-sm md:text-lg font-bold ${!nextGame.is_home ? 'text-blue-400' : 'text-white'}`}>
+                                            {nextGame.is_home ? nextGame.opponent : 'DAL'}
+                                        </span>
+                                    </div>
+
+                                    {/* VS */}
+                                    <div className="flex flex-col items-center">
+                                        <Zap className="w-6 h-6 text-yellow-400 mb-2" />
+                                        <span className="text-2xl md:text-3xl font-black text-white/50">VS</span>
+                                    </div>
+
+                                    {/* Home Team */}
+                                    <div className="flex flex-col items-center gap-2">
+                                        <div className="relative w-16 h-16 md:w-24 md:h-24 drop-shadow-2xl">
+                                            <Image
+                                                src={getTeamLogo(nextGame.is_home ? 'Mavericks' : nextGame.opponent)}
+                                                alt="Home Team"
+                                                fill
+                                                className="object-contain"
+                                            />
+                                        </div>
+                                        <span className={`text-sm md:text-lg font-bold ${nextGame.is_home ? 'text-blue-400' : 'text-white'}`}>
+                                            {nextGame.is_home ? 'DAL' : nextGame.opponent}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Venue & Home/Away */}
+                                <div className="flex items-center justify-center gap-3 text-sm text-slate-400">
+                                    <div className="flex items-center gap-1.5">
+                                        <MapPin className="w-3.5 h-3.5 text-purple-400" />
+                                        <span>{nextGame.venue}</span>
+                                    </div>
+                                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${nextGame.is_home ? 'bg-blue-600/30 text-blue-300' : 'bg-purple-600/30 text-purple-300'}`}>
+                                        {nextGame.is_home ? 'HOME' : 'AWAY'}
+                                    </span>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </a>
+                </motion.div>
+            )}
+
+            {/* Schedule Card */}
             <Card className="bg-[#0f111a]/80 backdrop-blur-md border-white/5 rounded-3xl overflow-hidden shadow-2xl">
                 <CardHeader className="pb-6 border-b border-white/5">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -68,24 +202,73 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
                             <span>Game Schedule</span>
                         </CardTitle>
 
-                        <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl overflow-x-auto custom-scrollbar md:w-auto w-full">
-                            {MONTHS.map((month) => (
-                                <button
-                                    key={month.id}
-                                    onClick={() => setSelectedMonth(month.id)}
-                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 whitespace-nowrap ${selectedMonth === month.id
-                                        ? 'bg-blue-600 text-white shadow-lg'
-                                        : 'text-gray-400 hover:text-white hover:bg-white/5'
-                                        }`}
-                                >
-                                    {month.label}
-                                </button>
-                            ))}
+                        {/* Month Navigation - Mobile Swipeable */}
+                        <div className="flex items-center gap-2 w-full md:w-auto">
+                            {/* Left Arrow - Desktop & Mobile */}
+                            <button
+                                onClick={() => navigateMonth('prev')}
+                                disabled={!canScrollLeft}
+                                className={`flex-shrink-0 p-2 rounded-full transition-all duration-200 ${
+                                    canScrollLeft 
+                                        ? 'bg-white/10 text-white hover:bg-blue-600/50 active:scale-95' 
+                                        : 'bg-white/5 text-gray-600 cursor-not-allowed'
+                                }`}
+                            >
+                                <ChevronLeft className="w-5 h-5" />
+                            </button>
+
+                            {/* Month Pills - Scrollable without visible scrollbar */}
+                            <div 
+                                ref={monthScrollRef}
+                                className="flex-1 overflow-x-auto scrollbar-hide"
+                                style={{ 
+                                    scrollbarWidth: 'none', 
+                                    msOverflowStyle: 'none',
+                                    WebkitOverflowScrolling: 'touch'
+                                }}
+                            >
+                                <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl w-max mx-auto">
+                                    {MONTHS.map((month) => (
+                                        <motion.button
+                                            key={month.id}
+                                            onClick={() => setSelectedMonth(month.id)}
+                                            whileTap={{ scale: 0.95 }}
+                                            className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 whitespace-nowrap ${
+                                                selectedMonth === month.id
+                                                    ? 'text-white'
+                                                    : 'text-gray-400 hover:text-white'
+                                            }`}
+                                        >
+                                            {selectedMonth === month.id && (
+                                                <motion.div
+                                                    layoutId="activeMonth"
+                                                    className="absolute inset-0 bg-blue-600 rounded-lg shadow-lg shadow-blue-500/30"
+                                                    transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
+                                                />
+                                            )}
+                                            <span className="relative z-10">{month.label}</span>
+                                        </motion.button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Right Arrow - Desktop & Mobile */}
+                            <button
+                                onClick={() => navigateMonth('next')}
+                                disabled={!canScrollRight}
+                                className={`flex-shrink-0 p-2 rounded-full transition-all duration-200 ${
+                                    canScrollRight 
+                                        ? 'bg-white/10 text-white hover:bg-blue-600/50 active:scale-95' 
+                                        : 'bg-white/5 text-gray-600 cursor-not-allowed'
+                                }`}
+                            >
+                                <ChevronRight className="w-5 h-5" />
+                            </button>
                         </div>
                     </div>
                 </CardHeader>
 
-                <CardContent className="p-0 min-h-[500px]">
+                <CardContent className="p-0 min-h-[400px]">
                     {loadingGames ? (
                         <div className="space-y-4 p-6">
                             {[1, 2, 3, 4, 5].map(i => (
@@ -103,17 +286,18 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
                                         rel="noopener noreferrer"
                                         className="group hover:bg-white/5 transition-colors duration-300 p-4 sm:p-6 grid grid-cols-12 gap-4 items-center cursor-pointer block"
                                     >
-                                        {/* Date & Status */}
-                                        <div className="col-span-3 sm:col-span-2 text-center border-r border-white/5 pr-4">
-                                            <div className="text-xs font-semibold text-blue-400 mb-1 uppercase tracking-wider">
-                                                {new Date(game.game_date_kst).toLocaleDateString('en-US', { weekday: 'short' })}
+                                        {/* Date & Time */}
+                                        <div className="col-span-3 sm:col-span-2 text-center border-r border-white/5 pr-2 sm:pr-4">
+                                            <div className="text-lg sm:text-xl font-bold text-white">
+                                                {new Date(game.game_date_kst).getMonth() + 1}/{new Date(game.game_date_kst).getDate()}
                                             </div>
-                                            <div className="text-xl font-bold text-white mb-1">
-                                                {new Date(game.game_date_kst).getDate()}
+                                            <div className="text-[10px] sm:text-xs text-blue-400 font-medium">
+                                                {new Date(game.game_date_kst).toLocaleDateString('ko-KR', { weekday: 'short' })}
                                             </div>
-                                            <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full inline-block ${game.status === 'finished' ? 'bg-gray-800 text-gray-400' :
-                                                game.status === 'live' ? 'bg-green-500/20 text-green-400 animate-pulse' :
-                                                    'bg-blue-600/20 text-blue-300'
+                                            <div className={`text-[10px] sm:text-xs font-bold mt-1 ${
+                                                game.status === 'finished' ? 'text-gray-500' :
+                                                game.status === 'live' ? 'text-green-400 animate-pulse' :
+                                                    'text-blue-300'
                                                 }`}>
                                                 {game.status === 'finished' ? 'FINAL' :
                                                     game.status === 'live' ? 'LIVE' :

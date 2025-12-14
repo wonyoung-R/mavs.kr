@@ -1,9 +1,11 @@
+// src/app/api/news/content/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { JSDOM } from 'jsdom';
+import { prisma } from '@/lib/db/prisma';
 
 export async function POST(request: NextRequest) {
   try {
-    const { url } = await request.json();
+    const { id, url } = await request.json();
 
     if (!url) {
       return NextResponse.json(
@@ -11,6 +13,47 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // 1. Try to fetch from DB first if ID is provided
+    if (id) {
+        const news = await prisma.news.findUnique({
+            where: { id },
+            select: { content: true, contentKr: true, titleKr: true }
+        });
+
+        if (news && (news.content || news.contentKr)) {
+            console.log(`Found content in DB for ${id}`);
+            return NextResponse.json({
+                success: true,
+                data: {
+                    content: news.content,
+                    content_kr: news.contentKr,
+                    title_kr: news.titleKr
+                }
+            });
+        }
+    }
+
+    // 2. Fallback: try to find by URL if ID lookup failed or ID wasn't provided
+    const newsByUrl = await prisma.news.findFirst({
+        where: { sourceUrl: url },
+        select: { content: true, contentKr: true, titleKr: true }
+    });
+
+    if (newsByUrl && (newsByUrl.content || newsByUrl.contentKr)) {
+        console.log(`Found content in DB for URL ${url}`);
+        return NextResponse.json({
+            success: true,
+            data: {
+                content: newsByUrl.content,
+                content_kr: newsByUrl.contentKr,
+                title_kr: newsByUrl.titleKr
+            }
+        });
+    }
+
+    // 3. Fallback: Scrape from URL
+    console.log(`Content not in DB, scraping: ${url}`);
 
     // URL 유효성 검사
     try {
@@ -117,9 +160,12 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({
-      content,
-      url,
       success: true,
+      data: {
+          content,
+          content_kr: null, // Scraped on fly, so no translation yet
+          title_kr: null
+      }
     });
 
   } catch (error) {

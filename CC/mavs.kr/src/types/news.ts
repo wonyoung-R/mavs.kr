@@ -34,16 +34,13 @@ export interface NewsArticle {
   title: string;
   titleKr?: string; // 번역된 한국어 제목
   description?: string;
+  contentKr?: string; // 한글 본문 추가
   url: string;
   image?: string;
   published: string;
   source: string;
   author?: string;
   categories?: string[];
-
-
-
-
 }
 
 export interface NewsFilter {

@@ -2,7 +2,7 @@
 
 ## 개요
 
-MAVS.KR API는 달라스 매버릭스 관련 데이터를 제공하는 RESTful API입니다. NBA API와 뉴스 크롤링을 통해 실시간 데이터를 제공합니다.
+MAVS.KR API는 댈러스 매버릭스 관련 데이터를 제공하는 RESTful API입니다. NBA API와 뉴스 크롤링을 통해 실시간 데이터를 제공합니다.
 
 ## 기본 정보
 

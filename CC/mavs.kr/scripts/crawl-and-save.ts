@@ -20,10 +20,9 @@ async function main() {
 
     // Fetch news from each source API
     const sources = [
-        { name: 'ESPN', endpoint: 'http://localhost:3002/api/news/espn?limit=10' },
-        { name: 'Mavs Moneyball', endpoint: 'http://localhost:3002/api/news/mavsmoneyball?limit=10' },
-        { name: 'Smoking Cuban', endpoint: 'http://localhost:3002/api/news/smoking-cuban?limit=10' },
-        { name: 'Naver', endpoint: 'http://localhost:3002/api/news/naver?limit=10' },
+        { name: 'ESPN', endpoint: 'http://localhost:3000/api/news/espn?limit=10' },
+        { name: 'Mavs Moneyball', endpoint: 'http://localhost:3000/api/news/mavsmoneyball?limit=10' },
+        { name: 'Smoking Cuban', endpoint: 'http://localhost:3000/api/news/smoking-cuban?limit=10' },
     ];
 
     let totalSaved = 0;

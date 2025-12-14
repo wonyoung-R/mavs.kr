@@ -19,7 +19,8 @@
     "check-status": "./scripts/check-status.sh",
     "test:api": "tsx scripts/test-api.ts",
     "crawl:news": "curl -X POST http://localhost:3000/api/news/crawl -H 'Authorization: Bearer $CRON_SECRET'",
-    "update:games": "curl -X GET http://localhost:3000/api/cron/update-games -H 'Authorization: Bearer $CRON_SECRET'"
+    "update:games": "curl -X GET http://localhost:3000/api/cron/update-games -H 'Authorization: Bearer $CRON_SECRET'",
+    "translate:batch": "curl 'http://localhost:3000/api/batch/translate-news?limit=5&delay=10000'"
   },
   "dependencies": {
     "@google-cloud/translate": "^9.2.0",

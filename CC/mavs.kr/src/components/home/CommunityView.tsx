@@ -1,340 +1,550 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Card, CardContent } from '@/components/ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { MessageCircle, Heart, MapPin, Search } from 'lucide-react';
+import { MessageCircle, Heart, MapPin, Calendar, ArrowRight, Users, DollarSign, ArrowLeft, Send } from 'lucide-react';
 import Link from 'next/link';
-import Masonry from 'react-masonry-css';
+import { formatDistanceToNow, format } from 'date-fns';
+import { ko } from 'date-fns/locale';
+import MavericksLoading from '@/components/ui/MavericksLoading';
+import TiptapEditor from '@/components/editor/TiptapEditor';
+import { useAuth } from '@/contexts/AuthContext';
+import { createCommunityPost } from '@/app/actions/community';
 
-interface Post {
+interface CommunityPost {
     id: string;
     title: string;
     content: string;
-    author: string;
+    category: string;
+    price?: number | null;
+    meetupLocation?: string | null;
+    meetupDate?: string | null;
+    meetupPurpose?: string | null;
     createdAt: string;
-    likes: number;
-    comments: number;
-    category: 'free' | 'news' | 'market' | 'sharing' | 'meetup';
-    isHot?: boolean;
-    price?: number;
-    location?: string;
-    snsUrl?: string;
+    author: {
+        id: string;
+        username: string;
+        image: string | null;
+    };
+    _count: {
+        comments: number;
+        votes: number;
+        likes: number;
+    };
 }
 
 const CATEGORIES = [
     { id: 'all', name: '전체', icon: '🔥' },
-    { id: 'free', name: '자유게시판', icon: '🗣️' },
-    { id: 'news', name: 'MAVS NEWS', icon: '📰' },
-    { id: 'market', name: '중고장터', icon: '🛒' },
-    { id: 'sharing', name: '나눔', icon: '🎁' },
-    { id: 'meetup', name: '오프모임', icon: '🍺' },
+    { id: 'FREE', name: '자유게시판', icon: '🗣️' },
+    { id: 'MARKET', name: '중고장터', icon: '🛒' },
+    { id: 'MEETUP', name: '오프라인 모임', icon: '🍺' },
 ];
 
+const WRITE_CATEGORIES = [
+    { id: 'FREE', name: '자유게시판', icon: '🗣️', description: '자유롭게 이야기를 나눠보세요' },
+    { id: 'MARKET', name: '중고장터', icon: '🛒', description: '매버릭스 굿즈를 사고 팔아요' },
+    { id: 'MEETUP', name: '오프라인 모임', icon: '🍺', description: '같이 경기 보러 가요!' },
+];
+
+const MEETUP_PURPOSES = [
+    { id: 'DRINK', name: '🍺 술 한잔' },
+    { id: 'MEAL', name: '🍽️ 식사' },
+    { id: 'THUNDER', name: '⚡ 번개 직관' },
+    { id: 'EXERCISE', name: '🏀 운동' },
+    { id: 'MEETING', name: '🤝 정모' },
+];
+
+const CATEGORY_COLORS: Record<string, string> = {
+    FREE: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
+    MARKET: 'bg-green-500/10 border-green-500/20 text-green-400',
+    MEETUP: 'bg-purple-500/10 border-purple-500/20 text-purple-400',
+};
+
 export function CommunityView() {
+    const { user, session } = useAuth();
+    const [posts, setPosts] = useState<CommunityPost[]>([]);
+    const [loading, setLoading] = useState(true);
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [showWriteForm, setShowWriteForm] = useState(false);
 
-    const posts: Post[] = [
-        {
-            id: '1',
-            title: '돈치치 MVP 가능성 진지하게 논의해봅시다',
-            content: '이번 시즌 돈치치의 활약이 정말 대단하네요. MVP 후보로 거론되고 있는데 여러분 생각은 어떠신가요?',
-            author: 'MavsFan2024',
-            createdAt: '2시간 전',
-            likes: 156,
-            comments: 23,
-            category: 'free',
-            isHot: true
-        },
-        {
-            id: '2',
-            title: '댈러스 매버릭스 공식 트윗',
-            content: '오늘 경기 승리 소식입니다!',
-            author: 'MavsOfficial',
-            createdAt: '4시간 전',
-            likes: 342,
-            comments: 45,
-            category: 'news',
-            snsUrl: 'https://twitter.com/dallasmavs/status/1789012345678901234'
-        },
-        {
-            id: '3',
-            title: '돈치치 하이라이트 영상',
-            content: '어제 경기 정말 미쳤습니다..',
-            author: 'HighlightKing',
-            createdAt: '6시간 전',
-            likes: 89,
-            comments: 12,
-            category: 'news',
-            snsUrl: 'https://youtu.be/dQw4w9WgXcQ'
-        },
-        {
-            id: '4',
-            title: '[판매] 어빙 유니폼(L) 팝니다',
-            content: '사이즈 미스로 판매합니다. 택 달린 새상품입니다.',
-            author: 'Jerseyman',
-            createdAt: '8시간 전',
-            likes: 4,
-            comments: 8,
-            category: 'market',
-            price: 120000
-        },
-        {
-            id: '5',
-            title: '[나눔] 22-23 시즌 스케줄표 나눔해요',
-            content: '직관 갔다가 받아온건데 필요하신 분 드립니다.',
-            author: 'KindFan',
-            createdAt: '10시간 전',
-            likes: 24,
-            comments: 15,
-            category: 'sharing'
-        },
-        {
-            id: '6',
-            title: '이번 주말 홍대입구역 벙개 하실 분?',
-            content: '레이커스전 같이 보면서 응원해요!',
-            author: 'SeoulMav',
-            createdAt: '1일 전',
-            likes: 15,
-            comments: 32,
-            category: 'meetup',
-            location: '홍대입구역 3번 출구'
+    // Write form states
+    const [writeCategory, setWriteCategory] = useState('FREE');
+    const [title, setTitle] = useState('');
+    const [content, setContent] = useState('');
+    const [price, setPrice] = useState('');
+    const [meetupLocation, setMeetupLocation] = useState('');
+    const [meetupDate, setMeetupDate] = useState('');
+    const [meetupPurpose, setMeetupPurpose] = useState('DRINK');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const fetchPosts = async (category: string) => {
+        try {
+            const query = category === 'all' ? '' : `?category=${category}`;
+            const response = await fetch(`/api/community${query}`);
+            const data = await response.json();
+            setPosts(data.posts || []);
+        } catch (err) {
+            console.error('Failed to load community posts:', err);
         }
-    ];
-
-    const categories = CATEGORIES.map(cat => ({
-        ...cat,
-        count: cat.id === 'all'
-            ? posts.length
-            : posts.filter(p => p.category === cat.id).length
-    }));
-
-    const filteredPosts = selectedCategory === 'all'
-        ? posts
-        : posts.filter(post => post.category === selectedCategory);
-
-    const breakpointColumnsObj = {
-        default: 3,
-        1100: 2,
-        700: 1
     };
 
+    useEffect(() => {
+        setLoading(true);
+        const minLoadingTime = new Promise(resolve => setTimeout(resolve, 1500));
+        
+        Promise.all([fetchPosts(selectedCategory), minLoadingTime]).then(() => {
+            setLoading(false);
+        });
+    }, [selectedCategory]);
+
+    const handleCategoryChange = (categoryId: string) => {
+        setSelectedCategory(categoryId);
+    };
+
+    const handleWriteClick = () => {
+        if (!user) {
+            alert('로그인이 필요합니다.');
+            return;
+        }
+        setShowWriteForm(true);
+    };
+
+    const handleCancelWrite = () => {
+        setShowWriteForm(false);
+        // Reset form
+        setTitle('');
+        setContent('');
+        setPrice('');
+        setMeetupLocation('');
+        setMeetupDate('');
+        setWriteCategory('FREE');
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!title.trim() || !content.trim()) {
+            alert('제목과 내용을 입력해주세요.');
+            return;
+        }
+
+        if (writeCategory === 'MARKET' && !price) {
+            alert('가격을 입력해주세요.');
+            return;
+        }
+
+        if (writeCategory === 'MEETUP' && (!meetupLocation || !meetupDate)) {
+            alert('모임 장소와 날짜를 입력해주세요.');
+            return;
+        }
+
+        // Double-check user is still logged in
+        if (!user || !session?.access_token) {
+            alert('로그인 세션이 만료되었습니다. 다시 로그인해주세요.');
+            return;
+        }
+
+        setIsSubmitting(true);
+
+        try {
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('content', content);
+            formData.append('category', writeCategory);
+            
+            if (writeCategory === 'MARKET') {
+                formData.append('price', price);
+            }
+            
+            if (writeCategory === 'MEETUP') {
+                formData.append('meetupLocation', meetupLocation);
+                formData.append('meetupDate', meetupDate);
+                formData.append('meetupPurpose', meetupPurpose);
+            }
+
+            console.log('Submitting with token:', session.access_token ? 'present' : 'missing');
+            await createCommunityPost(formData, session.access_token);
+            
+            // Reset and refresh
+            handleCancelWrite();
+            await fetchPosts(selectedCategory);
+            
+        } catch (error) {
+            console.error(error);
+            alert('작성 실패: ' + (error instanceof Error ? error.message : '알 수 없는 오류'));
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    // Extract text summary from HTML content
+    const getTextSummary = (content: string, maxLength = 100) => {
+        const text = content.replace(/<[^>]*>/g, '');
+        return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    };
+
+    const featuredPost = posts[0];
+    const recentPosts = posts.slice(1, 7);
+
+    if (loading) {
+        return (
+            <div className="min-h-[400px] flex items-center justify-center">
+                <MavericksLoading fullScreen={false} />
+            </div>
+        );
+    }
+
+    // Write Form View
+    if (showWriteForm) {
+        const selectedWriteCategory = WRITE_CATEGORIES.find(c => c.id === writeCategory);
+
+        return (
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="w-full max-w-4xl mx-auto space-y-6"
+            >
+                {/* Header */}
+                <div className="flex items-center gap-4">
+                    <Button
+                        variant="ghost"
+                        size="md"
+                        className="hover:bg-white/10 text-white p-2 w-10"
+                        onClick={handleCancelWrite}
+                    >
+                        <ArrowLeft className="w-5 h-5" />
+                    </Button>
+                    <h2 className="text-2xl font-bold text-white">커뮤니티 글쓰기</h2>
+                </div>
+
+                {/* Editor Card */}
+                <Card className="bg-slate-900/50 backdrop-blur-xl border-white/10">
+                    <CardContent className="p-6">
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            {/* Category Selection */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-400 mb-3">카테고리 선택</label>
+                                <div className="grid grid-cols-3 gap-3">
+                                    {WRITE_CATEGORIES.map((cat) => (
+                                        <button
+                                            key={cat.id}
+                                            type="button"
+                                            onClick={() => setWriteCategory(cat.id)}
+                                            className={`p-4 rounded-xl border transition-all text-left ${
+                                                writeCategory === cat.id
+                                                    ? 'bg-blue-600/20 border-blue-500 text-white'
+                                                    : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:border-slate-600'
+                                            }`}
+                                        >
+                                            <div className="text-2xl mb-2">{cat.icon}</div>
+                                            <div className="font-medium">{cat.name}</div>
+                                            <div className="text-xs opacity-70 mt-1">{cat.description}</div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Title */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-400 mb-2">제목</label>
+                                <input
+                                    type="text"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    placeholder={
+                                        writeCategory === 'MARKET' ? '[판매] 또는 [구매]로 시작해주세요' :
+                                        writeCategory === 'MEETUP' ? '모임 제목을 입력하세요' :
+                                        '제목을 입력하세요'
+                                    }
+                                    className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 placeholder-slate-500"
+                                />
+                            </div>
+
+                            {/* Market: Price */}
+                            {writeCategory === 'MARKET' && (
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-400 mb-2 flex items-center gap-2">
+                                        <DollarSign className="w-4 h-4" /> 가격
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={price}
+                                        onChange={(e) => setPrice(e.target.value)}
+                                        placeholder="가격을 입력하세요 (원)"
+                                        className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 placeholder-slate-500"
+                                    />
+                                </div>
+                            )}
+
+                            {/* Meetup: Location, Date, Purpose */}
+                            {writeCategory === 'MEETUP' && (
+                                <div className="grid md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-400 mb-2 flex items-center gap-2">
+                                            <MapPin className="w-4 h-4" /> 장소
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={meetupLocation}
+                                            onChange={(e) => setMeetupLocation(e.target.value)}
+                                            placeholder="예: 홍대입구역 3번 출구"
+                                            className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 placeholder-slate-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-400 mb-2 flex items-center gap-2">
+                                            <Calendar className="w-4 h-4" /> 날짜/시간
+                                        </label>
+                                        <input
+                                            type="datetime-local"
+                                            value={meetupDate}
+                                            onChange={(e) => setMeetupDate(e.target.value)}
+                                            className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-400 mb-2">모임 목적</label>
+                                        <select
+                                            value={meetupPurpose}
+                                            onChange={(e) => setMeetupPurpose(e.target.value)}
+                                            className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500"
+                                        >
+                                            {MEETUP_PURPOSES.map(p => (
+                                                <option key={p.id} value={p.id}>{p.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Content - TipTap Editor */}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-400 mb-2">내용</label>
+                                <TiptapEditor content={content} onChange={setContent} placeholder="내용을 입력하세요..." />
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white"
+                                    onClick={handleCancelWrite}
+                                >
+                                    취소
+                                </Button>
+                                <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-8" disabled={isSubmitting}>
+                                    <Send className="w-4 h-4 mr-2" />
+                                    {selectedWriteCategory?.icon} {selectedWriteCategory?.name} 등록
+                                </Button>
+                            </div>
+                        </form>
+                    </CardContent>
+                </Card>
+            </motion.div>
+        );
+    }
+
+    // Main List View
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
-            className="w-full max-w-7xl mx-auto space-y-6"
+            className="w-full max-w-6xl mx-auto space-y-8"
         >
             {/* Header */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-3xl font-bold text-white mb-2">Community</h2>
-                    <p className="text-slate-400">달라스 매버릭스 팬들과의 소통 공간</p>
+                    <p className="text-slate-400">댈러스 매버릭스 팬들과의 소통 공간</p>
                 </div>
-
-                <div className="flex gap-3 w-full md:w-auto">
-                    <div className="relative flex-1 md:w-64">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                        <input
-                            type="text"
-                            placeholder="게시글 검색..."
-                            className="w-full bg-slate-900/50 border border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-white focus:outline-none focus:border-blue-500 placeholder-slate-500"
-                        />
-                    </div>
-                    <Button
-                        onClick={() => setShowWriteForm(!showWriteForm)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white whitespace-nowrap"
-                    >
-                        {showWriteForm ? '목록으로' : '글쓰기'}
-                    </Button>
-                </div>
+                <button 
+                    onClick={handleWriteClick}
+                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-colors"
+                >
+                    ✍️ 글쓰기
+                </button>
             </div>
 
-            {/* Categories Tab */}
+            {/* Category Tabs */}
             <div className="flex overflow-x-auto pb-4 gap-2 custom-scrollbar">
-                {categories.map((category) => (
+                {CATEGORIES.map((category) => (
                     <button
                         key={category.id}
-                        onClick={() => setSelectedCategory(category.id)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap transition-colors border ${selectedCategory === category.id
-                            ? 'bg-blue-600 border-blue-500 text-white'
-                            : 'bg-slate-900/50 border-white/10 text-slate-400 hover:border-blue-500/50 hover:text-white'
-                            }`}
+                        onClick={() => handleCategoryChange(category.id)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap transition-all border ${
+                            selectedCategory === category.id
+                                ? 'bg-blue-600 border-blue-500 text-white'
+                                : 'bg-slate-900/50 border-white/10 text-slate-400 hover:border-blue-500/50 hover:text-white'
+                        }`}
                     >
                         <span>{category.icon}</span>
                         <span>{category.name}</span>
-                        <span className="ml-1 text-xs opacity-60 bg-black/20 px-1.5 rounded-full">{category.count}</span>
                     </button>
                 ))}
             </div>
 
-            {/* Content Area */}
-            <div className="min-h-[500px]">
-                {showWriteForm ? (
-                    <div className="max-w-4xl mx-auto">
-                        <Card className="bg-slate-900/50 backdrop-blur-xl border-white/10">
-                            <CardContent className="p-6">
-                                <form className="space-y-6">
-                                    {/* Category & Title */}
-                                    <div className="grid md:grid-cols-4 gap-4">
-                                        <div className="md:col-span-1">
-                                            <label className="block text-sm font-medium text-slate-400 mb-2">카테고리</label>
-                                            <select
-                                                className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500"
-                                            >
-                                                <option value="free">자유게시판</option>
-                                                <option value="news">MAVS NEWS</option>
-                                                <option value="market">중고장터</option>
-                                                <option value="sharing">나눔</option>
-                                                <option value="meetup">오프모임</option>
-                                            </select>
-                                        </div>
-                                        <div className="md:col-span-3">
-                                            <label className="block text-sm font-medium text-slate-400 mb-2">제목</label>
-                                            <input
-                                                type="text"
-                                                placeholder="제목을 입력하세요"
-                                                className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 placeholder-slate-500"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Content */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-400 mb-2">내용</label>
-                                        <textarea
-                                            placeholder="달라스 매버릭스 팬들과 나누고 싶은 이야기를 적어주세요."
-                                            className="w-full h-96 bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-4 text-white focus:outline-none focus:border-blue-500 placeholder-slate-500 resize-none leading-relaxed"
-                                        />
-                                    </div>
-
-                                    {/* Actions */}
-                                    <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white"
-                                            onClick={() => setShowWriteForm(false)}
-                                        >
-                                            취소
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            className="bg-blue-600 hover:bg-blue-700 text-white px-8"
-                                            onClick={() => {
-                                                alert('게시글 작성 기능은 준비 중입니다.');
-                                                setShowWriteForm(false);
-                                            }}
-                                        >
-                                            등록하기
-                                        </Button>
-                                    </div>
-                                </form>
-                            </CardContent>
-                        </Card>
-                    </div>
-                ) : selectedCategory === 'all' ? (
-                    <Masonry
-                        breakpointCols={breakpointColumnsObj}
-                        className="my-masonry-grid"
-                        columnClassName="my-masonry-grid_column"
+            {/* No Posts */}
+            {posts.length === 0 && (
+                <div className="text-center py-20">
+                    <div className="text-6xl mb-4">📝</div>
+                    <h3 className="text-xl font-bold text-white mb-2">아직 게시글이 없습니다</h3>
+                    <p className="text-slate-400 mb-6">첫 번째 글을 작성해보세요!</p>
+                    <button 
+                        onClick={handleWriteClick}
+                        className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-colors"
                     >
-                        {filteredPosts.map((post) => (
-                            <div key={post.id} className="mb-6">
-                                <PostCard post={post} />
-                            </div>
-                        ))}
-                    </Masonry>
-                ) : (
-                    <div className="space-y-4 max-w-4xl mx-auto">
-                        {filteredPosts.map((post) => (
-                            <PostCard key={post.id} post={post} />
-                        ))}
-                    </div>
-                )}
-            </div>
+                        글쓰기
+                    </button>
+                </div>
+            )}
 
-            <style jsx global>{`
-        .my-masonry-grid {
-          display: flex;
-          margin-left: -24px;
-          width: auto;
-        }
-        .my-masonry-grid_column {
-          padding-left: 24px;
-          background-clip: padding-box;
-        }
-      `}</style>
-        </motion.div>
-    );
-}
+            {/* Featured Post */}
+            {featuredPost && (
+                <Link href={`/community/${featuredPost.id}`}>
+                    <motion.div
+                        whileHover={{ scale: 1.01 }}
+                        className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-white/10 p-8 group cursor-pointer"
+                    >
+                        <div className="flex items-start justify-between gap-6">
+                            <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${CATEGORY_COLORS[featuredPost.category] || CATEGORY_COLORS.FREE}`}>
+                                        {CATEGORIES.find(c => c.id === featuredPost.category)?.icon} {CATEGORIES.find(c => c.id === featuredPost.category)?.name || '자유게시판'}
+                                    </span>
+                                    <span className="text-slate-500 text-sm">
+                                        {formatDistanceToNow(new Date(featuredPost.createdAt), { addSuffix: true, locale: ko })}
+                                    </span>
+                                </div>
+                                <h3 className="text-2xl md:text-3xl font-bold text-white mb-3 group-hover:text-blue-400 transition-colors">
+                                    {featuredPost.title}
+                                </h3>
+                                <p className="text-slate-400 text-lg line-clamp-2 mb-6">
+                                    {getTextSummary(featuredPost.content, 150)}
+                                </p>
 
-function PostCard({ post }: { post: Post }) {
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="h-full"
-        >
-            <Card className="bg-slate-900/50 backdrop-blur-xl border-white/10 hover:border-blue-500/30 transition-all group overflow-hidden h-full flex flex-col">
-                <CardContent className="p-5 flex flex-col h-full">
-                    {/* Header */}
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-slate-800 rounded-full flex items-center justify-center text-sm font-bold text-slate-300">
-                                {post.author.charAt(0).toUpperCase()}
+                                {/* Special badges */}
+                                <div className="flex flex-wrap gap-3 mb-6">
+                                    {featuredPost.category === 'MARKET' && featuredPost.price && (
+                                        <span className="inline-flex items-center gap-1 text-green-400 bg-green-900/30 px-3 py-1.5 rounded-lg text-sm font-bold">
+                                            <DollarSign className="w-4 h-4" /> ₩{featuredPost.price.toLocaleString()}
+                                        </span>
+                                    )}
+                                    {featuredPost.category === 'MEETUP' && featuredPost.meetupLocation && (
+                                        <span className="inline-flex items-center gap-1 text-purple-400 bg-purple-900/30 px-3 py-1.5 rounded-lg text-sm">
+                                            <MapPin className="w-4 h-4" /> {featuredPost.meetupLocation}
+                                        </span>
+                                    )}
+                                    {featuredPost.category === 'MEETUP' && featuredPost.meetupDate && (
+                                        <span className="inline-flex items-center gap-1 text-purple-400 bg-purple-900/30 px-3 py-1.5 rounded-lg text-sm">
+                                            <Calendar className="w-4 h-4" /> {format(new Date(featuredPost.meetupDate), 'M/d HH:mm')}
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className="flex items-center gap-6">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center text-sm font-bold text-white">
+                                            {featuredPost.author.username?.[0]?.toUpperCase()}
+                                        </div>
+                                        <span className="text-white font-medium">{featuredPost.author.username}</span>
+                                    </div>
+                                    <div className="flex items-center gap-4 text-slate-500 text-sm">
+                                        <span className="flex items-center gap-1">
+                                            <Heart className="w-4 h-4" /> {featuredPost._count.likes}
+                                        </span>
+                                        <span className="flex items-center gap-1">
+                                            <MessageCircle className="w-4 h-4" /> {featuredPost._count.comments}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="flex flex-col">
-                                <span className="text-sm font-medium text-white group-hover:text-blue-400 transition-colors">{post.author}</span>
-                                <span className="text-[10px] text-slate-500">{post.createdAt}</span>
-                            </div>
+                            <ArrowRight className="w-6 h-6 text-slate-500 group-hover:text-blue-400 group-hover:translate-x-2 transition-all flex-shrink-0" />
                         </div>
-                        <div className={`px-2 py-0.5 rounded text-[10px] border ${post.category === 'market' ? 'bg-green-500/10 border-green-500/20 text-green-400' :
-                            post.category === 'meetup' ? 'bg-purple-500/10 border-purple-500/20 text-purple-400' :
-                                'bg-slate-800 border-slate-700 text-slate-400'
-                            }`}>
-                            {CATEGORIES.find(c => c.id === post.category)?.name}
-                        </div>
+                    </motion.div>
+                </Link>
+            )}
+
+            {/* Recent Posts Grid */}
+            {recentPosts.length > 0 && (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {recentPosts.map((post) => (
+                        <Link key={post.id} href={`/community/${post.id}`}>
+                            <Card className="h-full bg-slate-900/50 border-white/10 hover:border-blue-500/50 transition-all group cursor-pointer">
+                                <CardHeader className="pb-3">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <span className={`text-xs font-medium px-2 py-1 rounded border ${CATEGORY_COLORS[post.category] || CATEGORY_COLORS.FREE}`}>
+                                            {CATEGORIES.find(c => c.id === post.category)?.icon}
+                                        </span>
+                                        <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-blue-400 -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all" />
+                                    </div>
+                                    <CardTitle className="text-lg text-white group-hover:text-blue-300 transition-colors line-clamp-2">
+                                        {post.title}
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-slate-500 text-sm line-clamp-2 mb-4">
+                                        {getTextSummary(post.content, 80)}
+                                    </p>
+
+                                    {/* Special badges */}
+                                    {post.category === 'MARKET' && post.price && (
+                                        <div className="mb-3 text-green-400 font-bold text-sm">
+                                            ₩{post.price.toLocaleString()}
+                                        </div>
+                                    )}
+                                    {post.category === 'MEETUP' && post.meetupLocation && (
+                                        <div className="mb-3 text-purple-400 text-xs flex items-center gap-1">
+                                            <MapPin className="w-3 h-3" /> {post.meetupLocation}
+                                        </div>
+                                    )}
+
+                                    <div className="flex items-center justify-between text-sm text-slate-500">
+                                        <span className="flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full bg-slate-600" />
+                                            {post.author.username}
+                                        </span>
+                                        <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ko })}</span>
+                                    </div>
+                                    <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/5 text-xs text-slate-500">
+                                        <span className="flex items-center gap-1">
+                                            <Heart className="w-3 h-3" /> {post._count.likes}
+                                        </span>
+                                        <span className="flex items-center gap-1">
+                                            <MessageCircle className="w-3 h-3" /> {post._count.comments}
+                                        </span>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </Link>
+                    ))}
+                </div>
+            )}
+
+            {/* Call to Action */}
+            <Card className="bg-gradient-to-r from-purple-900/40 to-blue-900/40 border-white/10">
+                <CardContent className="p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div>
+                        <h4 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                            <Users className="w-5 h-5 text-purple-400" />
+                            매버릭스 팬들과 함께하세요
+                        </h4>
+                        <p className="text-slate-300">
+                            자유롭게 이야기를 나누고, 굿즈를 거래하고, 오프라인 모임을 만들어보세요!
+                        </p>
                     </div>
-
-                    {/* Content */}
-                    <Link href={`/comm/${post.id}`} className="flex-1">
-                        <h3 className="text-lg font-bold text-white mb-2 leading-snug group-hover:text-blue-300 transition-colors">{post.title}</h3>
-                        <p className="text-slate-400 text-sm line-clamp-3 mb-4">{post.content}</p>
-
-                        {/* Special Content Previews */}
-                        {post.category === 'market' && post.price && (
-                            <div className="mb-4 text-green-400 font-bold text-sm bg-green-900/20 px-3 py-1.5 rounded-lg w-fit">
-                                ₩ {post.price.toLocaleString()}
-                            </div>
-                        )}
-                        {post.category === 'meetup' && post.location && (
-                            <div className="mb-4 text-purple-400 text-xs bg-purple-900/20 px-3 py-1.5 rounded-lg w-fit flex items-center gap-1">
-                                <MapPin className="w-3 h-3" /> {post.location}
-                            </div>
-                        )}
-                    </Link>
-
-                    {/* Footer Actions */}
-                    <div className="flex items-center justify-between pt-4 border-t border-white/5 mt-auto">
-                        <div className="flex items-center gap-4 text-slate-500 text-xs font-medium">
-                            <span className="flex items-center gap-1 hover:text-red-400 transition-colors cursor-pointer">
-                                <Heart className="w-3.5 h-3.5" /> {post.likes}
-                            </span>
-                            <span className="flex items-center gap-1 hover:text-blue-400 transition-colors cursor-pointer">
-                                <MessageCircle className="w-3.5 h-3.5" /> {post.comments}
-                            </span>
-                        </div>
-                        {post.category === 'market' && (
-                            <button className="text-xs flex items-center gap-1 text-slate-400 hover:text-yellow-400 transition-colors">
-                                <Heart className="w-3.5 h-3.5" /> 찜하기
-                            </button>
-                        )}
-                    </div>
+                    <button 
+                        onClick={handleWriteClick}
+                        className="px-6 py-3 bg-white text-slate-900 rounded-xl font-bold hover:bg-blue-50 transition-colors whitespace-nowrap"
+                    >
+                        새 글 작성하기
+                    </button>
                 </CardContent>
             </Card>
         </motion.div>

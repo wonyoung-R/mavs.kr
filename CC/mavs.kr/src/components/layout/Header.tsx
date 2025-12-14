@@ -1,16 +1,31 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
-import { Menu, X } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function Header() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, loading } = useAuth();
+  const [isScrolled, setIsScrolled] = useState(false);
 
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-  const closeMenu = () => setIsMenuOpen(false);
+  // Track scroll position - works on both desktop and mobile
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+      setIsScrolled(scrollTop > 10);
+    };
+
+    // Listen to multiple scroll events for better mobile support
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    document.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      document.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
   const navLinks = [
     { href: '/', label: '홈' },
@@ -22,11 +37,16 @@ export function Header() {
   ];
 
   return (
-    <header className="fixed top-0 w-full bg-[#050510]/80 backdrop-blur-md z-50 border-b border-white/5">
+    <header 
+      className={`fixed top-0 w-full z-50 border-b transition-all duration-300 ${
+        isScrolled 
+          ? 'bg-[#050510]/95 backdrop-blur-lg border-white/10 shadow-lg shadow-black/20' 
+          : 'bg-[#050510]/60 backdrop-blur-md border-white/5'
+      }`}
+    >
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center space-x-2 z-50" onClick={closeMenu}>
-          {/* <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center font-bold text-white text-sm">M</div> */}
+        <Link href="/" className="flex items-center space-x-2">
           <span className="text-xl font-bold font-mono text-white tracking-tighter">mavs.kr</span>
         </Link>
 
@@ -45,60 +65,35 @@ export function Header() {
 
         {/* Desktop Auth Buttons */}
         <div className="hidden md:flex items-center space-x-3">
-          <Link href="/login">
-            <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white hover:bg-white/10">
-              로그인
-            </Button>
-          </Link>
-          {/* <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
-              회원가입
-            </Button> */}
-        </div>
-
-        {/* Mobile Hamburger Button */}
-        <button
-          className="md:hidden z-50 text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
-          onClick={toggleMenu}
-          aria-label="Toggle menu"
-        >
-          {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
-
-        {/* Mobile Menu Overlay */}
-        <AnimatePresence>
-          {isMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="fixed inset-0 top-16 bg-[#050510] border-t border-white/10 md:hidden p-4 flex flex-col h-[calc(100vh-4rem)]"
-            >
-              <div className="flex flex-col space-y-4 flex-1">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="text-lg font-medium text-slate-300 hover:text-white hover:bg-white/5 px-4 py-3 rounded-lg transition-colors"
-                    onClick={closeMenu}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-
-              <div className="pt-6 border-t border-white/10 space-y-3 pb-8">
-                <Link href="/login" onClick={closeMenu}>
-                  <Button variant="ghost" className="w-full justify-center text-slate-300 hover:text-white hover:bg-white/10 border border-white/10">
-                    로그인
-                  </Button>
-                </Link>
-                {/* <Button className="w-full justify-center bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-900/20">
-                  회원가입
-                </Button> */}
-              </div>
-            </motion.div>
+          {!loading && (
+            user ? (
+              <Link href="/profile">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 transition-colors cursor-pointer">
+                  {user.user_metadata?.avatar_url ? (
+                    <img
+                      src={user.user_metadata.avatar_url}
+                      alt="Profile"
+                      className="w-6 h-6 rounded-full"
+                    />
+                  ) : (
+                    <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                      {user.email?.[0]?.toUpperCase() || 'U'}
+                    </div>
+                  )}
+                  <span className="text-white/90 text-sm font-medium max-w-[100px] truncate">
+                    {user.user_metadata?.name || user.email?.split('@')[0] || '사용자'}
+                  </span>
+                </div>
+              </Link>
+            ) : (
+              <Link href="/login">
+                <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white hover:bg-white/10">
+                  로그인
+                </Button>
+              </Link>
+            )
           )}
-        </AnimatePresence>
+        </div>
       </div>
     </header>
   );
