@@ -8,7 +8,6 @@ import { ScheduleView } from '@/components/home/ScheduleView';
 import { NewsView } from '@/components/home/NewsView';
 import { ColumnView } from '@/components/home/ColumnView';
 import { CommunityView } from '@/components/home/CommunityView';
-import { NewsArticle } from '@/types/news';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { LogIn, LogOut, User, ChevronDown, Shield } from 'lucide-react';
@@ -159,7 +158,6 @@ export default function NewHomePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState('home');
-  const [initialNews, setInitialNews] = useState<NewsArticle[]>([]);
   const [allGames, setAllGames] = useState<MavericksGame[]>([]);
   const [loadingGames, setLoadingGames] = useState(true);
   const [todaysMavsGame, setTodaysMavsGame] = useState<any>(null);
@@ -184,11 +182,6 @@ export default function NewHomePage() {
   }, [searchParams]);
 
   useEffect(() => {
-    fetch('/api/news/all?limit=6&translate=true')
-      .then(res => res.json())
-      .then(data => setInitialNews(data.articles || []))
-      .catch(err => console.error('Failed to load initial news:', err));
-
     fetchNBAData();
     fetchTodaysMavsGame();
   }, []);
