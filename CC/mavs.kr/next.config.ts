@@ -38,6 +38,14 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'platform.mavsmoneyball.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images2.minutemediacdn.com',
+      },
+      {
+        protocol: 'https',
         hostname: '**.sbnation.com',
       },
     ],

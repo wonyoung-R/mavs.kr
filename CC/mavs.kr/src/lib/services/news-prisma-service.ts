@@ -72,7 +72,11 @@ export async function saveNewsMany(articles: NewsArticleInput[]) {
       if (existing) {
         await prisma.news.update({
           where: { id: existing.id },
-          data: { title: article.title, content: article.content || existing.content },
+          data: { 
+            title: article.title, 
+            content: article.content || existing.content,
+            imageUrl: article.imageUrl || existing.imageUrl,
+          },
         });
         results.updated++;
       } else {

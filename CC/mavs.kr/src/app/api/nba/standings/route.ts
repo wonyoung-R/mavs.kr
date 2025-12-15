@@ -2,61 +2,82 @@ import { NextResponse } from 'next/server';
 
 interface TeamStanding {
   team: string;
+  teamId: string;
+  logo: string;
   wins: number;
   losses: number;
   win_percentage: number;
   conference_rank: number;
   conference: 'Eastern' | 'Western';
+  games_behind: string;
+  streak: string;
 }
-
-// interface StandingsResponse {
-//   success: boolean;
-//   data?: {
-//     western_standings: TeamStanding[];
-//     eastern_standings: TeamStanding[];
-//   };
-//   message?: string;
-// }
 
 export async function GET() {
   try {
     // ESPN API에서 NBA 순위 데이터 가져오기
-    const standingsResponse = await fetch('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/standings');
+    const response = await fetch(
+      'https://site.api.espn.com/apis/v2/sports/basketball/nba/standings',
+      { next: { revalidate: 3600 } } // 1시간 캐시
+    );
 
-    if (!standingsResponse.ok) {
-      throw new Error(`Failed to fetch ESPN standings: ${standingsResponse.statusText}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ESPN standings: ${response.statusText}`);
     }
 
-    // const standingsData = await standingsResponse.json();
-    await standingsResponse.json();
+    const data = await response.json();
+    
+    const westernStandings: TeamStanding[] = [];
+    const easternStandings: TeamStanding[] = [];
 
-    // 현재 시즌 데이터가 없을 수 있으므로 임시 데이터 사용
-    const mockWesternStandings: TeamStanding[] = [
-      { team: 'Thunder', wins: 34, losses: 6, win_percentage: 0.850, conference_rank: 1, conference: 'Western' },
-      { team: 'Timberwolves', wins: 32, losses: 8, win_percentage: 0.800, conference_rank: 2, conference: 'Western' },
-      { team: 'Mavericks', wins: 29, losses: 13, win_percentage: 0.690, conference_rank: 3, conference: 'Western' },
-      { team: 'Rockets', wins: 27, losses: 13, win_percentage: 0.675, conference_rank: 4, conference: 'Western' },
-      { team: 'Nuggets', wins: 25, losses: 15, win_percentage: 0.625, conference_rank: 5, conference: 'Western' },
-      { team: 'Lakers', wins: 23, losses: 17, win_percentage: 0.575, conference_rank: 6, conference: 'Western' },
-      { team: 'Warriors', wins: 22, losses: 18, win_percentage: 0.550, conference_rank: 7, conference: 'Western' },
-      { team: 'Suns', wins: 21, losses: 19, win_percentage: 0.525, conference_rank: 8, conference: 'Western' },
-    ];
+    // ESPN 데이터 파싱
+    if (data.children) {
+      for (const conference of data.children) {
+        const confName = conference.name?.includes('Eastern') ? 'Eastern' : 'Western';
+        const standings = conference.standings?.entries || [];
 
-    const mockEasternStandings: TeamStanding[] = [
-      { team: 'Celtics', wins: 35, losses: 5, win_percentage: 0.875, conference_rank: 1, conference: 'Eastern' },
-      { team: 'Bucks', wins: 31, losses: 9, win_percentage: 0.775, conference_rank: 2, conference: 'Eastern' },
-      { team: '76ers', wins: 28, losses: 12, win_percentage: 0.700, conference_rank: 3, conference: 'Eastern' },
-      { team: 'Heat', wins: 26, losses: 14, win_percentage: 0.650, conference_rank: 4, conference: 'Eastern' },
-      { team: 'Knicks', wins: 24, losses: 16, win_percentage: 0.600, conference_rank: 5, conference: 'Eastern' },
-    ];
+        for (const entry of standings) {
+          const team = entry.team;
+          const stats = entry.stats || [];
+          
+          const getStatValue = (name: string) => {
+            const stat = stats.find((s: any) => s.name === name);
+            return stat?.value ?? stat?.displayValue ?? 0;
+          };
+
+          const standing: TeamStanding = {
+            team: team?.displayName || team?.name || 'Unknown',
+            teamId: team?.id || '',
+            logo: team?.logos?.[0]?.href || '',
+            wins: parseInt(getStatValue('wins')) || 0,
+            losses: parseInt(getStatValue('losses')) || 0,
+            win_percentage: parseFloat(getStatValue('winPercent')) || 0,
+            conference_rank: parseInt(getStatValue('playoffSeed')) || 0,
+            conference: confName,
+            games_behind: getStatValue('gamesBehind')?.toString() || '-',
+            streak: getStatValue('streak') || '-',
+          };
+
+          if (confName === 'Eastern') {
+            easternStandings.push(standing);
+          } else {
+            westernStandings.push(standing);
+          }
+        }
+      }
+    }
+
+    // 순위로 정렬
+    westernStandings.sort((a, b) => a.conference_rank - b.conference_rank);
+    easternStandings.sort((a, b) => a.conference_rank - b.conference_rank);
 
     return NextResponse.json({
       success: true,
       data: {
-        western_standings: mockWesternStandings,
-        eastern_standings: mockEasternStandings,
+        western_standings: westernStandings,
+        eastern_standings: easternStandings,
       },
-      message: 'NBA standings loaded (mock data - current season data not available)',
+      lastUpdated: new Date().toISOString(),
     });
 
   } catch (error) {
@@ -64,8 +85,8 @@ export async function GET() {
     return NextResponse.json(
       {
         success: false,
-        error: 'Internal server error',
-        message: 'Unable to retrieve NBA standings from ESPN',
+        error: 'Failed to fetch standings',
+        message: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

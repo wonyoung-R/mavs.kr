@@ -1,119 +1,135 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
-import { NewsArticle } from '@/types/news';
-import { translateContentWithGemini } from '@/lib/api/gemini';
+import { NewsSource } from '@prisma/client';
+import { saveNewsMany, getNews } from '@/lib/services/news-prisma-service';
 
 export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get('limit') || '10');
+    try {
+        const { searchParams } = new URL(request.url);
+        const limit = parseInt(searchParams.get('limit') || '10');
+        const skipFetch = searchParams.get('skipFetch') === 'true';
 
-    const response = await fetch('https://thesmokingcuban.com/', {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; MAVS.KR Bot/1.0)'
-      },
-      next: { revalidate: 1800 } // 30분 캐시
-    });
+        let fetchResult = { saved: 0, updated: 0, errors: 0 };
 
-    if (!response.ok) {
-      throw new Error(`The Smoking Cuban error: ${response.status}`);
-    }
-
-    const html = await response.text();
-    const $ = cheerio.load(html);
-
-    const articles: NewsArticle[] = [];
-
-    // 다양한 셀렉터로 기사 찾기
-    const entries = $('.article-item, .post-item, article, .entry').toArray();
-
-    for (let i = 0; i < entries.length && articles.length < limit; i++) {
-        const elem = entries[i];
-        const $elem = $(elem);
-
-        const title = $elem.find('h2, h3, .entry-title, .post-title').first().text().trim();
-        const link = $elem.find('a').first().attr('href');
-        const excerpt = $elem.find('.excerpt, .entry-summary, .post-excerpt, p').first().text().trim();
-        const image = $elem.find('img').first().attr('src');
-        const date = $elem.find('.date, .entry-date, time, .post-date').first().text().trim();
-
-        if (title && link && title.length > 10) {
-            const fullUrl = link.startsWith('http') ? link : `https://thesmokingcuban.com${link}`;
+        if (!skipFetch) {
+            console.log('[The Smoking Cuban] Fetching from RSS feed...');
             
-            const article: NewsArticle = {
-                id: link,
-                title,
-                description: excerpt.substring(0, 200),
-                url: fullUrl,
-                image: image?.startsWith('http') ? image : `https://thesmokingcuban.com${image}`,
-                published: (() => {
-                    try {
-                        if (date) {
-                            const parsedDate = new Date(date);
-                            return isNaN(parsedDate.getTime()) ? new Date().toISOString() : parsedDate.toISOString();
-                        }
-                        return new Date().toISOString();
-                    } catch {
-                        return new Date().toISOString();
-                    }
-                })(),
-                source: 'The Smoking Cuban',
-                author: 'TSC Staff',
-                categories: ['Analysis', 'News']
-            };
+            // RSS 피드 사용 (더 안정적)
+            const response = await fetch('https://thesmokingcuban.com/feed/', {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (compatible; MAVS.KR Bot/1.0)'
+                },
+                next: { revalidate: 0 }
+            });
 
-            // 상세 페이지 크롤링 및 번역 (상위 3개만 수행)
-            if (i < 3) {
-                try {
-                    const detailResponse = await fetch(fullUrl, {
-                        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MAVS.KR Bot/1.0)' }
-                    });
-                    
-                    if (detailResponse.ok) {
-                        const detailHtml = await detailResponse.text();
-                        const $detail = cheerio.load(detailHtml);
-                        
-                        // 본문 추출 (FanSided content selector)
-                        // 보통 .post-content 또는 .entry-content 사용
-                        // 광고나 불필요한 요소 제거 필요할 수 있음
-                        $detail('.post-content script, .post-content style, .post-content .ad-container').remove();
-                        const content = $detail('.post-content, .entry-content').text().trim();
-                        
-                        if (content) {
-                            // 전체 본문은 너무 길 수 있으니 description에는 요약/앞부분
-                            article.description = content.substring(0, 300) + '...';
-                            
-                            // 번역 수행
+            if (!response.ok) {
+                throw new Error(`The Smoking Cuban RSS error: ${response.status}`);
+            }
+
+            const xml = await response.text();
+            const $ = cheerio.load(xml, { xmlMode: true });
+
+            const articlesToSave: Array<{
+                title: string;
+                content: string;
+                source: NewsSource;
+                sourceUrl: string;
+                author?: string;
+                imageUrl?: string;
+                publishedAt: Date;
+            }> = [];
+
+            // RSS 피드 파싱 (WordPress 형식)
+            const items = $('item').toArray();
+            
+            for (let i = 0; i < items.length && articlesToSave.length < limit; i++) {
+                const item = items[i];
+                const $item = $(item);
+
+                const title = $item.find('title').text().trim();
+                const link = $item.find('link').text().trim();
+                const author = $item.find('dc\\:creator, creator').text().trim();
+                const pubDate = $item.find('pubDate').text().trim();
+                const description = $item.find('description').text().trim();
+                const contentEncoded = $item.find('content\\:encoded, encoded').text().trim();
+                
+                // HTML에서 텍스트 추출
+                const $content = cheerio.load(contentEncoded || description);
+                const contentText = $content('p').map((_, el) => $(el).text()).get().join(' ').trim() || description;
+                
+                // 이미지 추출 - media:thumbnail 우선
+                // cheerio에서 네임스페이스 요소는 직접 찾아야 함
+                const itemHtml = $.html(item);
+                const mediaMatch = itemHtml.match(/media:thumbnail[^>]*url="([^"]+)"/i);
+                let imageUrl = mediaMatch ? mediaMatch[1] : undefined;
+                
+                // 없으면 content에서 추출
+                if (!imageUrl) {
+                    const imageMatch = (contentEncoded || description).match(/src="([^"]+\.(jpg|jpeg|png|gif|webp)[^"]*)"/i);
+                    imageUrl = imageMatch ? imageMatch[1].split('?')[0] : undefined;
+                }
+
+                if (title && link) {
+                    articlesToSave.push({
+                        title,
+                        content: contentText.substring(0, 5000), // 최대 5000자
+                        source: 'SMOKING_CUBAN' as NewsSource,
+                        sourceUrl: link,
+                        author: author || 'The Smoking Cuban Staff',
+                        imageUrl,
+                        publishedAt: (() => {
                             try {
-                                const translatedContent = await translateContentWithGemini(content);
-                                article.contentKr = translatedContent;
-                            } catch (transErr) {
-                                console.error(`Translation failed for ${fullUrl}:`, transErr);
+                                if (pubDate) {
+                                    const parsedDate = new Date(pubDate);
+                                    return isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+                                }
+                                return new Date();
+                            } catch {
+                                return new Date();
                             }
-                        }
-                    }
-                } catch (detailErr) {
-                    console.error(`Failed to fetch detail for ${fullUrl}:`, detailErr);
+                        })(),
+                    });
                 }
             }
 
-            articles.push(article);
+            console.log(`[The Smoking Cuban] Found ${articlesToSave.length} articles from RSS`);
+            fetchResult = await saveNewsMany(articlesToSave);
+            console.log(`[The Smoking Cuban] Saved: ${fetchResult.saved} new, ${fetchResult.updated} updated`);
         }
+
+        // DB에서 데이터 조회
+        const news = await getNews({ source: 'SMOKING_CUBAN' as NewsSource, limit, orderBy: 'publishedAt' });
+
+        const articles = news.map((item) => ({
+            id: item.id,
+            title: item.title,
+            titleKr: item.titleKr || null,
+            description: item.content?.substring(0, 300) + '...',
+            contentKr: item.contentKr || null,
+            url: item.sourceUrl,
+            image: item.imageUrl,
+            published: item.publishedAt.toISOString(),
+            source: item.source,
+            author: item.author,
+            isTranslated: !!item.titleKr,
+        }));
+
+        return NextResponse.json({
+            success: true,
+            articles,
+            total: articles.length,
+            fetched: fetchResult,
+            source: 'The Smoking Cuban',
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        console.error('[The Smoking Cuban] Error:', error);
+        return NextResponse.json({
+            success: false,
+            articles: [],
+            error: 'Failed to fetch The Smoking Cuban',
+            source: 'The Smoking Cuban'
+        }, { status: 500 });
     }
-
-    return NextResponse.json({
-      articles: articles,
-      total: articles.length,
-      source: 'The Smoking Cuban',
-      timestamp: new Date().toISOString()
-    });
-
-  } catch (error) {
-    console.error('The Smoking Cuban Scraping Error:', error);
-    return NextResponse.json({
-      articles: [],
-      error: 'Failed to scrape The Smoking Cuban',
-      source: 'The Smoking Cuban'
-    }, { status: 500 });
-  }
 }

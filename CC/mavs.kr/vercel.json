@@ -1,16 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/cron/update-box-scores",
+      "path": "/api/cron/all-tasks",
       "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/cron/crawl-news",
-      "schedule": "0 * * * *"
-    },
-    {
-      "path": "/api/batch/translate-news?limit=3&delay=15000",
-      "schedule": "*/30 * * * *"
     }
   ]
 }
