@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth, UserRole } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/db/supabase';
-import { ArrowLeft, Shield, User, Edit2, Check, X, Newspaper, Loader2 } from 'lucide-react';
+import { ArrowLeft, Shield, User, Edit2, Check, X, Newspaper, Loader2, RefreshCw } from 'lucide-react';
 
 interface UserProfile {
     id: string;
@@ -25,6 +25,8 @@ export default function AdminPage() {
     const [selectedRole, setSelectedRole] = useState<UserRole>('user');
     const [crawlingNews, setCrawlingNews] = useState(false);
     const [crawlResult, setCrawlResult] = useState<any>(null);
+    const [updatingScores, setUpdatingScores] = useState(false);
+    const [scoreUpdateResult, setScoreUpdateResult] = useState<any>(null);
 
     useEffect(() => {
         if (!loading && !user) {
@@ -108,6 +110,35 @@ export default function AdminPage() {
             alert('크롤링 중 오류가 발생했습니다.');
         } finally {
             setCrawlingNews(false);
+        }
+    };
+
+    const updateBoxScores = async () => {
+        setUpdatingScores(true);
+        setScoreUpdateResult(null);
+
+        try {
+            const response = await fetch('/api/cron/update-box-scores', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            const result = await response.json();
+            setScoreUpdateResult(result);
+
+            if (response.ok) {
+                alert('박스스코어가 성공적으로 업데이트되었습니다!');
+            } else {
+                alert(`업데이트 실패: ${result.error || '알 수 없는 오류'}`);
+            }
+        } catch (error) {
+            console.error('Update box scores error:', error);
+            setScoreUpdateResult({ success: false, error: String(error) });
+            alert('업데이트 중 오류가 발생했습니다.');
+        } finally {
+            setUpdatingScores(false);
         }
     };
 
@@ -252,6 +283,51 @@ export default function AdminPage() {
                         <div className="flex items-center gap-3">
                             <span className="px-2 py-1 text-xs rounded bg-slate-500/20 text-slate-400">일반유저</span>
                             <span className="text-slate-400">커뮤니티 게시글 및 댓글 작성</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Box Score Updates */}
+                <div className="mt-6 bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden">
+                    <div className="p-4 border-b border-white/10">
+                        <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                            <RefreshCw className="w-5 h-5" />
+                            박스스코어 업데이트
+                        </h2>
+                        <p className="text-slate-400 text-sm">수동으로 NBA 박스스코어를 업데이트합니다</p>
+                    </div>
+
+                    <div className="p-4">
+                        <div className="flex items-center gap-4 mb-4">
+                            <button
+                                onClick={updateBoxScores}
+                                disabled={updatingScores}
+                                className="flex items-center gap-2 px-4 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-400 hover:text-green-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {updatingScores ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <RefreshCw className="w-4 h-4" />
+                                )}
+                                {updatingScores ? '업데이트 중...' : '박스스코어 업데이트'}
+                            </button>
+                        </div>
+
+                        {scoreUpdateResult && (
+                            <div className={`p-3 rounded-lg text-sm ${scoreUpdateResult.success ? 'bg-green-500/10 border border-green-500/20 text-green-400' : 'bg-red-500/10 border border-red-500/20 text-red-400'}`}>
+                                <div className="font-medium mb-1">
+                                    {scoreUpdateResult.success ? '✅ 업데이트 성공' : '❌ 업데이트 실패'}
+                                </div>
+                                {scoreUpdateResult.executedAt && (
+                                    <div className="text-xs opacity-60">
+                                        실행 시간: {new Date(scoreUpdateResult.executedAt).toLocaleString('ko-KR')}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        <div className="text-xs text-slate-500 mt-3">
+                            💡 박스스코어는 매일 오전 6시에 자동으로 업데이트됩니다.
                         </div>
                     </div>
                 </div>
