@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth, UserRole } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/db/supabase';
-import { ArrowLeft, Shield, User, Edit2, Check, X } from 'lucide-react';
+import { ArrowLeft, Shield, User, Edit2, Check, X, Newspaper, Loader2 } from 'lucide-react';
 
 interface UserProfile {
     id: string;
@@ -23,6 +23,8 @@ export default function AdminPage() {
     const [loadingUsers, setLoadingUsers] = useState(true);
     const [editingUser, setEditingUser] = useState<string | null>(null);
     const [selectedRole, setSelectedRole] = useState<UserRole>('user');
+    const [crawlingNews, setCrawlingNews] = useState(false);
+    const [crawlResult, setCrawlResult] = useState<any>(null);
 
     useEffect(() => {
         if (!loading && !user) {
@@ -77,6 +79,35 @@ export default function AdminPage() {
             setEditingUser(null);
         } catch (err) {
             console.error('Failed to update role:', err);
+        }
+    };
+
+    const crawlNews = async () => {
+        setCrawlingNews(true);
+        setCrawlResult(null);
+
+        try {
+            const response = await fetch('/api/admin/crawl-news', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            const result = await response.json();
+            setCrawlResult(result);
+
+            if (response.ok) {
+                alert('뉴스가 성공적으로 크롤링되었습니다!');
+            } else {
+                alert(`크롤링 실패: ${result.error || '알 수 없는 오류'}`);
+            }
+        } catch (error) {
+            console.error('Crawl news error:', error);
+            setCrawlResult({ success: false, error: String(error) });
+            alert('크롤링 중 오류가 발생했습니다.');
+        } finally {
+            setCrawlingNews(false);
         }
     };
 
@@ -221,6 +252,57 @@ export default function AdminPage() {
                         <div className="flex items-center gap-3">
                             <span className="px-2 py-1 text-xs rounded bg-slate-500/20 text-slate-400">일반유저</span>
                             <span className="text-slate-400">커뮤니티 게시글 및 댓글 작성</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* News Crawling */}
+                <div className="mt-6 bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden">
+                    <div className="p-4 border-b border-white/10">
+                        <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                            <Newspaper className="w-5 h-5" />
+                            뉴스 크롤링 관리
+                        </h2>
+                        <p className="text-slate-400 text-sm">수동으로 뉴스를 크롤링합니다</p>
+                    </div>
+
+                    <div className="p-4">
+                        <div className="flex items-center gap-4 mb-4">
+                            <button
+                                onClick={crawlNews}
+                                disabled={crawlingNews}
+                                className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 hover:text-blue-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {crawlingNews ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <Newspaper className="w-4 h-4" />
+                                )}
+                                {crawlingNews ? '크롤링 중...' : '뉴스 크롤링 실행'}
+                            </button>
+                        </div>
+
+                        {crawlResult && (
+                            <div className={`p-3 rounded-lg text-sm ${crawlResult.success ? 'bg-green-500/10 border border-green-500/20 text-green-400' : 'bg-red-500/10 border border-red-500/20 text-red-400'}`}>
+                                <div className="font-medium mb-1">
+                                    {crawlResult.success ? '✅ 크롤링 성공' : '❌ 크롤링 실패'}
+                                </div>
+                                {crawlResult.message && (
+                                    <div className="text-xs opacity-80">{crawlResult.message}</div>
+                                )}
+                                {crawlResult.error && (
+                                    <div className="text-xs opacity-80">{crawlResult.error}</div>
+                                )}
+                                {crawlResult.timestamp && (
+                                    <div className="text-xs opacity-60 mt-1">
+                                        실행 시간: {new Date(crawlResult.timestamp).toLocaleString('ko-KR')}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        <div className="text-xs text-slate-500 mt-3">
+                            💡 뉴스 크롤링은 ESPN, Mavs Moneyball, The Smoking Cuban에서 최신 뉴스를 가져옵니다.
                         </div>
                     </div>
                 </div>
