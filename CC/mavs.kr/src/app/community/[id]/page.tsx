@@ -4,7 +4,7 @@ import { formatDistanceToNow, format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
-import { ArrowLeft, Clock, Heart, MessageCircle, Share, MapPin, Calendar, DollarSign } from 'lucide-react';
+import { ArrowLeft, Clock, Share, MapPin, Calendar, DollarSign } from 'lucide-react';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import CommunityDeleteButton from '@/components/community/DeleteButton';

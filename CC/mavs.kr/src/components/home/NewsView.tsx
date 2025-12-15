@@ -30,10 +30,6 @@ interface NewsArticle {
   isTranslated: boolean;
 }
 
-interface NewsViewProps {
-  initialNews?: NewsArticle[];
-}
-
 type SourceFilter = 'all' | 'ESPN' | 'MAVS_MONEYBALL' | 'SMOKING_CUBAN';
 
 const SOURCE_LABELS: Record<SourceFilter, string> = {
@@ -43,9 +39,9 @@ const SOURCE_LABELS: Record<SourceFilter, string> = {
   SMOKING_CUBAN: 'The Smoking Cuban',
 };
 
-export function NewsView({ initialNews }: NewsViewProps) {
-  const [articles, setArticles] = useState<NewsArticle[]>(initialNews || []);
-  const [loading, setLoading] = useState(!initialNews);
+export function NewsView() {
+  const [articles, setArticles] = useState<NewsArticle[]>([]);
+  const [loading, setLoading] = useState(true);
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
   const [showKorean, setShowKorean] = useState(true);
@@ -136,13 +132,13 @@ export function NewsView({ initialNews }: NewsViewProps) {
   };
 
   useEffect(() => {
-    if (!initialNews) {
-      fetchNews();
-    }
-  }, [fetchNews, initialNews]);
+    fetchNews();
+  }, [fetchNews]);
 
   useEffect(() => {
-    fetchNews(sourceFilter);
+    if (sourceFilter !== 'all') {
+      fetchNews(sourceFilter);
+    }
   }, [sourceFilter, fetchNews]);
 
   const formatDate = (dateString: string) => {

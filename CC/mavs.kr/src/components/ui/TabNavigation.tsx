@@ -26,8 +26,8 @@ export function TabNavigation({ tabs, activeTab, onTabChange, className }: TabNa
     const [isScrolled, setIsScrolled] = useState(false);
     const { user, loading, signOut, userRole } = useAuth();
 
-    const isAdmin = userRole === 'ADMIN' || userRole === 'admin';
-    const isColumnist = userRole === 'COLUMNIST' || userRole === 'columnist' || isAdmin;
+    const isAdmin = userRole === 'admin';
+    const isColumnist = userRole === 'columnist' || isAdmin;
 
     // Track scroll position - works on both desktop and mobile
     useEffect(() => {

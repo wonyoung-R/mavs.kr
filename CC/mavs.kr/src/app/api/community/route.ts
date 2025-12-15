@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0');
 
     try {
-        let whereClause: any = {};
+        const whereClause: Record<string, unknown> = {};
 
         // Filter by specific category if provided
         if (category && category !== 'ALL' && Object.values(ForumCategory).includes(category as ForumCategory)) {

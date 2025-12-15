@@ -1,13 +1,12 @@
 'use client';
 
-import { useEditor, EditorContent, Editor } from '@tiptap/react';
+import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import Youtube from '@tiptap/extension-youtube';
 import Placeholder from '@tiptap/extension-placeholder';
 import { supabase } from '@/lib/db/supabase';
-import { Button } from '@/components/ui/Button';
 import {
     Bold, Italic, List, ListOrdered, Quote,
     Heading1, Heading2, Image as ImageIcon,
@@ -69,7 +68,7 @@ const TiptapEditor = ({ content, onChange, placeholder = '내용을 입력하세
                 const filePath = `${fileName}`;
 
                 try {
-                    const { data, error } = await supabase.storage
+                    const { error } = await supabase.storage
                         .from('Column')
                         .upload(filePath, file);
 

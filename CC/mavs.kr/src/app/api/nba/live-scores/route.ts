@@ -182,7 +182,7 @@ export async function GET() {
         is_finished: isFinished,
         broadcast: [],
       };
-    }).filter((game): game is ProcessedLiveGame => game !== null);
+    }).filter((game: ProcessedLiveGame | null): game is ProcessedLiveGame => game !== null);
 
     // 매버릭스 경기와 다른 경기 분리
     const mavsGames = processedGames.filter(game => game.is_mavs_game);

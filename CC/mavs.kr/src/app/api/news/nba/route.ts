@@ -67,6 +67,7 @@ export async function GET(request: NextRequest) {
             savedArticles.push({
                 ...existing,
                 id: existing.id,
+                url: existing.sourceUrl,
                 published: existing.publishedAt.toISOString(),
                 description: existing.content || article.description,
                 contentKr: existing.contentKr || undefined, 
@@ -82,13 +83,13 @@ export async function GET(request: NextRequest) {
 
         try {
             if (isEnglishText(article.title)) {
-                titleKr = await translateContentWithGemini(article.title, 'title');
+                titleKr = await translateContentWithGemini(article.title);
             }
         } catch (e) { console.error('Title translation failed', e); }
 
         try {
             if (article.description && isEnglishText(article.description)) {
-                contentKr = await translateContentWithGemini(article.description, 'summary');
+                contentKr = await translateContentWithGemini(article.description);
             }
         } catch (e) { console.error('Desc translation failed', e); }
 
@@ -97,13 +98,13 @@ export async function GET(request: NextRequest) {
                 data: {
                     title: article.title,
                     titleKr: titleKr !== article.title ? titleKr : null,
-                    content: article.description,
+                    content: article.description || '',
                     contentKr: contentKr !== article.description ? contentKr : null,
                     sourceUrl: article.url,
-                    imageUrl: article.image,
+                    imageUrl: article.image || null,
                     publishedAt: new Date(article.published),
-                    source: 'NBA.com',
-                    author: article.author,
+                    source: 'ESPN',
+                    author: article.author || null,
                 }
             });
             savedArticles.push({

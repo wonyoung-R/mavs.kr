@@ -16,36 +16,8 @@ interface NewsCardProps {
 export function NewsCard({ article }: NewsCardProps) {
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const [isNewsModalOpen, setIsNewsModalOpen] = useState(false);
-  const [summary, setSummary] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const timeAgo = formatTimeAgo(article.published);
-
-
-  const handleSummarize = async () => {
-    setIsSummaryModalOpen(true);
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch('/api/news/summarize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: article.url, title: article.title })
-      });
-
-      if (!response.ok) throw new Error('Failed to summarize');
-
-      const data = await response.json();
-      setSummary(data);
-    } catch (err) {
-      setError('요약 생성에 실패했습니다. 다시 시도해주세요.');
-      console.error('Summary error:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleTitleClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -161,9 +133,6 @@ export function NewsCard({ article }: NewsCardProps) {
         isOpen={isSummaryModalOpen}
         onClose={() => setIsSummaryModalOpen(false)}
         article={article}
-        summary={summary}
-        isLoading={isLoading}
-        error={error}
       />
 
       {/* 뉴스 상세 모달 */}

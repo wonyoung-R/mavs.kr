@@ -65,7 +65,7 @@ export default function MembersPage() {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                     <div className="flex items-center gap-4 text-white">
                         <Link href="/?tab=community">
-                            <Button variant="ghost" size="icon" className="hover:bg-white/10 text-white">
+                            <Button variant="ghost" size="sm" className="hover:bg-white/10 text-white p-2">
                                 <ArrowLeft className="w-5 h-5" />
                             </Button>
                         </Link>

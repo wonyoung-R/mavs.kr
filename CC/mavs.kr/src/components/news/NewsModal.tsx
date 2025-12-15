@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { NewsArticle } from '@/types/news';
-import { X, ExternalLink, MessageCircle, ThumbsUp, Eye, Share2, Languages } from 'lucide-react';
+import { X, ExternalLink, Eye, Share2, Languages } from 'lucide-react';
 import { getSourceColor, getSourceIcon, formatTimeAgo } from '@/lib/utils/news-utils';
 
 interface NewsModalProps {
@@ -30,10 +30,10 @@ export function NewsModal({ isOpen, onClose, article }: NewsModalProps) {
       // 초기화
       setTranslatedTitle(article.titleKr || '');
       setTranslatedContent(article.contentKr || '');
-      setArticleContent(article.content || '');
+      setArticleContent(article.description || '');
 
       // 내용이 없으면 DB에서 불러오기
-      if (!article.content) {
+      if (!article.description) {
         loadArticleContent();
       }
     }
@@ -83,14 +83,14 @@ export function NewsModal({ isOpen, onClose, article }: NewsModalProps) {
           text: article.title,
           url: article.url,
         });
-      } catch (err) {
+      } catch {
         console.log('Share cancelled');
       }
     } else {
       try {
         await navigator.clipboard.writeText(article.url);
         alert('링크가 클립보드에 복사되었습니다.');
-      } catch (err) {
+      } catch {
         console.error('Failed to copy to clipboard');
       }
     }
@@ -167,18 +167,6 @@ export function NewsModal({ isOpen, onClose, article }: NewsModalProps) {
 
             {/* 통계 */}
             <div className="flex items-center gap-6 text-sm text-toss-gray-500">
-              {article.score !== undefined && (
-                <span className="flex items-center gap-1">
-                  <ThumbsUp className="w-4 h-4" />
-                  {article.score}개 좋아요
-                </span>
-              )}
-              {article.comments !== undefined && (
-                <span className="flex items-center gap-1">
-                  <MessageCircle className="w-4 h-4" />
-                  {article.comments}개 댓글
-                </span>
-              )}
               <span className="flex items-center gap-1">
                 <Eye className="w-4 h-4" />
                 조회수
@@ -253,17 +241,6 @@ export function NewsModal({ isOpen, onClose, article }: NewsModalProps) {
                 <ExternalLink className="w-4 h-4" />
                 원문 보기
               </a>
-              {article.redditUrl && (
-                <a
-                  href={article.redditUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-orange-500 text-white rounded-toss hover:bg-orange-600 transition-colors font-medium"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  Reddit
-                </a>
-              )}
             </div>
           </div>
         </div>

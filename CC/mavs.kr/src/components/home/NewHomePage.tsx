@@ -11,7 +11,7 @@ import { CommunityView } from '@/components/home/CommunityView';
 import { NewsArticle } from '@/types/news';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { LogIn, LogOut, User, ChevronDown, Settings, Shield } from 'lucide-react';
+import { LogIn, LogOut, User, ChevronDown, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Type definitions for Game data
@@ -292,10 +292,7 @@ export default function NewHomePage() {
             />
           )}
           {activeTab === 'news' && (
-            <NewsView
-              key="news"
-              initialNews={initialNews}
-            />
+            <NewsView key="news" />
           )}
           {activeTab === 'column' && (
             <ColumnView key="column" />

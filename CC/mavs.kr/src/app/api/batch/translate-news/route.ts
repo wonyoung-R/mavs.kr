@@ -48,14 +48,14 @@ export async function GET(request: NextRequest) {
                 // 제목 번역
                 if (!titleKr && article.title) {
                     console.log(`  - 제목 번역 중...`);
-                    titleKr = await translateContentWithGemini(article.title, 'title');
+                    titleKr = await translateContentWithGemini(article.title);
                     await delay(2000); // 제목 번역 후 2초 대기
                 }
 
                 // 내용 번역
                 if (!contentKr && article.content) {
                     console.log(`  - 내용 번역 중...`);
-                    contentKr = await translateContentWithGemini(article.content, 'summary');
+                    contentKr = await translateContentWithGemini(article.content);
                     await delay(2000); // 내용 번역 후 2초 대기
                 }
 

@@ -5,7 +5,6 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ArrowLeft, Send } from 'lucide-react';
-import Link from 'next/link';
 import TiptapEditor from '@/components/editor/TiptapEditor';
 import { useAuth } from '@/contexts/AuthContext';
 import { createColumn } from '@/app/actions/column';

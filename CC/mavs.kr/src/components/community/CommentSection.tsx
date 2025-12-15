@@ -1,14 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle, Send, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/contexts/AuthContext';
-import { createComment, deleteComment, getComments } from '@/app/actions/comment';
+import { createComment, deleteComment } from '@/app/actions/comment';
 import CommentItem from './CommentItem';
-import { formatDistanceToNow } from 'date-fns';
-import { ko } from 'date-fns/locale';
 
 interface Comment {
     id: string;
@@ -29,7 +27,7 @@ interface CommentSectionProps {
     commentCount: number;
 }
 
-export default function CommentSection({ postId, initialComments, commentCount }: CommentSectionProps) {
+export default function CommentSection({ postId, initialComments }: CommentSectionProps) {
     const { user, session } = useAuth();
     const [comments, setComments] = useState<Comment[]>(initialComments);
     const [newComment, setNewComment] = useState('');

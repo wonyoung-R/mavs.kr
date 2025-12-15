@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export function Footer() {
   return (
     <footer className="border-t border-white/10 bg-[#050510] text-slate-300">
@@ -14,10 +16,10 @@ export function Footer() {
 
           {/* Links - Compact */}
           <div className="flex gap-6 text-sm">
-            <a href="/news" className="text-slate-400 hover:text-blue-400 transition-colors">뉴스</a>
-            <a href="/games" className="text-slate-400 hover:text-blue-400 transition-colors">경기</a>
-            <a href="/?tab=community" className="text-slate-400 hover:text-blue-400 transition-colors">커뮤니티</a>
-            <a href="/?tab=column" className="text-slate-400 hover:text-blue-400 transition-colors">칼럼</a>
+            <Link href="/?tab=news" className="text-slate-400 hover:text-blue-400 transition-colors">뉴스</Link>
+            <Link href="/?tab=schedule" className="text-slate-400 hover:text-blue-400 transition-colors">경기</Link>
+            <Link href="/?tab=community" className="text-slate-400 hover:text-blue-400 transition-colors">커뮤니티</Link>
+            <Link href="/?tab=column" className="text-slate-400 hover:text-blue-400 transition-colors">칼럼</Link>
           </div>
 
         </div>

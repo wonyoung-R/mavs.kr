@@ -28,17 +28,6 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
     const [selectedMonth, setSelectedMonth] = useState('');
     const monthScrollRef = useRef<HTMLDivElement>(null);
 
-    // Navigate months with arrows
-    const scrollMonths = (direction: 'left' | 'right') => {
-        if (monthScrollRef.current) {
-            const scrollAmount = 120;
-            monthScrollRef.current.scrollBy({
-                left: direction === 'left' ? -scrollAmount : scrollAmount,
-                behavior: 'smooth'
-            });
-        }
-    };
-
     // Get current month index for navigation
     const currentMonthIndex = MONTHS.findIndex(m => m.id === selectedMonth);
     const canScrollLeft = currentMonthIndex > 0;
@@ -55,7 +44,6 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
     const nextGame = useMemo(() => {
         if (!allGames || allGames.length === 0) return null;
         
-        const now = new Date();
         const upcomingGames = allGames
             .filter(game => game.status === 'upcoming' || game.status === 'today')
             .sort((a, b) => new Date(a.game_date_kst).getTime() - new Date(b.game_date_kst).getTime());
