@@ -5,6 +5,7 @@ import { cookies } from 'next/headers'
 import { prisma } from '@/lib/db/prisma'
 import { revalidatePath } from 'next/cache'
 import { Role } from '@prisma/client'
+import { getSupabaseEnv } from '@/lib/supabase-helpers'
 
 const ADMIN_EMAILS = ['mavsdotkr@gmail.com'];
 
@@ -17,10 +18,11 @@ export async function createColumn(formData: FormData, token?: string) {
     }
 
     const cookieStore = await cookies()
+    const { supabaseUrl, supabaseAnonKey } = getSupabaseEnv()
 
     const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        supabaseUrl,
+        supabaseAnonKey,
         {
             cookies: {
                 getAll() {
@@ -111,10 +113,11 @@ export async function createColumn(formData: FormData, token?: string) {
 
 export async function deleteColumn(postId: string, token?: string) {
     const cookieStore = await cookies()
+    const { supabaseUrl, supabaseAnonKey } = getSupabaseEnv()
 
     const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        supabaseUrl,
+        supabaseAnonKey,
         {
             cookies: {
                 getAll() {

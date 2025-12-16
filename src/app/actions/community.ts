@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db/prisma';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
+import { getSupabaseEnv } from '@/lib/supabase-helpers';
 
 const COMMUNITY_CATEGORIES = ['FREE', 'MARKET', 'MEETUP'];
 const ADMIN_EMAILS = ['mavsdotkr@gmail.com'];
@@ -27,9 +28,10 @@ export async function createCommunityPost(formData: FormData, accessToken?: stri
 
     // Get user from Supabase
     const cookieStore = await cookies();
+    const { supabaseUrl, supabaseAnonKey } = getSupabaseEnv();
     const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        supabaseUrl,
+        supabaseAnonKey,
         {
             cookies: {
                 getAll() {
