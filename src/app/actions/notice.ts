@@ -63,10 +63,21 @@ export async function createNotice(formData: FormData) {
     });
 
     if (!dbUser) {
+        // Generate unique username
+        const baseUsername = user.email.split('@')[0];
+        let username = baseUsername;
+        let counter = 1;
+        
+        // Check if username already exists
+        while (await prisma.user.findUnique({ where: { username } })) {
+            username = `${baseUsername}${counter}`;
+            counter++;
+        }
+
         dbUser = await prisma.user.create({
             data: {
                 email: user.email,
-                username: user.email.split('@')[0],
+                username,
                 name: user.user_metadata?.full_name || null,
                 role: 'ADMIN',
             }

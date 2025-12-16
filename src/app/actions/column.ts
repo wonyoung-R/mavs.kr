@@ -87,12 +87,22 @@ export async function createColumn(formData: FormData, token?: string) {
     });
 
     if (!dbUser) {
+        // Generate unique username
+        const baseUsername = user.email?.split('@')[0] || `user_${Date.now()}`;
+        let username = baseUsername;
+        let counter = 1;
+        
+        // Check if username already exists
+        while (await prisma.user.findUnique({ where: { username } })) {
+            username = `${baseUsername}${counter}`;
+            counter++;
+        }
+
         // Create user if doesn't exist
-        const username = user.email?.split('@')[0] || `user_${Date.now()}`;
         dbUser = await prisma.user.create({
             data: {
                 email: user.email!,
-                username: username,
+                username,
                 name: user.user_metadata?.name || username,
                 image: user.user_metadata?.avatar_url,
                 role: ADMIN_EMAILS.includes(user.email!) ? Role.ADMIN : Role.COLUMNIST,
