@@ -41,38 +41,51 @@ export default async function ColumnDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  // Get current user
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            // Ignore
-          }
-        },
-      },
+  // Get current user (안전하게 처리)
+  let user = null;
+  let canDelete = false;
+
+  try {
+    // 환경변수 확인
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
+
+    if (supabaseUrl && supabaseAnonKey && supabaseUrl !== 'https://placeholder.supabase.co') {
+      const cookieStore = await cookies();
+      const supabase = createServerClient(
+        supabaseUrl,
+        supabaseAnonKey,
+        {
+          cookies: {
+            getAll() {
+              return cookieStore.getAll();
+            },
+            setAll(cookiesToSet) {
+              try {
+                cookiesToSet.forEach(({ name, value, options }) =>
+                  cookieStore.set(name, value, options)
+                );
+              } catch {
+                // Ignore
+              }
+            },
+          },
+        }
+      );
+
+      const { data } = await supabase.auth.getUser();
+      user = data.user;
+
+      // Check if user can delete (author or admin)
+      canDelete = user ? (
+        user.email === post.author.email ||
+        ADMIN_EMAILS.includes(user.email || '')
+      ) : false;
     }
-  );
-
-  const { data: { user } } = await supabase.auth.getUser();
-
-  // Check if user can delete (author or admin)
-  const canDelete = user && (
-    user.email === post.author.email ||
-    ADMIN_EMAILS.includes(user.email || '')
-  );
-
-  console.log('Debug - User:', user?.email, 'Author:', post.author.email, 'Can Delete:', canDelete);
+  } catch (error) {
+    console.error('Auth error:', error);
+    // 인증 실패 시 계속 진행
+  }
 
   return (
     <div className="min-h-screen w-full bg-[#050510] relative text-white">
