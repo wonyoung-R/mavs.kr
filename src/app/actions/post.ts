@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import { prisma } from '@/lib/db/prisma';
 import { revalidatePath } from 'next/cache';
 import { ForumCategory, Prisma } from '@prisma/client';
+import { getSupabaseEnv } from '@/lib/supabase-helpers';
 
 const ADMIN_EMAILS = ['mavsdotkr@gmail.com'];
 
@@ -35,10 +36,11 @@ export async function createPost(formData: FormData, token?: string) {
     const category = mapCategoryToEnum(categoryInput);
 
     const cookieStore = await cookies();
+    const { supabaseUrl, supabaseAnonKey } = getSupabaseEnv();
 
     const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        supabaseUrl,
+        supabaseAnonKey,
         {
             cookies: {
                 getAll() {
@@ -117,10 +119,11 @@ export async function createPost(formData: FormData, token?: string) {
 
 export async function deletePost(postId: string, token?: string) {
      const cookieStore = await cookies();
+    const { supabaseUrl, supabaseAnonKey } = getSupabaseEnv();
 
     const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        supabaseUrl,
+        supabaseAnonKey,
         {
             cookies: {
                 getAll() {
