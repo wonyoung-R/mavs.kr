@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { MessageCircle, Heart, MapPin, Calendar, ArrowRight, Users, DollarSign, ArrowLeft, Send } from 'lucide-react';
+import { MessageCircle, Heart, MapPin, Calendar, ArrowRight, Users, DollarSign, ArrowLeft, Send, Image as ImageIcon, Link as LinkIcon, Plus, X } from 'lucide-react';
 import Link from 'next/link';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -37,12 +37,15 @@ interface CommunityPost {
 
 const CATEGORIES = [
     { id: 'all', name: '전체', icon: '🔥' },
+    { id: 'NOTICE', name: '공지사항', icon: '📢' },
+    { id: 'NEWS', name: '뉴스', icon: '📰' },
     { id: 'FREE', name: '자유게시판', icon: '🗣️' },
     { id: 'MARKET', name: '중고장터', icon: '🛒' },
     { id: 'MEETUP', name: '오프라인 모임', icon: '🍺' },
 ];
 
 const WRITE_CATEGORIES = [
+    { id: 'NEWS', name: '뉴스', icon: '📰', description: 'SNS 링크와 이미지로 뉴스를 공유하세요' },
     { id: 'FREE', name: '자유게시판', icon: '🗣️', description: '자유롭게 이야기를 나눠보세요' },
     { id: 'MARKET', name: '중고장터', icon: '🛒', description: '매버릭스 굿즈를 사고 팔아요' },
     { id: 'MEETUP', name: '오프라인 모임', icon: '🍺', description: '같이 경기 보러 가요!' },
@@ -57,6 +60,8 @@ const MEETUP_PURPOSES = [
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
+    NOTICE: 'bg-red-500/10 border-red-500/20 text-red-400',
+    NEWS: 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400',
     FREE: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
     MARKET: 'bg-green-500/10 border-green-500/20 text-green-400',
     MEETUP: 'bg-purple-500/10 border-purple-500/20 text-purple-400',
@@ -78,6 +83,10 @@ export function CommunityView() {
     const [meetupDate, setMeetupDate] = useState('');
     const [meetupPurpose, setMeetupPurpose] = useState('DRINK');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    // News specific states
+    const [newsImages, setNewsImages] = useState<string[]>(['']);
+    const [snsLinks, setSnsLinks] = useState<string[]>(['']);
 
     const fetchPosts = async (category: string) => {
         try {
@@ -93,7 +102,7 @@ export function CommunityView() {
     useEffect(() => {
         setLoading(true);
         const minLoadingTime = new Promise(resolve => setTimeout(resolve, 1500));
-        
+
         Promise.all([fetchPosts(selectedCategory), minLoadingTime]).then(() => {
             setLoading(false);
         });
@@ -121,6 +130,8 @@ export function CommunityView() {
         setMeetupLocation('');
         setMeetupDate('');
         setWriteCategory('FREE');
+        setNewsImages(['']);
+        setSnsLinks(['']);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -154,24 +165,32 @@ export function CommunityView() {
             formData.append('title', title);
             formData.append('content', content);
             formData.append('category', writeCategory);
-            
+
             if (writeCategory === 'MARKET') {
                 formData.append('price', price);
             }
-            
+
             if (writeCategory === 'MEETUP') {
                 formData.append('meetupLocation', meetupLocation);
                 formData.append('meetupDate', meetupDate);
                 formData.append('meetupPurpose', meetupPurpose);
             }
 
+            if (writeCategory === 'NEWS') {
+                // Filter out empty strings
+                const validImages = newsImages.filter(img => img.trim());
+                const validLinks = snsLinks.filter(link => link.trim());
+                formData.append('images', JSON.stringify(validImages));
+                formData.append('snsLinks', JSON.stringify(validLinks));
+            }
+
             console.log('Submitting with token:', session.access_token ? 'present' : 'missing');
             await createCommunityPost(formData, session.access_token);
-            
+
             // Reset and refresh
             handleCancelWrite();
             await fetchPosts(selectedCategory);
-            
+
         } catch (error) {
             console.error(error);
             alert('작성 실패: ' + (error instanceof Error ? error.message : '알 수 없는 오류'));
@@ -322,6 +341,91 @@ export function CommunityView() {
                                 </div>
                             )}
 
+                            {/* News: Images and SNS Links */}
+                            {writeCategory === 'NEWS' && (
+                                <div className="space-y-4">
+                                    {/* Image URLs */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-400 mb-2 flex items-center gap-2">
+                                            <ImageIcon className="w-4 h-4" /> 이미지 URL (최대 5개)
+                                        </label>
+                                        {newsImages.map((img, index) => (
+                                            <div key={index} className="flex gap-2 mb-2">
+                                                <input
+                                                    type="url"
+                                                    value={img}
+                                                    onChange={(e) => {
+                                                        const updated = [...newsImages];
+                                                        updated[index] = e.target.value;
+                                                        setNewsImages(updated);
+                                                    }}
+                                                    placeholder="https://example.com/image.jpg"
+                                                    className="flex-1 bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 placeholder-slate-500"
+                                                />
+                                                {newsImages.length > 1 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setNewsImages(newsImages.filter((_, i) => i !== index))}
+                                                        className="px-3 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+                                        {newsImages.length < 5 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setNewsImages([...newsImages, ''])}
+                                                className="px-4 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors text-sm flex items-center gap-2"
+                                            >
+                                                <Plus className="w-4 h-4" /> 이미지 추가
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* SNS Links */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-400 mb-2 flex items-center gap-2">
+                                            <LinkIcon className="w-4 h-4" /> SNS 링크 (Twitter, Instagram 등)
+                                        </label>
+                                        {snsLinks.map((link, index) => (
+                                            <div key={index} className="flex gap-2 mb-2">
+                                                <input
+                                                    type="url"
+                                                    value={link}
+                                                    onChange={(e) => {
+                                                        const updated = [...snsLinks];
+                                                        updated[index] = e.target.value;
+                                                        setSnsLinks(updated);
+                                                    }}
+                                                    placeholder="https://twitter.com/... 또는 https://instagram.com/..."
+                                                    className="flex-1 bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 placeholder-slate-500"
+                                                />
+                                                {snsLinks.length > 1 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setSnsLinks(snsLinks.filter((_, i) => i !== index))}
+                                                        className="px-3 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+                                        {snsLinks.length < 3 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setSnsLinks([...snsLinks, ''])}
+                                                className="px-4 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors text-sm flex items-center gap-2"
+                                            >
+                                                <Plus className="w-4 h-4" /> SNS 링크 추가
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Content - TipTap Editor */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-400 mb-2">내용</label>
@@ -365,7 +469,7 @@ export function CommunityView() {
                     <h2 className="text-3xl font-bold text-white mb-2">Community</h2>
                     <p className="text-slate-400">댈러스 매버릭스 팬들과의 소통 공간</p>
                 </div>
-                <button 
+                <button
                     onClick={handleWriteClick}
                     className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-colors"
                 >
@@ -397,7 +501,7 @@ export function CommunityView() {
                     <div className="text-6xl mb-4">📝</div>
                     <h3 className="text-xl font-bold text-white mb-2">아직 게시글이 없습니다</h3>
                     <p className="text-slate-400 mb-6">첫 번째 글을 작성해보세요!</p>
-                    <button 
+                    <button
                         onClick={handleWriteClick}
                         className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-colors"
                     >
@@ -540,7 +644,7 @@ export function CommunityView() {
                             자유롭게 이야기를 나누고, 굿즈를 거래하고, 오프라인 모임을 만들어보세요!
                         </p>
                     </div>
-                    <button 
+                    <button
                         onClick={handleWriteClick}
                         className="px-6 py-3 bg-white text-slate-900 rounded-xl font-bold hover:bg-blue-50 transition-colors whitespace-nowrap"
                     >
