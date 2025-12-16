@@ -40,10 +40,16 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
         }
     };
 
-    // Find the next upcoming game (closest future game that hasn't been played)
+    // Find the next game or live game
+    // 우선순위: 1) live 경기, 2) today 경기, 3) upcoming 경기
     const nextGame = useMemo(() => {
         if (!allGames || allGames.length === 0) return null;
         
+        // 먼저 live 경기 찾기
+        const liveGame = allGames.find(game => game.status === 'live');
+        if (liveGame) return liveGame;
+        
+        // live 경기가 없으면 오늘 또는 다가오는 경기 찾기
         const upcomingGames = allGames
             .filter(game => game.status === 'upcoming' || game.status === 'today')
             .sort((a, b) => new Date(a.game_date_kst).getTime() - new Date(b.game_date_kst).getTime());
@@ -104,13 +110,23 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
                         rel="noopener noreferrer"
                         className="block"
                     >
-                        <Card className="bg-gradient-to-br from-blue-900/60 via-blue-800/40 to-purple-900/40 border-blue-500/30 rounded-2xl overflow-hidden shadow-xl hover:shadow-blue-900/30 transition-all duration-300 hover:scale-[1.02]">
+                        <Card className={`${
+                            nextGame.status === 'live' 
+                                ? 'bg-gradient-to-br from-green-900/60 via-green-800/40 to-emerald-900/40 border-green-500/50' 
+                                : 'bg-gradient-to-br from-blue-900/60 via-blue-800/40 to-purple-900/40 border-blue-500/30'
+                        } rounded-2xl overflow-hidden shadow-xl hover:shadow-blue-900/30 transition-all duration-300 hover:scale-[1.02]`}>
                             <CardContent className="p-6">
                                 {/* Header with Date & Time */}
                                 <div className="flex flex-col items-center mb-6">
                                     <div className="flex items-center gap-2 mb-2">
-                                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                                        <span className="text-green-400 text-sm font-bold uppercase tracking-wider">Next Game</span>
+                                        <div className={`w-2 h-2 rounded-full animate-pulse ${
+                                            nextGame.status === 'live' ? 'bg-green-400' : 'bg-blue-400'
+                                        }`} />
+                                        <span className={`text-sm font-bold uppercase tracking-wider ${
+                                            nextGame.status === 'live' ? 'text-green-400' : 'text-blue-400'
+                                        }`}>
+                                            {nextGame.status === 'live' ? '🔴 LIVE NOW' : 'Next Game'}
+                                        </span>
                                     </div>
                                     <div className="flex items-center gap-3 text-white">
                                         <div className="flex items-center gap-2">
@@ -120,7 +136,13 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
                                         <span className="text-white/30">|</span>
                                         <div className="flex items-center gap-2">
                                             <Clock className="w-4 h-4 text-blue-400" />
-                                            <span className="font-mono font-bold text-blue-300">{nextGame.game_time_kst} KST</span>
+                                            {nextGame.status === 'live' ? (
+                                                <span className="font-mono font-bold text-green-300 animate-pulse">
+                                                    Q{nextGame.period} {nextGame.time_remaining}
+                                                </span>
+                                            ) : (
+                                                <span className="font-mono font-bold text-blue-300">{nextGame.game_time_kst} KST</span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -141,12 +163,23 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
                                         <span className={`text-sm md:text-lg font-bold ${!nextGame.is_home ? 'text-blue-400' : 'text-white'}`}>
                                             {nextGame.is_home ? nextGame.opponent : 'DAL'}
                                         </span>
+                                        {nextGame.status === 'live' && (
+                                            <span className="text-2xl md:text-3xl font-mono font-black text-white">
+                                                {nextGame.is_home ? nextGame.opponent_score : nextGame.mavs_score}
+                                            </span>
+                                        )}
                                     </div>
 
-                                    {/* VS */}
+                                    {/* VS or Score */}
                                     <div className="flex flex-col items-center">
-                                        <Zap className="w-6 h-6 text-yellow-400 mb-2" />
-                                        <span className="text-2xl md:text-3xl font-black text-white/50">VS</span>
+                                        {nextGame.status === 'live' ? (
+                                            <span className="text-2xl md:text-3xl font-black text-white/50">-</span>
+                                        ) : (
+                                            <>
+                                                <Zap className="w-6 h-6 text-yellow-400 mb-2" />
+                                                <span className="text-2xl md:text-3xl font-black text-white/50">VS</span>
+                                            </>
+                                        )}
                                     </div>
 
                                     {/* Home Team */}
@@ -162,6 +195,11 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
                                         <span className={`text-sm md:text-lg font-bold ${nextGame.is_home ? 'text-blue-400' : 'text-white'}`}>
                                             {nextGame.is_home ? 'DAL' : nextGame.opponent}
                                         </span>
+                                        {nextGame.status === 'live' && (
+                                            <span className="text-2xl md:text-3xl font-mono font-black text-white">
+                                                {nextGame.is_home ? nextGame.mavs_score : nextGame.opponent_score}
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
 

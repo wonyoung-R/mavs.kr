@@ -184,19 +184,30 @@ export default function NewHomePage() {
   useEffect(() => {
     fetchNBAData();
     fetchTodaysMavsGame();
+
+    // 실시간 업데이트: 1분마다 자동으로 점수 갱신
+    const intervalId = setInterval(() => {
+      fetchTodaysMavsGame();
+      fetchNBAData(); // 스케줄도 함께 업데이트
+    }, 60000); // 60초 = 1분
+
+    return () => clearInterval(intervalId);
   }, []);
 
   const fetchNBAData = async () => {
     try {
+      const shouldShowLoading = loadingGames; // 첫 로딩에만 로딩 표시
       const [gamesResponse] = await Promise.all([
         fetch('/api/nba/espn-schedule'),
-        new Promise(resolve => setTimeout(resolve, 2000)) // Min 2s loading
+        shouldShowLoading ? new Promise(resolve => setTimeout(resolve, 2000)) : Promise.resolve() // 첫 로딩에만 2초 지연
       ]);
       const gamesData = await gamesResponse.json();
       if (gamesData.success && gamesData.data) {
         setAllGames(gamesData.data.all_games || []);
       }
-      setLoadingGames(false);
+      if (shouldShowLoading) {
+        setLoadingGames(false);
+      }
     } catch (error) {
       console.error('Failed to fetch NBA data:', error);
       setLoadingGames(false);
@@ -205,16 +216,19 @@ export default function NewHomePage() {
 
   const fetchTodaysMavsGame = async () => {
     try {
+      const shouldShowLoading = loadingTodaysGame; // 첫 로딩에만 로딩 표시
       const [response] = await Promise.all([
         fetch('/api/nba/live-scores'),
-        new Promise(resolve => setTimeout(resolve, 2000)) // Min 2s loading
+        shouldShowLoading ? new Promise(resolve => setTimeout(resolve, 2000)) : Promise.resolve() // 첫 로딩에만 2초 지연
       ]);
       const data = await response.json();
       if (data.success && data.data) {
         const mavsGame = data.data.all_games?.find((game: any) => game.is_mavs_game);
         setTodaysMavsGame(mavsGame || null);
       }
-      setLoadingTodaysGame(false);
+      if (shouldShowLoading) {
+        setLoadingTodaysGame(false);
+      }
     } catch (error) {
       console.error('Failed to fetch today\'s Mavs game:', error);
       setLoadingTodaysGame(false);
