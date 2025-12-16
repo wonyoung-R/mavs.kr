@@ -26,9 +26,14 @@ export async function createCommunityPost(formData: FormData, accessToken?: stri
         throw new Error('올바른 카테고리를 선택해주세요.');
     }
 
+    // Supabase 설정 확인
+    const { supabaseUrl, supabaseAnonKey, isConfigured } = getSupabaseEnv();
+    if (!isConfigured) {
+        throw new Error('로그인 기능이 설정되지 않았습니다. 관리자에게 문의하세요.');
+    }
+
     // Get user from Supabase
     const cookieStore = await cookies();
-    const { supabaseUrl, supabaseAnonKey } = getSupabaseEnv();
     const supabase = createServerClient(
         supabaseUrl,
         supabaseAnonKey,
