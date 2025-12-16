@@ -17,8 +17,8 @@ export async function GET() {
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV,
     checks,
-    message: allConfigured 
-      ? 'All environment variables are configured' 
+    message: allConfigured
+      ? 'All environment variables are configured'
       : 'Some environment variables are missing or using placeholders',
   });
 }
