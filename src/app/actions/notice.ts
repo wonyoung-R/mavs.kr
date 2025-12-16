@@ -77,7 +77,7 @@ export async function createNotice(formData: FormData) {
         data: {
             title,
             content,
-            category: 'NOTICE',
+            category: 'NOTICE' as any,
             authorId: dbUser.id,
             isPinned,
         }

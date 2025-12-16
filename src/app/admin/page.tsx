@@ -27,7 +27,7 @@ export default function AdminPage() {
     const [crawlResult, setCrawlResult] = useState<any>(null);
     const [updatingScores, setUpdatingScores] = useState(false);
     const [scoreUpdateResult, setScoreUpdateResult] = useState<any>(null);
-    
+
     // Notice states
     const [showNoticeForm, setShowNoticeForm] = useState(false);
     const [noticeTitle, setNoticeTitle] = useState('');
@@ -172,7 +172,7 @@ export default function AdminPage() {
 
             const { createNotice } = await import('@/app/actions/notice');
             await createNotice(formData);
-            
+
             alert('공지사항이 등록되었습니다!');
             setNoticeTitle('');
             setNoticeContent('');

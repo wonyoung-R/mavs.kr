@@ -83,7 +83,7 @@ export function CommunityView() {
     const [meetupDate, setMeetupDate] = useState('');
     const [meetupPurpose, setMeetupPurpose] = useState('DRINK');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    
+
     // News specific states
     const [newsImages, setNewsImages] = useState<string[]>(['']);
     const [snsLinks, setSnsLinks] = useState<string[]>(['']);

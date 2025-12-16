@@ -172,7 +172,7 @@ model Post {
   isLocked      Boolean   @default(false)
   comments      Comment[]
   votes         Vote[]
-  
+
   // Market specific fields
   price         Int?
   contactInfo   String?
