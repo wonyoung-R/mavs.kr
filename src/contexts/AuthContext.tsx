@@ -78,12 +78,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
-                console.log('Auth event:', event);
+                console.log('[AuthContext] Auth event:', event);
+                console.log('[AuthContext] Session:', session ? 'present' : 'null');
+                console.log('[AuthContext] User:', session?.user?.email || 'no user');
+                
                 setSession(session);
                 setUser(session?.user ?? null);
 
                 if (session?.user) {
+                    console.log('[AuthContext] Fetching user role for:', session.user.email);
                     const role = await fetchUserRole(session.user);
+                    console.log('[AuthContext] User role:', role);
                     setUserRole(role);
                 } else {
                     setUserRole('user');
@@ -100,25 +105,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const signInWithGoogle = async () => {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'not set';
-        
-        console.log('Starting Google sign in...');
-        console.log('Redirect URL:', `${window.location.origin}/auth/callback`);
-        console.log('Supabase URL:', supabaseUrl);
 
-        const { data, error } = await supabase.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-                redirectTo: `${window.location.origin}/auth/callback`,
-            },
-        });
+        console.log('[SignIn] Starting Google sign in...');
+        console.log('[SignIn] Redirect URL:', `${window.location.origin}/auth/callback`);
+        console.log('[SignIn] Supabase URL:', supabaseUrl);
+        console.log('[SignIn] Current location:', window.location.href);
 
-        if (error) {
-            console.error('Google sign in error:', error);
-            alert(`로그인 실패: ${error.message}`);
-            throw error;
+        if (supabaseUrl === 'not set' || supabaseUrl === 'https://placeholder.supabase.co') {
+            alert('⚠️ Supabase가 설정되지 않았습니다. 관리자에게 문의하세요.');
+            console.error('[SignIn] Supabase not configured');
+            return;
         }
 
-        console.log('OAuth redirect initiated:', data);
+        try {
+            const { data, error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: `${window.location.origin}/auth/callback`,
+                    queryParams: {
+                        access_type: 'offline',
+                        prompt: 'consent',
+                    }
+                },
+            });
+
+            if (error) {
+                console.error('[SignIn] Google sign in error:', error);
+                alert(`❌ 로그인 실패: ${error.message}`);
+                throw error;
+            }
+
+            console.log('[SignIn] OAuth redirect initiated');
+            console.log('[SignIn] Provider:', data?.provider);
+            console.log('[SignIn] URL:', data?.url);
+        } catch (err) {
+            console.error('[SignIn] Exception:', err);
+            throw err;
+        }
     };
 
     const signOut = async () => {
