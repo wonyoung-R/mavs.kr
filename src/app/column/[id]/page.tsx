@@ -10,16 +10,17 @@ import { cookies } from 'next/headers';
 import DeleteButton from '@/components/column/DeleteButton';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string;
-  }
+  }>
 }
 
 const ADMIN_EMAILS = ['mavsdotkr@gmail.com'];
 
 export default async function ColumnDetailPage({ params }: PageProps) {
+  const { id } = await params;
   const post = await prisma.post.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       author: {
         select: {

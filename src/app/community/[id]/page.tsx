@@ -12,9 +12,9 @@ import LikeButton from '@/components/community/LikeButton';
 import CommentSection from '@/components/community/CommentSection';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string;
-  }
+  }>
 }
 
 const CATEGORY_LABELS: Record<string, { name: string; icon: string; color: string }> = {
@@ -34,9 +34,11 @@ const MEETUP_PURPOSE_LABELS: Record<string, string> = {
 const ADMIN_EMAILS = ['mavsdotkr@gmail.com'];
 
 export default async function CommunityDetailPage({ params }: PageProps) {
+  const { id } = await params;
+  
   // Fetch post with comments
   const post = await prisma.post.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       author: {
         select: {
