@@ -7,7 +7,7 @@ export function getSupabaseEnv() {
 
   // 빌드 시에는 placeholder 허용, 런타임에는 실제 값 필요
   const isPlaceholder = supabaseUrl === 'https://placeholder.supabase.co';
-  
+
   return {
     supabaseUrl,
     supabaseAnonKey,
@@ -17,10 +17,10 @@ export function getSupabaseEnv() {
 
 export function requireSupabaseEnv() {
   const { supabaseUrl, supabaseAnonKey, isPlaceholder } = getSupabaseEnv();
-  
+
   if (isPlaceholder) {
     throw new Error('Supabase environment variables are not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.');
   }
-  
+
   return { supabaseUrl, supabaseAnonKey };
 }
