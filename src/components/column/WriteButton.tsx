@@ -13,7 +13,7 @@ export default function WriteButton() {
     // Hide button only if user is logged in but NOT a columnist
     if (user && !isColumnist) return null;
 
-    const href = user ? '/column/new' : '/login?redirect=/column';
+    const href = user ? '/column/new' : '/login?redirect=/column/new';
 
     return (
         <Link href={href}>
