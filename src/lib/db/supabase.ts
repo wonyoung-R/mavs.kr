@@ -1,17 +1,25 @@
 // src/lib/db/supabase.ts
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 // Public client (for client-side and basic server operations)
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-    },
-});
+// 환경변수가 없으면 더미 클라이언트 생성 (빌드 시 에러 방지)
+export const supabase = supabaseUrl && supabaseAnonKey 
+    ? createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+        },
+    })
+    : createClient('https://placeholder.supabase.co', 'placeholder-key', {
+        auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+        },
+    });
 
 // Service role client (for server-side operations with full access)
 // Only use this on the server side!
@@ -19,6 +27,10 @@ export const getServiceSupabase = () => {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!serviceRoleKey) {
         console.warn('SUPABASE_SERVICE_ROLE_KEY not found, using anon key');
+        return supabase;
+    }
+    if (!supabaseUrl) {
+        console.warn('SUPABASE_URL not found');
         return supabase;
     }
     return createClient(supabaseUrl, serviceRoleKey);
