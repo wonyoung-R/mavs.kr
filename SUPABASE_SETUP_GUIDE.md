@@ -41,14 +41,21 @@ http://localhost:3030/auth/callback
 
 **위치:** Google Cloud Console → APIs & Services → OAuth consent screen
 
-1. **앱 이름**: MAVS.KR
-2. **사용자 지원 이메일**: mavsdotkr@gmail.com
-3. **승인된 도메인** 추가:
-   ```
-   mavs.kr
-   supabase.co
-   ```
-4. **저장 후 계속**
+**1단계: 앱 정보**
+- **앱 이름**: MAVS.KR
+- **사용자 지원 이메일**: mavsdotkr@gmail.com
+
+**2단계: 브랜딩 (스크롤 다운)**
+- **승인된 도메인** 섹션에서 "도메인 추가" 클릭
+- 다음을 하나씩 추가:
+  ```
+  mavs.kr
+  supabase.co
+  ```
+  ⚠️ **주의:** 각 도메인을 입력하고 Enter 누르기
+  ⚠️ **주의:** `https://` 없이 도메인만 입력
+
+**3단계: 저장 후 계속**
 
 #### B. OAuth 2.0 클라이언트 ID 생성
 
