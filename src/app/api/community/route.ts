@@ -4,6 +4,8 @@ import { ForumCategory } from '@prisma/client';
 
 // Community categories (excluding COLUMN which is for columns only)
 const COMMUNITY_CATEGORIES: ForumCategory[] = [
+    ForumCategory.NOTICE,
+    ForumCategory.NEWS,
     ForumCategory.FREE,
     ForumCategory.MARKET,
     ForumCategory.MEETUP
