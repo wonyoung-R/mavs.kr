@@ -24,7 +24,7 @@ export async function createPost(formData: FormData, token?: string) {
     const title = formData.get('title') as string;
     const content = formData.get('content') as string;
     const categoryInput = formData.get('category') as string;
-    
+
     // Optional fields
     const price = formData.get('price') ? parseInt(formData.get('price') as string) : null;
     const location = formData.get('location') as string || null;
