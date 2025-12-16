@@ -81,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 console.log('[AuthContext] Auth event:', event);
                 console.log('[AuthContext] Session:', session ? 'present' : 'null');
                 console.log('[AuthContext] User:', session?.user?.email || 'no user');
-                
+
                 setSession(session);
                 setUser(session?.user ?? null);
 
