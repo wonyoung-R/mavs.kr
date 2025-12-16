@@ -17,8 +17,13 @@ export async function createColumn(formData: FormData, token?: string) {
         throw new Error('Title and content are required')
     }
 
+    // Supabase 설정 확인
+    const { supabaseUrl, supabaseAnonKey, isConfigured } = getSupabaseEnv()
+    if (!isConfigured) {
+        throw new Error('로그인 기능이 설정되지 않았습니다. 관리자에게 문의하세요.')
+    }
+
     const cookieStore = await cookies()
-    const { supabaseUrl, supabaseAnonKey } = getSupabaseEnv()
 
     const supabase = createServerClient(
         supabaseUrl,
@@ -112,8 +117,13 @@ export async function createColumn(formData: FormData, token?: string) {
 }
 
 export async function deleteColumn(postId: string, token?: string) {
+    // Supabase 설정 확인
+    const { supabaseUrl, supabaseAnonKey, isConfigured } = getSupabaseEnv()
+    if (!isConfigured) {
+        throw new Error('로그인 기능이 설정되지 않았습니다. 관리자에게 문의하세요.')
+    }
+
     const cookieStore = await cookies()
-    const { supabaseUrl, supabaseAnonKey } = getSupabaseEnv()
 
     const supabase = createServerClient(
         supabaseUrl,

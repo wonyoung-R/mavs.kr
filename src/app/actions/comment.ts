@@ -20,8 +20,13 @@ export async function createComment(
         throw new Error('댓글 내용을 입력해주세요.');
     }
 
+    // Supabase 설정 확인
+    const { supabaseUrl, supabaseAnonKey, isConfigured } = getSupabaseEnv();
+    if (!isConfigured) {
+        throw new Error('로그인 기능이 설정되지 않았습니다. 관리자에게 문의하세요.');
+    }
+
     const cookieStore = await cookies();
-    const { supabaseUrl, supabaseAnonKey } = getSupabaseEnv();
     const supabase = createServerClient(
         supabaseUrl,
         supabaseAnonKey,
