@@ -99,10 +99,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const signInWithGoogle = async () => {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'not set';
+        
         console.log('Starting Google sign in...');
         console.log('Redirect URL:', `${window.location.origin}/auth/callback`);
-        console.log('Supabase URL:', supabase.supabaseUrl);
-        
+        console.log('Supabase URL:', supabaseUrl);
+
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
@@ -115,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             alert(`로그인 실패: ${error.message}`);
             throw error;
         }
-        
+
         console.log('OAuth redirect initiated:', data);
     };
 
