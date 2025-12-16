@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
 
         const total = await prisma.post.count({ where: whereClause });
 
-        return NextResponse.json({ 
+        return NextResponse.json({
             posts,
             total,
             hasMore: offset + posts.length < total
