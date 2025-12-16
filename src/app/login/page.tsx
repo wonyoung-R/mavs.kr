@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginPage() {
-    const { user, loading, signInWithGoogle } = useAuth();
+    const { user, session, loading, signInWithGoogle } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
     const redirect = searchParams.get('redirect');
@@ -14,11 +14,13 @@ export default function LoginPage() {
     const errorMessage = searchParams.get('message') || searchParams.get('description');
 
     useEffect(() => {
-        if (!loading && user) {
+        // 세션과 유저가 모두 있고, 로딩이 끝났을 때만 리다이렉트
+        if (!loading && user && session) {
+            console.log('[Login Page] Authenticated user detected, redirecting to:', redirect || '/');
             // 로그인 성공 시 redirect 파라미터가 있으면 해당 페이지로, 없으면 홈으로
             router.push(redirect || '/');
         }
-    }, [user, loading, router, redirect]);
+    }, [user, session, loading, router, redirect]);
 
     useEffect(() => {
         // Display error message if present

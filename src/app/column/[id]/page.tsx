@@ -77,11 +77,6 @@ export default async function ColumnDetailPage({ params }: PageProps) {
       const { data } = await supabase.auth.getUser();
       user = data.user;
 
-      // 로그인하지 않은 경우 로그인 페이지로 리다이렉트
-      if (!user) {
-        redirect('/login?redirect=/column/' + id);
-      }
-
       // Check if user can delete (author or admin)
       canDelete = user ? (
         user.email === post.author.email ||

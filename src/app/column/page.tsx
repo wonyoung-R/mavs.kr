@@ -9,51 +9,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 export default async function ColumnPage() {
-    // 로그인 체크
-    let user = null;
-
-    try {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
-
-        if (supabaseUrl && supabaseAnonKey && supabaseUrl !== 'https://placeholder.supabase.co') {
-            const cookieStore = await cookies();
-            const supabase = createServerClient(
-                supabaseUrl,
-                supabaseAnonKey,
-                {
-                    cookies: {
-                        getAll() {
-                            return cookieStore.getAll();
-                        },
-                        setAll(cookiesToSet) {
-                            try {
-                                cookiesToSet.forEach(({ name, value, options }) =>
-                                    cookieStore.set(name, value, options)
-                                );
-                            } catch {
-                                // Ignore
-                            }
-                        },
-                    },
-                }
-            );
-
-            const { data } = await supabase.auth.getUser();
-            user = data.user;
-
-            // 로그인하지 않은 경우 로그인 페이지로 리다이렉트
-            if (!user) {
-                redirect('/login?redirect=/column');
-            }
-        } else {
-            // Supabase가 설정되지 않은 경우
-            redirect('/login?redirect=/column');
-        }
-    } catch (error) {
-        console.error('Auth error:', error);
-        redirect('/login?redirect=/column');
-    }
+    // 컬럼은 누구나 읽을 수 있음 (로그인 체크 제거)
     const posts = await prisma.post.findMany({
         where: { category: 'COLUMN' },
         orderBy: { createdAt: 'desc' },
