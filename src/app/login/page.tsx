@@ -138,15 +138,7 @@ export default function LoginPage() {
 
                     {/* Additional Info */}
                     <p className="text-center text-slate-500 text-sm">
-                        로그인하면 MAVS.KR의{' '}
-                        <Link href="/terms" className="text-blue-400 hover:underline">
-                            이용약관
-                        </Link>
-                        {' '}및{' '}
-                        <Link href="/privacy" className="text-blue-400 hover:underline">
-                            개인정보처리방침
-                        </Link>
-                        에 동의하게 됩니다.
+                        로그인하면 MAVS.KR의 이용약관 및 개인정보처리방침에 동의하게 됩니다.
                     </p>
 
                     {/* Back to Home */}
