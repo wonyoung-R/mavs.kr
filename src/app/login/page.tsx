@@ -1,19 +1,22 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginPage() {
     const { user, loading, signInWithGoogle } = useAuth();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const redirect = searchParams.get('redirect');
 
     useEffect(() => {
         if (!loading && user) {
-            router.push('/');
+            // 로그인 성공 시 redirect 파라미터가 있으면 해당 페이지로, 없으면 홈으로
+            router.push(redirect || '/');
         }
-    }, [user, loading, router]);
+    }, [user, loading, router, redirect]);
 
     const handleGoogleLogin = async () => {
         try {
@@ -22,6 +25,31 @@ export default function LoginPage() {
             console.error('Login failed:', error);
         }
     };
+
+    // redirect 파라미터에 따른 메시지
+    const getMessage = () => {
+        if (redirect?.includes('/column')) {
+            return {
+                title: '컬럼을 읽으려면 로그인이 필요합니다',
+                description: '매버릭스 전문가들의 심도 있는 분석과 칼럼을 확인하세요.',
+                icon: '📰'
+            };
+        }
+        if (redirect?.includes('/community')) {
+            return {
+                title: '커뮤니티 글을 작성하려면 로그인이 필요합니다',
+                description: '매버릭스 팬들과 함께 이야기를 나눠보세요.',
+                icon: '✍️'
+            };
+        }
+        return {
+            title: '매버릭스 팬 커뮤니티에 오신 것을 환영합니다',
+            description: '로그인하고 다양한 콘텐츠를 즐기세요.',
+            icon: '🏀'
+        };
+    };
+
+    const message = getMessage();
 
     if (loading) {
         return (
@@ -46,6 +74,13 @@ export default function LoginPage() {
                             <h1 className="text-3xl font-bold text-white">MAVS.KR</h1>
                         </Link>
                         <p className="text-slate-400 mt-2">댈러스 매버릭스 팬 커뮤니티</p>
+                    </div>
+
+                    {/* Login Message */}
+                    <div className="mb-8 text-center bg-blue-600/10 border border-blue-500/20 rounded-xl p-6">
+                        <div className="text-4xl mb-3">{message.icon}</div>
+                        <h2 className="text-xl font-bold text-white mb-2">{message.title}</h2>
+                        <p className="text-slate-400 text-sm">{message.description}</p>
                     </div>
 
                     {/* Google Login Button */}

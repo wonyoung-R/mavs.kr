@@ -105,7 +105,8 @@ export function CommunityView() {
 
     const handleWriteClick = () => {
         if (!user) {
-            alert('로그인이 필요합니다.');
+            // 로그인 페이지로 리다이렉트 (현재 위치 저장)
+            window.location.href = '/login?redirect=' + encodeURIComponent('/?tab=community');
             return;
         }
         setShowWriteForm(true);

@@ -176,7 +176,7 @@ export function ColumnView() {
                             나만의 시선으로 댈러스의 이야기를 들려주세요. 우수 칼럼니스트에게는 소정의 혜택이 주어집니다.
                         </p>
                     </div>
-                    <Link href="/column/new">
+                    <Link href="/login?redirect=/column">
                         <button className="px-6 py-3 bg-white text-slate-900 rounded-xl font-bold hover:bg-blue-50 transition-colors whitespace-nowrap">
                             칼럼 기고하기
                         </button>
