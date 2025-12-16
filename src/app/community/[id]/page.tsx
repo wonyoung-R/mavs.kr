@@ -87,47 +87,62 @@ export default async function CommunityDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  // Get current user
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            // Ignore
-          }
-        },
-      },
-    }
-  );
-
-  const { data: { user } } = await supabase.auth.getUser();
-
-  // Check if user can delete
-  const canDelete = user && (
-    user.email === post.author.email ||
-    ADMIN_EMAILS.includes(user.email || '')
-  );
-
-  // Check if user has liked
+  // Get current user (안전하게 처리)
+  let user = null;
+  let canDelete = false;
   let hasLiked = false;
-  if (user) {
-    const dbUser = await prisma.user.findUnique({ where: { email: user.email! } });
-    if (dbUser) {
-      const like = await prisma.like.findUnique({
-        where: { userId_postId: { userId: dbUser.id, postId: post.id } }
-      });
-      hasLiked = !!like;
+
+  try {
+    // 환경변수 확인
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
+
+    if (supabaseUrl && supabaseAnonKey && supabaseUrl !== 'https://placeholder.supabase.co') {
+      const cookieStore = await cookies();
+      const supabase = createServerClient(
+        supabaseUrl,
+        supabaseAnonKey,
+        {
+          cookies: {
+            getAll() {
+              return cookieStore.getAll();
+            },
+            setAll(cookiesToSet) {
+              try {
+                cookiesToSet.forEach(({ name, value, options }) =>
+                  cookieStore.set(name, value, options)
+                );
+              } catch {
+                // Ignore
+              }
+            },
+          },
+        }
+      );
+
+      const { data } = await supabase.auth.getUser();
+      user = data.user;
+
+      // Check if user can delete
+      canDelete = user ? (
+        user.email === post.author.email ||
+        ADMIN_EMAILS.includes(user.email || '')
+      ) : false;
+
+      // Check if user has liked
+      if (user) {
+        const dbUser = await prisma.user.findUnique({ where: { email: user.email! } });
+        if (dbUser) {
+          const like = await prisma.like.findUnique({
+            where: { userId_postId: { userId: dbUser.id, postId: post.id } }
+          });
+          hasLiked = !!like;
+        }
+      }
     }
+  } catch (error) {
+    console.error('Auth error:', error);
+    // 인증 실패 시 계속 진행
   }
 
   const categoryInfo = CATEGORY_LABELS[post.category] || CATEGORY_LABELS.FREE;
