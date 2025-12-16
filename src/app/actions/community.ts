@@ -58,13 +58,13 @@ export async function createCommunityPost(formData: FormData, accessToken?: stri
     // Try token first, then fallback to cookies (like column.ts does)
     let user;
     console.log('[Community Action] accessToken provided:', !!accessToken);
-    
+
     if (accessToken) {
         const { data, error } = await supabase.auth.getUser(accessToken);
         console.log('[Community Action] Token auth result:', error ? error.message : 'success');
         if (!error) user = data.user;
     }
-    
+
     // Fallback to cookies if token didn't work
     if (!user) {
         console.log('[Community Action] Trying cookie auth...');
@@ -77,7 +77,7 @@ export async function createCommunityPost(formData: FormData, accessToken?: stri
         console.log('[Community Action] No user found, throwing error');
         throw new Error('로그인이 필요합니다.');
     }
-    
+
     console.log('[Community Action] User authenticated:', user.email);
 
     // Find or create user in Prisma
@@ -154,7 +154,7 @@ export async function deleteCommunityPost(postId: string, accessToken?: string) 
         const { data, error } = await supabase.auth.getUser(accessToken);
         if (!error) user = data.user;
     }
-    
+
     if (!user) {
         const { data } = await supabase.auth.getUser();
         user = data.user;
@@ -220,7 +220,7 @@ export async function toggleLike(postId: string, accessToken?: string) {
         const { data, error } = await supabase.auth.getUser(accessToken);
         if (!error) user = data.user;
     }
-    
+
     if (!user) {
         const { data } = await supabase.auth.getUser();
         user = data.user;
