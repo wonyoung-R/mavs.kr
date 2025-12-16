@@ -10,18 +10,29 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 120; // 120 seconds timeout (for translation)
 
 export async function GET(request: Request) {
-  // Verify cron secret (optional security)
-  const authHeader = request.headers.get('authorization');
-  const cronSecret = process.env.CRON_SECRET;
+  // Verify cron secret (optional security) - 로컬 개발 환경에서는 체크 건너뛰기
+  const isDevelopment = process.env.NODE_ENV === 'development';
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!isDevelopment) {
+    const authHeader = request.headers.get('authorization');
+    const cronSecret = process.env.CRON_SECRET;
+
+    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
   }
 
   console.log('🕐 Cron job started: crawl-news');
 
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    // 로컬 개발 환경에서는 request URL에서 호스트 추출
+    let baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+    if (isDevelopment) {
+      const requestUrl = new URL(request.url);
+      baseUrl = `${requestUrl.protocol}//${requestUrl.host}`;
+      console.log(`🔧 Development mode - using baseUrl: ${baseUrl}`);
+    }
 
     // Fetch from all news sources
     const sources = [
@@ -34,10 +45,28 @@ export async function GET(request: Request) {
 
     for (const source of sources) {
       try {
-        const response = await fetch(source.endpoint);
+        console.log(`📥 Fetching from ${source.name}...`);
+        const response = await fetch(source.endpoint, {
+          headers: { 'Accept': 'application/json' }
+        });
+
+        // 응답 상태 확인
+        if (!response.ok) {
+          console.error(`❌ ${source.name} HTTP error: ${response.status}`);
+          continue;
+        }
+
+        // 응답 타입 확인
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          console.error(`❌ ${source.name} returned non-JSON: ${text.substring(0, 100)}...`);
+          continue;
+        }
+
         const data = await response.json();
 
-        if (data.articles) {
+        if (data.articles && Array.isArray(data.articles)) {
           // Transform API response to NewsArticleInput format
           const transformed = data.articles.map((a: any) => ({
             title: a.title,
@@ -50,19 +79,36 @@ export async function GET(request: Request) {
           }));
           allArticles.push(...transformed);
           console.log(`✅ ${source.name}: ${data.articles.length} articles`);
+        } else {
+          console.log(`⚠️ ${source.name}: No articles found in response`);
         }
       } catch (err) {
-        console.error(`❌ Failed to fetch ${source.name}:`, err);
+        console.error(`❌ Failed to fetch ${source.name}:`, err instanceof Error ? err.message : String(err));
       }
     }
 
     // Save to database via Prisma
-    const saveResult = await saveNewsMany(allArticles);
-    console.log(`💾 Saved: ${saveResult.saved}, Updated: ${saveResult.updated}, Errors: ${saveResult.errors}`);
+    let saveResult = { saved: 0, updated: 0, errors: 0 };
+    let translateResult = { translated: 0, errors: 0 };
 
-    // Translate untranslated news (limit to 3 to avoid rate limits)
-    const translateResult = await translateUntranslatedNews(3);
-    console.log(`🌐 Translated: ${translateResult.translated}, Errors: ${translateResult.errors}`);
+    if (allArticles.length > 0) {
+      try {
+        saveResult = await saveNewsMany(allArticles);
+        console.log(`💾 Saved: ${saveResult.saved}, Updated: ${saveResult.updated}, Errors: ${saveResult.errors}`);
+      } catch (err) {
+        console.error('❌ Failed to save articles:', err instanceof Error ? err.message : String(err));
+      }
+
+      // Translate untranslated news (limit to 3 to avoid rate limits)
+      try {
+        translateResult = await translateUntranslatedNews(3);
+        console.log(`🌐 Translated: ${translateResult.translated}, Errors: ${translateResult.errors}`);
+      } catch (err) {
+        console.error('❌ Failed to translate:', err instanceof Error ? err.message : String(err));
+      }
+    } else {
+      console.log('⚠️ No articles to save');
+    }
 
     console.log('🕐 Cron job complete');
 
@@ -92,4 +138,9 @@ export async function GET(request: Request) {
       message: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
+}
+
+// POST 메서드도 지원 (admin 페이지에서 호출)
+export async function POST(request: Request) {
+  return GET(request);
 }

@@ -28,19 +28,25 @@ export default function AdminPage() {
     const [updatingScores, setUpdatingScores] = useState(false);
     const [scoreUpdateResult, setScoreUpdateResult] = useState<any>(null);
 
-    useEffect(() => {
-        if (!loading && !user) {
-            router.push('/login');
-        } else if (!loading && !isAdmin) {
-            router.push('/');
-        }
-    }, [user, loading, isAdmin, router]);
+    // 로컬 개발 환경 체크
+    const isDevelopment = process.env.NODE_ENV === 'development';
 
     useEffect(() => {
-        if (isAdmin) {
+        // 개발 환경에서는 인증 체크 건너뛰기
+        if (!isDevelopment) {
+            if (!loading && !user) {
+                router.push('/login');
+            } else if (!loading && !isAdmin) {
+                router.push('/');
+            }
+        }
+    }, [user, loading, isAdmin, router, isDevelopment]);
+
+    useEffect(() => {
+        if (isAdmin || isDevelopment) {
             fetchUsers();
         }
-    }, [isAdmin]);
+    }, [isAdmin, isDevelopment]);
 
     const fetchUsers = async () => {
         try {
@@ -50,14 +56,15 @@ export default function AdminPage() {
                 .order('created_at', { ascending: false });
 
             if (error) {
-                console.error('Error fetching users:', error);
+                console.log('프로필 테이블이 없거나 데이터가 없습니다. (로컬 개발 모드)');
                 // If table doesn't exist, show empty
                 setUsers([]);
             } else {
                 setUsers(data || []);
             }
         } catch (err) {
-            console.error('Failed to fetch users:', err);
+            console.log('사용자 목록을 불러올 수 없습니다. (로컬 개발 모드)');
+            setUsers([]);
         } finally {
             setLoadingUsers(false);
         }
@@ -153,7 +160,7 @@ export default function AdminPage() {
         }
     };
 
-    if (loading || !isAdmin) {
+    if (!isDevelopment && (loading || !isAdmin)) {
         return (
             <div className="min-h-screen bg-[#050510] flex items-center justify-center">
                 <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full"></div>

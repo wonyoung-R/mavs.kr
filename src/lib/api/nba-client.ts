@@ -108,14 +108,36 @@ export class NBAApiClient {
       if (endDate) params.end_date = endDate;
       if (teamId) params.team_ids = [teamId];
 
+      console.log('NBA API request params:', params);
+
       const response: AxiosResponse<NBAApiResponse<NBAGame>> = await this.client.get('/games', {
         params,
       });
 
+      console.log(`NBA API response: ${response.data.data.length} games found`);
       return response.data.data.map(this.transformGame);
-    } catch (error) {
-      console.error('Failed to fetch games:', error);
-      throw new Error('Failed to fetch games from NBA API');
+    } catch (error: any) {
+      if (error.response) {
+        // 서버가 응답을 반환했지만 2xx 범위를 벗어남
+        console.error('NBA API error response:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+          headers: error.response.headers,
+        });
+      } else if (error.request) {
+        // 요청이 전송되었지만 응답을 받지 못함
+        console.error('NBA API no response:', {
+          message: error.message,
+          code: error.code,
+          request: error.request?.path,
+        });
+      } else {
+        // 요청 설정 중 오류 발생
+        console.error('NBA API request setup error:', error.message);
+      }
+
+      throw new Error(`Failed to fetch games from NBA API: ${error.message || 'Unknown error'}`);
     }
   }
 
