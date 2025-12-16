@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth, UserRole } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/db/supabase';
-import { ArrowLeft, Shield, User, Edit2, Check, X, Newspaper, Loader2, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Shield, User, Edit2, Check, X, Newspaper, Loader2, RefreshCw, Megaphone } from 'lucide-react';
 
 interface UserProfile {
     id: string;
@@ -27,6 +27,13 @@ export default function AdminPage() {
     const [crawlResult, setCrawlResult] = useState<any>(null);
     const [updatingScores, setUpdatingScores] = useState(false);
     const [scoreUpdateResult, setScoreUpdateResult] = useState<any>(null);
+    
+    // Notice states
+    const [showNoticeForm, setShowNoticeForm] = useState(false);
+    const [noticeTitle, setNoticeTitle] = useState('');
+    const [noticeContent, setNoticeContent] = useState('');
+    const [isPinned, setIsPinned] = useState(false);
+    const [submittingNotice, setSubmittingNotice] = useState(false);
 
     // 로컬 개발 환경 체크
     const isDevelopment = process.env.NODE_ENV === 'development';
@@ -146,6 +153,36 @@ export default function AdminPage() {
             alert('업데이트 중 오류가 발생했습니다.');
         } finally {
             setUpdatingScores(false);
+        }
+    };
+
+    const handleNoticeSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!noticeTitle.trim() || !noticeContent.trim()) {
+            alert('제목과 내용을 입력해주세요.');
+            return;
+        }
+
+        setSubmittingNotice(true);
+        try {
+            const formData = new FormData();
+            formData.append('title', noticeTitle);
+            formData.append('content', noticeContent);
+            formData.append('isPinned', isPinned.toString());
+
+            const { createNotice } = await import('@/app/actions/notice');
+            await createNotice(formData);
+            
+            alert('공지사항이 등록되었습니다!');
+            setNoticeTitle('');
+            setNoticeContent('');
+            setIsPinned(false);
+            setShowNoticeForm(false);
+        } catch (error) {
+            console.error('Notice creation error:', error);
+            alert('공지사항 등록 실패: ' + (error instanceof Error ? error.message : '알 수 없는 오류'));
+        } finally {
+            setSubmittingNotice(false);
         }
     };
 
@@ -386,6 +423,108 @@ export default function AdminPage() {
 
                         <div className="text-xs text-slate-500 mt-3">
                             💡 뉴스 크롤링은 ESPN, Mavs Moneyball, The Smoking Cuban에서 최신 뉴스를 가져옵니다.
+                        </div>
+                    </div>
+                </div>
+
+                {/* Notice Management */}
+                <div className="mt-6 bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden">
+                    <div className="p-4 border-b border-white/10">
+                        <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                            <Megaphone className="w-5 h-5 text-red-400" />
+                            공지사항 작성
+                        </h2>
+                        <p className="text-slate-400 text-sm">슈퍼관리자만 공지사항을 작성할 수 있습니다</p>
+                    </div>
+
+                    <div className="p-4">
+                        {!showNoticeForm ? (
+                            <button
+                                onClick={() => setShowNoticeForm(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 rounded-lg transition-colors"
+                            >
+                                <Megaphone className="w-4 h-4" />
+                                새 공지사항 작성
+                            </button>
+                        ) : (
+                            <form onSubmit={handleNoticeSubmit} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-400 mb-2">
+                                        제목
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={noticeTitle}
+                                        onChange={(e) => setNoticeTitle(e.target.value)}
+                                        placeholder="공지사항 제목을 입력하세요"
+                                        className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-red-500 placeholder-slate-500"
+                                        required
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-400 mb-2">
+                                        내용
+                                    </label>
+                                    <textarea
+                                        value={noticeContent}
+                                        onChange={(e) => setNoticeContent(e.target.value)}
+                                        placeholder="공지사항 내용을 입력하세요"
+                                        rows={6}
+                                        className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-red-500 placeholder-slate-500 resize-none"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="checkbox"
+                                        id="isPinned"
+                                        checked={isPinned}
+                                        onChange={(e) => setIsPinned(e.target.checked)}
+                                        className="w-4 h-4 rounded bg-slate-800 border-slate-700 text-red-500 focus:ring-red-500 focus:ring-offset-slate-900"
+                                    />
+                                    <label htmlFor="isPinned" className="text-sm text-slate-300">
+                                        상단 고정
+                                    </label>
+                                </div>
+
+                                <div className="flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setShowNoticeForm(false);
+                                            setNoticeTitle('');
+                                            setNoticeContent('');
+                                            setIsPinned(false);
+                                        }}
+                                        className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                                    >
+                                        취소
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={submittingNotice}
+                                        className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {submittingNotice ? (
+                                            <>
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                등록 중...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Megaphone className="w-4 h-4" />
+                                                공지사항 등록
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        )}
+
+                        <div className="text-xs text-slate-500 mt-3">
+                            📢 공지사항은 커뮤니티 게시판 상단에 표시됩니다.
                         </div>
                     </div>
                 </div>

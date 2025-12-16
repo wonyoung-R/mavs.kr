@@ -6,7 +6,7 @@ import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { getSupabaseEnv } from '@/lib/supabase-helpers';
 
-const COMMUNITY_CATEGORIES = ['FREE', 'MARKET', 'MEETUP'];
+const COMMUNITY_CATEGORIES = ['FREE', 'MARKET', 'MEETUP', 'NEWS'];
 const ADMIN_EMAILS = ['mavsdotkr@gmail.com'];
 
 export async function createCommunityPost(formData: FormData, accessToken?: string) {
@@ -17,6 +17,8 @@ export async function createCommunityPost(formData: FormData, accessToken?: stri
     const meetupLocation = formData.get('meetupLocation') as string;
     const meetupDate = formData.get('meetupDate') as string;
     const meetupPurpose = formData.get('meetupPurpose') as string;
+    const imagesJson = formData.get('images') as string;
+    const snsLinksJson = formData.get('snsLinks') as string;
 
     if (!title?.trim() || !content?.trim()) {
         throw new Error('제목과 내용을 입력해주세요.');
@@ -113,6 +115,24 @@ export async function createCommunityPost(formData: FormData, accessToken?: stri
         if (meetupLocation) postData.meetupLocation = meetupLocation;
         if (meetupDate) postData.meetupDate = new Date(meetupDate);
         if (meetupPurpose) postData.meetupPurpose = meetupPurpose;
+    }
+
+    // News specific fields
+    if (category === 'NEWS') {
+        if (imagesJson) {
+            try {
+                postData.images = JSON.parse(imagesJson);
+            } catch (e) {
+                postData.images = [];
+            }
+        }
+        if (snsLinksJson) {
+            try {
+                postData.snsLinks = JSON.parse(snsLinksJson);
+            } catch (e) {
+                postData.snsLinks = [];
+            }
+        }
     }
 
     const post = await prisma.post.create({
