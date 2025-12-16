@@ -10,6 +10,8 @@ export default function LoginPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const redirect = searchParams.get('redirect');
+    const error = searchParams.get('error');
+    const errorMessage = searchParams.get('message') || searchParams.get('description');
 
     useEffect(() => {
         if (!loading && user) {
@@ -18,11 +20,25 @@ export default function LoginPage() {
         }
     }, [user, loading, router, redirect]);
 
+    useEffect(() => {
+        // Display error message if present
+        if (error) {
+            const errorMessages: Record<string, string> = {
+                'auth_failed': '로그인에 실패했습니다. 다시 시도해주세요.',
+                'config_error': 'Supabase 설정이 올바르지 않습니다. 관리자에게 문의하세요.',
+                'access_denied': '로그인이 취소되었습니다.',
+            };
+            const displayMessage = errorMessages[error] || errorMessage || '알 수 없는 오류가 발생했습니다.';
+            alert(`❌ ${displayMessage}`);
+        }
+    }, [error, errorMessage]);
+
     const handleGoogleLogin = async () => {
         try {
             await signInWithGoogle();
         } catch (error) {
             console.error('Login failed:', error);
+            alert('로그인 중 오류가 발생했습니다. 다시 시도해주세요.');
         }
     };
 
