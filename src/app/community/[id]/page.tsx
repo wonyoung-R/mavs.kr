@@ -35,7 +35,7 @@ const ADMIN_EMAILS = ['mavsdotkr@gmail.com'];
 
 export default async function CommunityDetailPage({ params }: PageProps) {
   const { id } = await params;
-  
+
   // Fetch post with comments
   const post = await prisma.post.findUnique({
     where: { id },

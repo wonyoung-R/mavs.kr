@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db/prisma';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Button } from '@/components/ui/Button';
@@ -42,7 +42,7 @@ export default async function ColumnDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  // Get current user (안전하게 처리)
+  // Get current user - 컬럼은 로그인 필수
   let user = null;
   let canDelete = false;
 
@@ -77,15 +77,25 @@ export default async function ColumnDetailPage({ params }: PageProps) {
       const { data } = await supabase.auth.getUser();
       user = data.user;
 
+      // 로그인하지 않은 경우 로그인 페이지로 리다이렉트
+      if (!user) {
+        redirect('/login?redirect=/column/' + id);
+      }
+
       // Check if user can delete (author or admin)
       canDelete = user ? (
         user.email === post.author.email ||
         ADMIN_EMAILS.includes(user.email || '')
       ) : false;
+    } else {
+      // Supabase가 설정되지 않은 경우 (개발 모드)
+      // 로그인 페이지로 리다이렉트
+      redirect('/login?redirect=/column/' + id);
     }
   } catch (error) {
     console.error('Auth error:', error);
-    // 인증 실패 시 계속 진행
+    // 인증 실패 시 로그인 페이지로 리다이렉트
+    redirect('/login?redirect=/column/' + id);
   }
 
   return (
@@ -103,7 +113,7 @@ export default async function ColumnDetailPage({ params }: PageProps) {
               <ArrowLeft className="w-4 h-4" /> 목록으로 돌아가기
             </Button>
           </Link>
-          <DeleteButton postId={post.id} />
+          {canDelete && <DeleteButton postId={post.id} />}
         </div>
 
         {/* Post Header */}
