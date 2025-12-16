@@ -26,6 +26,7 @@ const MONTHS = [
 
 export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
     const [selectedMonth, setSelectedMonth] = useState('');
+    const [liveGames, setLiveGames] = useState<any[]>([]);
     const monthScrollRef = useRef<HTMLDivElement>(null);
 
     // Get current month index for navigation
@@ -43,19 +44,19 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
     // Find the next game or live game
     // 우선순위: 1) live 경기, 2) today 경기, 3) upcoming 경기
     const nextGame = useMemo(() => {
-        if (!allGames || allGames.length === 0) return null;
-        
+        if (!mergedGames || mergedGames.length === 0) return null;
+
         // 먼저 live 경기 찾기
-        const liveGame = allGames.find(game => game.status === 'live');
+        const liveGame = mergedGames.find(game => game.status === 'live');
         if (liveGame) return liveGame;
-        
+
         // live 경기가 없으면 오늘 또는 다가오는 경기 찾기
-        const upcomingGames = allGames
+        const upcomingGames = mergedGames
             .filter(game => game.status === 'upcoming' || game.status === 'today')
             .sort((a, b) => new Date(a.game_date_kst).getTime() - new Date(b.game_date_kst).getTime());
-        
+
         return upcomingGames[0] || null;
-    }, [allGames]);
+    }, [mergedGames]);
 
     useEffect(() => {
         // Set current month on load
@@ -71,7 +72,56 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
         }
     }, [selectedMonth]);
 
-    const filteredGames = allGames ? allGames.filter(game => {
+    // 실시간 점수 업데이트: Schedule 탭이 활성화되어 있을 때 1분마다 live 경기 정보 갱신
+    useEffect(() => {
+        const fetchLiveScores = async () => {
+            try {
+                const response = await fetch('/api/nba/live-scores');
+                const data = await response.json();
+                if (data.success && data.data && data.data.all_games) {
+                    setLiveGames(data.data.all_games);
+                }
+            } catch (error) {
+                console.error('Failed to fetch live scores:', error);
+            }
+        };
+
+        // 초기 로드
+        fetchLiveScores();
+
+        // 1분마다 업데이트
+        const intervalId = setInterval(fetchLiveScores, 60000);
+
+        return () => clearInterval(intervalId);
+    }, []);
+
+    // allGames와 liveGames를 병합하여 최신 정보 사용
+    const mergedGames = useMemo(() => {
+        if (!allGames || allGames.length === 0) return [];
+        
+        // liveGames가 있으면 해당 게임 정보를 업데이트
+        return allGames.map(game => {
+            const liveGame = liveGames.find(lg => lg.game_id === game.game_id);
+            if (liveGame && (liveGame.is_live || liveGame.is_finished)) {
+                // live 또는 finished 상태면 최신 정보로 업데이트
+                return {
+                    ...game,
+                    status: liveGame.is_live ? 'live' : liveGame.is_finished ? 'finished' : game.status,
+                    mavs_score: game.is_home ? liveGame.home_score : liveGame.away_score,
+                    opponent_score: game.is_home ? liveGame.away_score : liveGame.home_score,
+                    period: liveGame.period,
+                    time_remaining: liveGame.time_remaining,
+                    result: liveGame.is_finished ? (
+                        (game.is_home && liveGame.home_score > liveGame.away_score) ||
+                        (!game.is_home && liveGame.away_score > liveGame.home_score)
+                    ) ? 'W' : 'L' : null
+                };
+            }
+            return game;
+        });
+    }, [allGames, liveGames]);
+
+    const filteredGames = mergedGames ? mergedGames.filter(game => {
         const month = game.game_date_kst.split('-')[1];
         return month === selectedMonth;
     }) : [];
@@ -82,8 +132,8 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
     // Format KST date nicely
     const formatKSTDate = (dateStr: string) => {
         const date = new Date(dateStr);
-        return date.toLocaleDateString('ko-KR', { 
-            month: 'long', 
+        return date.toLocaleDateString('ko-KR', {
+            month: 'long',
             day: 'numeric',
             weekday: 'long'
         });
@@ -111,8 +161,8 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
                         className="block"
                     >
                         <Card className={`${
-                            nextGame.status === 'live' 
-                                ? 'bg-gradient-to-br from-green-900/60 via-green-800/40 to-emerald-900/40 border-green-500/50' 
+                            nextGame.status === 'live'
+                                ? 'bg-gradient-to-br from-green-900/60 via-green-800/40 to-emerald-900/40 border-green-500/50'
                                 : 'bg-gradient-to-br from-blue-900/60 via-blue-800/40 to-purple-900/40 border-blue-500/30'
                         } rounded-2xl overflow-hidden shadow-xl hover:shadow-blue-900/30 transition-all duration-300 hover:scale-[1.02]`}>
                             <CardContent className="p-6">
@@ -235,8 +285,8 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
                                 onClick={() => navigateMonth('prev')}
                                 disabled={!canScrollLeft}
                                 className={`flex-shrink-0 p-2 rounded-full transition-all duration-200 ${
-                                    canScrollLeft 
-                                        ? 'bg-white/10 text-white hover:bg-blue-600/50 active:scale-95' 
+                                    canScrollLeft
+                                        ? 'bg-white/10 text-white hover:bg-blue-600/50 active:scale-95'
                                         : 'bg-white/5 text-gray-600 cursor-not-allowed'
                                 }`}
                             >
@@ -244,11 +294,11 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
                             </button>
 
                             {/* Month Pills - Scrollable without visible scrollbar */}
-                            <div 
+                            <div
                                 ref={monthScrollRef}
                                 className="flex-1 overflow-x-auto scrollbar-hide"
-                                style={{ 
-                                    scrollbarWidth: 'none', 
+                                style={{
+                                    scrollbarWidth: 'none',
                                     msOverflowStyle: 'none',
                                     WebkitOverflowScrolling: 'touch'
                                 }}
@@ -283,8 +333,8 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
                                 onClick={() => navigateMonth('next')}
                                 disabled={!canScrollRight}
                                 className={`flex-shrink-0 p-2 rounded-full transition-all duration-200 ${
-                                    canScrollRight 
-                                        ? 'bg-white/10 text-white hover:bg-blue-600/50 active:scale-95' 
+                                    canScrollRight
+                                        ? 'bg-white/10 text-white hover:bg-blue-600/50 active:scale-95'
                                         : 'bg-white/5 text-gray-600 cursor-not-allowed'
                                 }`}
                             >
