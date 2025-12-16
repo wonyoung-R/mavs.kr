@@ -41,23 +41,6 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
         }
     };
 
-    // Find the next game or live game
-    // 우선순위: 1) live 경기, 2) today 경기, 3) upcoming 경기
-    const nextGame = useMemo(() => {
-        if (!mergedGames || mergedGames.length === 0) return null;
-
-        // 먼저 live 경기 찾기
-        const liveGame = mergedGames.find(game => game.status === 'live');
-        if (liveGame) return liveGame;
-
-        // live 경기가 없으면 오늘 또는 다가오는 경기 찾기
-        const upcomingGames = mergedGames
-            .filter(game => game.status === 'upcoming' || game.status === 'today')
-            .sort((a, b) => new Date(a.game_date_kst).getTime() - new Date(b.game_date_kst).getTime());
-
-        return upcomingGames[0] || null;
-    }, [mergedGames]);
-
     useEffect(() => {
         // Set current month on load
         if (!selectedMonth) {
@@ -98,7 +81,7 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
     // allGames와 liveGames를 병합하여 최신 정보 사용
     const mergedGames = useMemo(() => {
         if (!allGames || allGames.length === 0) return [];
-        
+
         // liveGames가 있으면 해당 게임 정보를 업데이트
         return allGames.map(game => {
             const liveGame = liveGames.find(lg => lg.game_id === game.game_id);
@@ -120,6 +103,23 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
             return game;
         });
     }, [allGames, liveGames]);
+
+    // Find the next game or live game
+    // 우선순위: 1) live 경기, 2) today 경기, 3) upcoming 경기
+    const nextGame = useMemo(() => {
+        if (!mergedGames || mergedGames.length === 0) return null;
+
+        // 먼저 live 경기 찾기
+        const liveGame = mergedGames.find(game => game.status === 'live');
+        if (liveGame) return liveGame;
+
+        // live 경기가 없으면 오늘 또는 다가오는 경기 찾기
+        const upcomingGames = mergedGames
+            .filter(game => game.status === 'upcoming' || game.status === 'today')
+            .sort((a, b) => new Date(a.game_date_kst).getTime() - new Date(b.game_date_kst).getTime());
+
+        return upcomingGames[0] || null;
+    }, [mergedGames]);
 
     const filteredGames = mergedGames ? mergedGames.filter(game => {
         const month = game.game_date_kst.split('-')[1];
