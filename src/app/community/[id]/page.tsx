@@ -263,8 +263,8 @@ export default async function CommunityDetailPage({ params }: PageProps) {
         </article>
 
         {/* Comments Section */}
-        <CommentSection 
-          postId={post.id} 
+        <CommentSection
+          postId={post.id}
           initialComments={transformedComments}
           commentCount={post._count.comments}
         />
