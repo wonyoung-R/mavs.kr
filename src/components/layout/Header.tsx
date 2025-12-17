@@ -2,11 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/Button';
-import { useAuth } from '@/contexts/AuthContext';
 
 export function Header() {
-  const { user, loading } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
 
   // Track scroll position - works on both desktop and mobile
@@ -62,8 +59,6 @@ export function Header() {
             </Link>
           ))}
         </nav>
-
-        {/* Desktop Auth Buttons - Removed per user request */}
       </div>
     </header>
   );
