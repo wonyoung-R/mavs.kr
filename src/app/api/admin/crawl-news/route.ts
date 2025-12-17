@@ -12,7 +12,9 @@ export async function POST(request: Request) {
   try {
     // 임시로 인증 체크 비활성화 (테스트용)
     const skipAuth = true;
-    
+    let userEmail: string = 'system'; // 기본값
+    const isDevelopment = process.env.NODE_ENV === 'development';
+
     if (!skipAuth) {
       // Supabase 인증 확인
       const cookieStore = await cookies();
