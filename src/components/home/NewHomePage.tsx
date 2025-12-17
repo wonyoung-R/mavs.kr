@@ -206,7 +206,7 @@ export default function NewHomePage() {
         setAllGames(gamesData.data.all_games || []);
       }
       if (shouldShowLoading) {
-        setLoadingGames(false);
+      setLoadingGames(false);
       }
     } catch (error) {
       console.error('Failed to fetch NBA data:', error);
@@ -227,7 +227,7 @@ export default function NewHomePage() {
         setTodaysMavsGame(mavsGame || null);
       }
       if (shouldShowLoading) {
-        setLoadingTodaysGame(false);
+      setLoadingTodaysGame(false);
       }
     } catch (error) {
       console.error('Failed to fetch today\'s Mavs game:', error);

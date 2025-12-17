@@ -92,7 +92,7 @@ export async function createCommunityPost(formData: FormData, accessToken?: stri
         const baseUsername = user.email.split('@')[0];
         let username = baseUsername;
         let counter = 1;
-        
+
         // Check if username already exists
         while (await prisma.user.findUnique({ where: { username } })) {
             username = `${baseUsername}${counter}`;

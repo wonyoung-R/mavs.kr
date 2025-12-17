@@ -191,7 +191,7 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
                                                     Q{nextGame.period} {nextGame.time_remaining}
                                                 </span>
                                             ) : (
-                                                <span className="font-mono font-bold text-blue-300">{nextGame.game_time_kst} KST</span>
+                                            <span className="font-mono font-bold text-blue-300">{nextGame.game_time_kst} KST</span>
                                             )}
                                         </div>
                                     </div>
@@ -226,8 +226,8 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
                                             <span className="text-2xl md:text-3xl font-black text-white/50">-</span>
                                         ) : (
                                             <>
-                                                <Zap className="w-6 h-6 text-yellow-400 mb-2" />
-                                                <span className="text-2xl md:text-3xl font-black text-white/50">VS</span>
+                                        <Zap className="w-6 h-6 text-yellow-400 mb-2" />
+                                        <span className="text-2xl md:text-3xl font-black text-white/50">VS</span>
                                             </>
                                         )}
                                     </div>

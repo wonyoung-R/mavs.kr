@@ -58,19 +58,27 @@ export default function AdminPage() {
     const fetchUsers = async () => {
         try {
             const { data, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .order('created_at', { ascending: false });
+                .from('User')
+                .select('id, email, name, image, role, createdAt')
+                .order('createdAt', { ascending: false });
 
             if (error) {
-                console.log('프로필 테이블이 없거나 데이터가 없습니다. (로컬 개발 모드)');
-                // If table doesn't exist, show empty
+                console.log('User 테이블 조회 실패:', error);
                 setUsers([]);
             } else {
-                setUsers(data || []);
+                // Map Prisma User table to UserProfile format
+                const mappedUsers = (data || []).map((u: any) => ({
+                    id: u.id,
+                    email: u.email,
+                    name: u.name,
+                    avatar_url: u.image,
+                    role: u.role?.toLowerCase() || 'user',
+                    created_at: u.createdAt
+                }));
+                setUsers(mappedUsers);
             }
         } catch (err) {
-            console.log('사용자 목록을 불러올 수 없습니다. (로컬 개발 모드)');
+            console.log('사용자 목록을 불러올 수 없습니다:', err);
             setUsers([]);
         } finally {
             setLoadingUsers(false);
@@ -80,8 +88,8 @@ export default function AdminPage() {
     const updateUserRole = async (userId: string, newRole: UserRole) => {
         try {
             const { error } = await supabase
-                .from('profiles')
-                .update({ role: newRole })
+                .from('User')
+                .update({ role: newRole.toUpperCase() })
                 .eq('id', userId);
 
             if (error) {
