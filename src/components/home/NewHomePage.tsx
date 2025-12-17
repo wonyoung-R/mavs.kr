@@ -181,6 +181,26 @@ export default function NewHomePage() {
     }
   }, [searchParams]);
 
+  // Handle initial scroll position based on tab
+  useEffect(() => {
+    // 모바일에서만 적용 (768px 이하)
+    const isMobile = window.innerWidth < 768;
+    if (!isMobile) return;
+
+    if (activeTab === 'home') {
+      // 홈 탭: footer가 보이도록 약간 아래로 스크롤
+      setTimeout(() => {
+        const scrollAmount = window.innerHeight * 0.15; // 화면 높이의 15% 정도 스크롤
+        window.scrollTo({ top: scrollAmount, behavior: 'smooth' });
+      }, 100);
+    } else {
+      // 다른 탭: 최상단으로 스크롤
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
+    }
+  }, [activeTab]);
+
   useEffect(() => {
     fetchNBAData();
     fetchTodaysMavsGame();
