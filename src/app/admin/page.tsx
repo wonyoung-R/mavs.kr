@@ -173,13 +173,24 @@ export default function AdminPage() {
 
         setSubmittingNotice(true);
         try {
+            // Get access token from Supabase
+            const { data: { session } } = await supabase.auth.getSession();
+            const accessToken = session?.access_token;
+
+            console.log('🔑 [Admin Page] Session found:', !!session);
+            console.log('🔑 [Admin Page] Access token:', !!accessToken);
+
+            if (!accessToken) {
+                throw new Error('로그인 세션이 만료되었습니다. 다시 로그인해주세요.');
+            }
+
             const formData = new FormData();
             formData.append('title', noticeTitle);
             formData.append('content', noticeContent);
             formData.append('isPinned', isPinned.toString());
 
             const { createNotice } = await import('@/app/actions/notice');
-            await createNotice(formData);
+            await createNotice(formData, accessToken);
 
             alert('공지사항이 등록되었습니다!');
             setNoticeTitle('');
@@ -229,13 +240,20 @@ export default function AdminPage() {
                     >
                         <ArrowLeft className="w-5 h-5 text-white" />
                     </Link>
-                    <div>
+                    <div className="flex-1">
                         <h1 className="text-2xl font-bold text-white flex items-center gap-2">
                             <Shield className="w-6 h-6 text-red-400" />
                             관리자 패널
                         </h1>
                         <p className="text-slate-400">사용자 권한을 관리합니다</p>
                     </div>
+                    {/* Current User Debug Info */}
+                    {user && (
+                        <div className="bg-slate-800/50 border border-white/10 rounded-lg px-4 py-2">
+                            <div className="text-xs text-slate-400">로그인:</div>
+                            <div className="text-sm text-white font-medium">{user.email}</div>
+                        </div>
+                    )}
                 </div>
 
                 {/* User Management */}
@@ -280,7 +298,9 @@ export default function AdminPage() {
                                                 <select
                                                     value={selectedRole}
                                                     onChange={(e) => setSelectedRole(e.target.value as UserRole)}
-                                                    className="bg-slate-800 border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    className="bg-slate-800 border-2 border-white/10 rounded-lg px-3 py-1.5 text-white text-sm
+                                                               focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                                                               cursor-pointer transition-all"
                                                 >
                                                     <option value="user">일반유저</option>
                                                     <option value="columnist">컬럼작성자</option>
@@ -465,8 +485,11 @@ export default function AdminPage() {
                                         value={noticeTitle}
                                         onChange={(e) => setNoticeTitle(e.target.value)}
                                         placeholder="공지사항 제목을 입력하세요"
-                                        className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-red-500 placeholder-slate-500"
+                                        className="w-full bg-slate-800/50 border-2 border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500
+                                                   focus:outline-none focus:border-red-500 focus:bg-slate-800 focus:ring-2 focus:ring-red-500/20
+                                                   transition-all duration-200"
                                         required
+                                        autoComplete="off"
                                     />
                                 </div>
 
@@ -479,8 +502,11 @@ export default function AdminPage() {
                                         onChange={(e) => setNoticeContent(e.target.value)}
                                         placeholder="공지사항 내용을 입력하세요"
                                         rows={6}
-                                        className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-red-500 placeholder-slate-500 resize-none"
+                                        className="w-full bg-slate-800/50 border-2 border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 resize-none
+                                                   focus:outline-none focus:border-red-500 focus:bg-slate-800 focus:ring-2 focus:ring-red-500/20
+                                                   transition-all duration-200"
                                         required
+                                        autoComplete="off"
                                     />
                                 </div>
 
@@ -490,9 +516,11 @@ export default function AdminPage() {
                                         id="isPinned"
                                         checked={isPinned}
                                         onChange={(e) => setIsPinned(e.target.checked)}
-                                        className="w-4 h-4 rounded bg-slate-800 border-slate-700 text-red-500 focus:ring-red-500 focus:ring-offset-slate-900"
+                                        className="w-4 h-4 rounded bg-slate-800 border-2 border-slate-700 text-red-500
+                                                   focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-slate-900
+                                                   cursor-pointer transition-all"
                                     />
-                                    <label htmlFor="isPinned" className="text-sm text-slate-300">
+                                    <label htmlFor="isPinned" className="text-sm text-slate-300 cursor-pointer select-none">
                                         상단 고정
                                     </label>
                                 </div>
