@@ -91,11 +91,19 @@ export function CommunityView() {
     const fetchPosts = async (category: string) => {
         try {
             const query = category === 'all' ? '' : `?category=${category}`;
+            console.log('[CommunityView] Fetching posts for category:', category, 'query:', query);
             const response = await fetch(`/api/community${query}`);
+            
+            if (!response.ok) {
+                console.error('[CommunityView] API error:', response.status, response.statusText);
+            }
+            
             const data = await response.json();
+            console.log('[CommunityView] Received data:', data);
+            console.log('[CommunityView] Posts count:', data.posts?.length || 0);
             setPosts(data.posts || []);
         } catch (err) {
-            console.error('Failed to load community posts:', err);
+            console.error('[CommunityView] Failed to load community posts:', err);
         }
     };
 

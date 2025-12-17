@@ -17,20 +17,25 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = parseInt(searchParams.get('offset') || '0');
 
+    console.log('[Community API] Request params:', { category, limit, offset });
+    console.log('[Community API] Available categories:', COMMUNITY_CATEGORIES);
+
     try {
         const whereClause: Record<string, unknown> = {};
 
         // Filter by specific category if provided
         if (category && category !== 'ALL' && Object.values(ForumCategory).includes(category as ForumCategory)) {
+            console.log('[Community API] Filtering by specific category:', category);
             whereClause.category = category as ForumCategory;
         } else {
             // For 'all' or no category, get all community posts (FREE, MARKET, MEETUP)
+            console.log('[Community API] Showing all community categories:', COMMUNITY_CATEGORIES);
             whereClause.category = {
                 in: COMMUNITY_CATEGORIES
             };
         }
 
-        console.log('[Community API] Querying with:', JSON.stringify(whereClause));
+        console.log('[Community API] Final where clause:', JSON.stringify(whereClause));
 
         const posts = await prisma.post.findMany({
             where: whereClause,
@@ -55,9 +60,24 @@ export async function GET(request: NextRequest) {
             }
         });
 
-        console.log('[Community API] Found', posts.length, 'posts. Categories:', posts.map(p => p.category));
+        console.log('[Community API] Found', posts.length, 'posts');
+        
+        if (posts.length > 0) {
+            console.log('[Community API] Post categories:', posts.map(p => p.category));
+            console.log('[Community API] First post:', { 
+                id: posts[0].id, 
+                title: posts[0].title, 
+                category: posts[0].category 
+            });
+        } else {
+            console.log('[Community API] No posts found!');
+            // Check total posts in database
+            const totalAllPosts = await prisma.post.count();
+            console.log('[Community API] Total posts in DB:', totalAllPosts);
+        }
 
         const total = await prisma.post.count({ where: whereClause });
+        console.log('[Community API] Total matching posts:', total);
 
         return NextResponse.json({
             posts,

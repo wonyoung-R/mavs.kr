@@ -2,10 +2,10 @@
 -- Supabase SQL Editor에서 실행하세요
 
 -- 1. images 컬럼 추가 (존재하지 않을 경우)
-DO $$ 
+DO $$
 BEGIN
     IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
+        SELECT 1 FROM information_schema.columns
         WHERE table_name = 'Post' AND column_name = 'images'
     ) THEN
         ALTER TABLE "Post" ADD COLUMN "images" TEXT[] DEFAULT '{}';
@@ -16,10 +16,10 @@ BEGIN
 END $$;
 
 -- 2. snsLinks 컬럼 추가 (존재하지 않을 경우)
-DO $$ 
+DO $$
 BEGIN
     IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
+        SELECT 1 FROM information_schema.columns
         WHERE table_name = 'Post' AND column_name = 'snsLinks'
     ) THEN
         ALTER TABLE "Post" ADD COLUMN "snsLinks" TEXT[] DEFAULT '{}';
@@ -30,10 +30,10 @@ BEGIN
 END $$;
 
 -- 3. 확인
-SELECT 
-    column_name, 
-    data_type, 
+SELECT
+    column_name,
+    data_type,
     column_default
-FROM information_schema.columns 
-WHERE table_name = 'Post' 
+FROM information_schema.columns
+WHERE table_name = 'Post'
 AND column_name IN ('images', 'snsLinks');
