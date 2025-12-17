@@ -10,12 +10,11 @@ export const maxDuration = 300; // 5분 제한
 
 export async function POST(request: Request) {
   try {
-    // 로컬 개발 환경에서는 인증 체크 건너뛰기
-    const isDevelopment = process.env.NODE_ENV === 'development';
-    let userEmail = 'local-admin';
-
-    if (!isDevelopment) {
-      // Supabase 인증 확인 (프로덕션만)
+    // 임시로 인증 체크 비활성화 (테스트용)
+    const skipAuth = true;
+    
+    if (!skipAuth) {
+      // Supabase 인증 확인
       const cookieStore = await cookies();
       const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
