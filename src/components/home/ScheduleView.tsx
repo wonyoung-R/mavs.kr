@@ -412,10 +412,10 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
                                                 ) : (
                                                     <span className="text-lg sm:text-xl font-bold text-gray-600">@</span>
                                                 )}
-                                                {/* Dallas-centric WIN/LOSS */}
+                                                {/* Dallas-centric WIN/LOSE */}
                                                 {game.status === 'finished' && (
                                                     <span className={`text-[10px] sm:text-xs mt-1 font-bold px-1.5 py-0.5 rounded ${game.result === 'W' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                                                        {game.result === 'W' ? 'WIN' : 'LOSS'}
+                                                        {game.result === 'W' ? 'WIN' : 'LOSE'}
                                                     </span>
                                                 )}
                                                 {game.status === 'live' && game.time_remaining && (
