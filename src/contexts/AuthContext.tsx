@@ -61,16 +61,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         // Get initial session
         const getSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            setSession(session);
-            setUser(session?.user ?? null);
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                setSession(session);
+                setUser(session?.user ?? null);
 
-            if (session?.user) {
-                const role = await fetchUserRole(session.user);
-                setUserRole(role);
+                if (session?.user) {
+                    const role = await fetchUserRole(session.user);
+                    setUserRole(role);
+                }
+            } catch (error) {
+                console.error('[AuthContext] Error getting session:', error);
+                setSession(null);
+                setUser(null);
+            } finally {
+                // 항상 loading을 false로 설정
+                setLoading(false);
             }
-
-            setLoading(false);
         };
 
         getSession();
