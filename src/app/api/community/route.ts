@@ -42,7 +42,18 @@ export async function GET(request: NextRequest) {
             orderBy: { createdAt: 'desc' },
             take: limit,
             skip: offset,
-            include: {
+            select: {
+                id: true,
+                title: true,
+                content: true,
+                category: true,
+                price: true,
+                meetupLocation: true,
+                meetupDate: true,
+                meetupPurpose: true,
+                isPinned: true,
+                createdAt: true,
+                updatedAt: true,
                 author: {
                     select: {
                         id: true,
@@ -61,13 +72,13 @@ export async function GET(request: NextRequest) {
         });
 
         console.log('[Community API] Found', posts.length, 'posts');
-        
+
         if (posts.length > 0) {
             console.log('[Community API] Post categories:', posts.map(p => p.category));
-            console.log('[Community API] First post:', { 
-                id: posts[0].id, 
-                title: posts[0].title, 
-                category: posts[0].category 
+            console.log('[Community API] First post:', {
+                id: posts[0].id,
+                title: posts[0].title,
+                category: posts[0].category
             });
         } else {
             console.log('[Community API] No posts found!');
