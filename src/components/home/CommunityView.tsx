@@ -477,12 +477,6 @@ export function CommunityView() {
                     <h2 className="text-3xl font-bold text-white mb-2">Community</h2>
                     <p className="text-slate-400">댈러스 매버릭스 팬들과의 소통 공간</p>
                 </div>
-                <button
-                    onClick={handleWriteClick}
-                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-colors"
-                >
-                    ✍️ 글쓰기
-                </button>
             </div>
 
             {/* Category Tabs */}
