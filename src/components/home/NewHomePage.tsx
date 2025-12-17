@@ -273,7 +273,7 @@ export default function NewHomePage() {
       </div>
 
       {/* Navigation */}
-      <div className="relative z-50 pt-4 pb-1">
+      <div className="relative z-50 pt-4 pb-0">
         <TabNavigation
           tabs={tabs}
           activeTab={activeTab}
@@ -282,7 +282,7 @@ export default function NewHomePage() {
       </div>
 
       {/* Main Content Area */}
-      <div className="relative z-10 flex-1 w-full max-w-7xl mx-auto flex flex-col px-4 h-full justify-center">
+      <div className="relative z-10 flex-1 w-full max-w-7xl mx-auto flex flex-col px-4 pt-4 h-full justify-center">
         <AnimatePresence mode="wait">
           {activeTab === 'home' && (
             <HomeView

@@ -122,3 +122,41 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Chrome, Safari and Opera */
 }
+
+/* Prose styles for dark theme */
+.prose-invert {
+  color: #e2e8f0;
+}
+
+.prose-invert h1,
+.prose-invert h2,
+.prose-invert h3,
+.prose-invert h4,
+.prose-invert h5,
+.prose-invert h6 {
+  color: #ffffff;
+}
+
+.prose-invert p,
+.prose-invert li,
+.prose-invert span,
+.prose-invert div {
+  color: #e2e8f0;
+}
+
+.prose-invert strong {
+  color: #ffffff;
+}
+
+.prose-invert a {
+  color: #60a5fa;
+}
+
+.prose-invert code {
+  color: #fbbf24;
+}
+
+.prose-invert blockquote {
+  color: #cbd5e1;
+  border-left-color: #475569;
+}

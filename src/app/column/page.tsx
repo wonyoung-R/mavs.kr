@@ -38,7 +38,7 @@ export default async function ColumnPage() {
 
             <div className="relative z-10 w-full max-w-7xl mx-auto px-4 py-8 pt-24">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-6">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-6">
                     <div className="flex items-center gap-4">
                         <Link href="/">
                             <Button variant="ghost" size="md" className="hover:bg-white/10 text-white p-2 w-10">
@@ -46,8 +46,8 @@ export default async function ColumnPage() {
                             </Button>
                         </Link>
                         <div>
-                            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
-                                MAVS Column
+                            <h1 className="text-3xl font-bold text-white mb-2">
+                                Column
                             </h1>
                             <p className="text-slate-400">
                                 전문가들의 심도 있는 분석과 칼럼

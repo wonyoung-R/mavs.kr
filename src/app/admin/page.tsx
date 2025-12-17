@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useAuth, UserRole } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/db/supabase';
 import { ArrowLeft, Shield, User, Edit2, Check, X, Newspaper, Loader2, RefreshCw, Megaphone } from 'lucide-react';
+import TiptapEditor from '@/components/editor/TiptapEditor';
 
 interface UserProfile {
     id: string;
@@ -497,16 +498,10 @@ export default function AdminPage() {
                                     <label className="block text-sm font-medium text-slate-400 mb-2">
                                         내용
                                     </label>
-                                    <textarea
-                                        value={noticeContent}
-                                        onChange={(e) => setNoticeContent(e.target.value)}
-                                        placeholder="공지사항 내용을 입력하세요"
-                                        rows={6}
-                                        className="w-full bg-slate-800/50 border-2 border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 resize-none
-                                                   focus:outline-none focus:border-red-500 focus:bg-slate-800 focus:ring-2 focus:ring-red-500/20
-                                                   transition-all duration-200"
-                                        required
-                                        autoComplete="off"
+                                    <TiptapEditor
+                                        content={noticeContent}
+                                        onChange={setNoticeContent}
+                                        placeholder="공지사항 내용을 입력하세요..."
                                     />
                                 </div>
 

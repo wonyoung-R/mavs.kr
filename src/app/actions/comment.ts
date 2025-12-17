@@ -186,12 +186,12 @@ export async function deleteComment(commentId: string, token?: string) {
 
 // Get comments for a post
 export async function getComments(postId: string) {
+    // Get all comments in a flat structure
     const comments = await prisma.comment.findMany({
         where: {
             postId,
-            parentId: null, // Only get top-level comments
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: 'asc' },
         include: {
             author: {
                 select: {
@@ -201,19 +201,6 @@ export async function getComments(postId: string) {
                     email: true,
                 }
             },
-            replies: {
-                orderBy: { createdAt: 'asc' },
-                include: {
-                    author: {
-                        select: {
-                            id: true,
-                            username: true,
-                            image: true,
-                            email: true,
-                        }
-                    }
-                }
-            }
         }
     });
 
