@@ -34,10 +34,10 @@ export function Header() {
   ];
 
   return (
-    <header 
+    <header
       className={`fixed top-0 w-full z-50 border-b transition-all duration-300 ${
-        isScrolled 
-          ? 'bg-[#050510]/95 backdrop-blur-lg border-white/10 shadow-lg shadow-black/20' 
+        isScrolled
+          ? 'bg-[#050510]/95 backdrop-blur-lg border-white/10 shadow-lg shadow-black/20'
           : 'bg-[#050510]/60 backdrop-blur-md border-white/5'
       }`}
     >
