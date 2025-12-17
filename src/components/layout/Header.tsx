@@ -63,37 +63,7 @@ export function Header() {
           ))}
         </nav>
 
-        {/* Desktop Auth Buttons */}
-        <div className="hidden md:flex items-center space-x-3">
-          {loading ? (
-            <div className="w-8 h-8 animate-pulse bg-white/10 rounded-full"></div>
-          ) : user ? (
-            <Link href="/profile">
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 transition-colors cursor-pointer">
-                {user.user_metadata?.avatar_url ? (
-                  <img
-                    src={user.user_metadata.avatar_url}
-                    alt="Profile"
-                    className="w-6 h-6 rounded-full"
-                  />
-                ) : (
-                  <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                    {user.email?.[0]?.toUpperCase() || 'U'}
-                  </div>
-                )}
-                <span className="text-white/90 text-sm font-medium max-w-[100px] truncate">
-                  {user.user_metadata?.name || user.email?.split('@')[0] || '사용자'}
-                </span>
-              </div>
-            </Link>
-          ) : (
-            <Link href="/login">
-              <Button variant="ghost" size="sm" className="text-slate-300 hover:text-white hover:bg-white/10">
-                로그인
-              </Button>
-            </Link>
-          )}
-        </div>
+        {/* Desktop Auth Buttons - Removed per user request */}
       </div>
     </header>
   );

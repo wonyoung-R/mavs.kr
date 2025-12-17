@@ -508,13 +508,7 @@ export function CommunityView() {
                 <div className="text-center py-20">
                     <div className="text-6xl mb-4">📝</div>
                     <h3 className="text-xl font-bold text-white mb-2">아직 게시글이 없습니다</h3>
-                    <p className="text-slate-400 mb-6">첫 번째 글을 작성해보세요!</p>
-                    <button
-                        onClick={handleWriteClick}
-                        className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-colors"
-                    >
-                        글쓰기
-                    </button>
+                    <p className="text-slate-400">첫 번째 글을 기다리고 있어요!</p>
                 </div>
             )}
 
