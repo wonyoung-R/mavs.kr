@@ -28,14 +28,8 @@ function extractImage(html: string): string | null {
     return imgMatch ? imgMatch[1] : null;
 }
 
-function extractText(html: string): string {
-    const text = html.replace(/<[^>]*>/g, '');
-    return text.substring(0, 120) + '...';
-}
-
 export default function ColumnCard({ post }: ColumnCardProps) {
     const thumbnail = extractImage(post.content);
-    const summary = extractText(post.content);
 
     return (
         <Link href={`/column/${post.id}`} className="block group">
@@ -58,13 +52,9 @@ export default function ColumnCard({ post }: ColumnCardProps) {
                             <span className="text-blue-400 text-sm font-medium">{post.author.username}</span>
                         </div>
 
-                        <h3 className="text-lg font-bold text-white mb-2 group-hover:text-blue-300 transition-colors line-clamp-2">
+                        <h3 className="text-lg font-bold text-white mb-4 group-hover:text-blue-300 transition-colors line-clamp-2">
                             {post.title}
                         </h3>
-
-                        <p className="text-slate-400 text-sm line-clamp-3 leading-relaxed mb-4">
-                            {summary}
-                        </p>
 
                         <div className="flex items-center justify-between text-slate-500 text-xs">
                             <div className="flex items-center gap-1">

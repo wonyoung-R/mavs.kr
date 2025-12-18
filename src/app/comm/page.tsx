@@ -7,12 +7,10 @@ export const dynamic = 'force-dynamic';
 
 function mapEnumToCategory(category: string): string {
     switch (category) {
-        case 'GENERAL': return 'free';
+        case 'FREE': return 'free';
         case 'MARKET': return 'market';
         case 'MEETUP': return 'meetup';
-        case 'GAME_THREAD': return 'free'; // Map to free or new cat
-        case 'TRADE_RUMORS': return 'news'; // Map to news
-        case 'ANALYSIS': return 'free';
+        case 'NEWS': return 'news';
         default: return 'free';
     }
 }
@@ -23,7 +21,7 @@ export default async function CommunityPage() {
         prisma.post.findMany({
             where: {
                 category: {
-                    not: 'COLUMN'
+                    in: ['FREE', 'MARKET', 'MEETUP', 'NEWS']
                 }
             },
             orderBy: {

@@ -1,7 +1,8 @@
 'use client';
 
-import Masonry from 'react-masonry-css';
+import { motion } from 'framer-motion';
 import ColumnCard from './ColumnCard';
+import ColumnListItem from './ColumnListItem';
 
 interface ColumnGridProps {
     posts: Array<{
@@ -21,15 +22,6 @@ interface ColumnGridProps {
 }
 
 export default function ColumnGrid({ posts }: ColumnGridProps) {
-    const breakpointColumnsObj = {
-        default: 4,
-        1536: 4,
-        1280: 3,
-        1024: 3,
-        768: 2,
-        640: 1
-    };
-
     if (posts.length === 0) {
         return (
             <div className="text-center py-20 text-slate-500">
@@ -38,31 +30,26 @@ export default function ColumnGrid({ posts }: ColumnGridProps) {
         );
     }
 
-    return (
-        <>
-            <Masonry
-                breakpointCols={breakpointColumnsObj}
-                className="my-masonry-grid"
-                columnClassName="my-masonry-grid_column"
-            >
-                {posts.map((post) => (
-                    <div key={post.id} className="mb-6">
-                        <ColumnCard post={post} />
-                    </div>
-                ))}
-            </Masonry>
+    const firstPost = posts[0];
+    const remainingPosts = posts.slice(1);
 
-            <style jsx global>{`
-                .my-masonry-grid {
-                    display: flex;
-                    margin-left: -24px;
-                    width: auto;
-                }
-                .my-masonry-grid_column {
-                    padding-left: 24px;
-                    background-clip: padding-box;
-                }
-            `}</style>
-        </>
+    return (
+        <div className="max-w-5xl mx-auto">
+            {/* Featured First Post - Card View */}
+            {firstPost && (
+                <div className="mb-8">
+                    <ColumnCard post={firstPost} />
+                </div>
+            )}
+
+            {/* Remaining Posts - List View */}
+            {remainingPosts.length > 0 && (
+                <div className="space-y-2">
+                    {remainingPosts.map((post) => (
+                        <ColumnListItem key={post.id} post={post} />
+                    ))}
+                </div>
+            )}
+        </div>
     );
 }

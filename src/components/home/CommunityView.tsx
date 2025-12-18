@@ -75,6 +75,8 @@ export function CommunityView() {
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [showWriteForm, setShowWriteForm] = useState(false);
     const [selectedPost, setSelectedPost] = useState<CommunityPost | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 10; // 첫 페이지: 1개 featured + 9개 list, 나머지 페이지: 10개 list
 
     // Write form states
     const [writeCategory, setWriteCategory] = useState('FREE');
@@ -152,6 +154,7 @@ export function CommunityView() {
 
     const handleCategoryChange = (categoryId: string) => {
         setSelectedCategory(categoryId);
+        setCurrentPage(1); // 카테고리 변경 시 첫 페이지로
     };
 
     const handleWriteClick = () => {
@@ -339,6 +342,7 @@ export function CommunityView() {
 
             // Reset and refresh
             handleCancelWrite();
+            setCurrentPage(1); // 첫 페이지로 이동
             await fetchPosts(selectedCategory);
 
         } catch (error) {
@@ -355,8 +359,23 @@ export function CommunityView() {
         return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
     };
 
-    const featuredPost = posts[0];
-    const recentPosts = posts.slice(1, 7);
+    // Pagination logic
+    const totalPages = Math.ceil(posts.length / ITEMS_PER_PAGE);
+    let featuredPost: CommunityPost | undefined;
+    let displayPosts: CommunityPost[] = [];
+
+    if (currentPage === 1) {
+        // 첫 페이지: featured 1개 + list 9개
+        featuredPost = posts[0];
+        displayPosts = posts.slice(1, ITEMS_PER_PAGE);
+    } else {
+        // 나머지 페이지: 모두 list로 표시
+        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+        const endIndex = startIndex + ITEMS_PER_PAGE;
+        displayPosts = posts.slice(startIndex, endIndex);
+    }
+
+    const recentPosts = displayPosts;
 
     if (loading) {
         return (
@@ -918,12 +937,9 @@ export function CommunityView() {
                                         {formatDistanceToNow(new Date(featuredPost.createdAt), { addSuffix: true, locale: ko })}
                                     </span>
                                 </div>
-                                <h3 className="text-2xl md:text-3xl font-bold text-white mb-3 group-hover:text-blue-400 transition-colors">
+                                <h3 className="text-2xl md:text-3xl font-bold text-white mb-6 group-hover:text-blue-400 transition-colors">
                                     {featuredPost.title}
                                 </h3>
-                                <p className="text-slate-400 text-lg line-clamp-2 mb-6">
-                                    {getTextSummary(featuredPost.content, 150)}
-                                </p>
 
                                 {/* Special badges */}
                                 <div className="flex flex-wrap gap-3 mb-6">
@@ -966,59 +982,151 @@ export function CommunityView() {
                     </motion.div>
             )}
 
-            {/* Recent Posts Grid */}
+            {/* Recent Posts List */}
             {recentPosts.length > 0 && (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="space-y-2">
                     {recentPosts.map((post) => (
-                        <Card key={post.id} className="h-full bg-slate-900/50 border-white/10 hover:border-blue-500/50 transition-all group cursor-pointer" onClick={() => setSelectedPost(post)}>
-                                <CardHeader className="pb-3">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <span className={`text-xs font-medium px-2 py-1 rounded border ${CATEGORY_COLORS[post.category] || CATEGORY_COLORS.FREE}`}>
-                                            {CATEGORIES.find(c => c.id === post.category)?.icon}
-                                        </span>
-                                        <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-blue-400 -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all" />
+                        <motion.div
+                            key={post.id}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.2 }}
+                            onClick={() => setSelectedPost(post)}
+                            className="bg-slate-900/30 backdrop-blur-sm border border-white/5 hover:border-blue-500/30 hover:bg-slate-900/50 transition-all group rounded-lg p-4 cursor-pointer"
+                        >
+                            <div className="flex items-center justify-between gap-4">
+                                {/* Left: Title and Meta */}
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <h3 className="text-base font-semibold text-white group-hover:text-blue-400 transition-colors truncate">
+                                            {post.title}
+                                        </h3>
+                                        <div className={`px-2 py-0.5 rounded text-[10px] border shrink-0 ${CATEGORY_COLORS[post.category] || CATEGORY_COLORS.FREE}`}>
+                                            {CATEGORIES.find(c => c.id === post.category)?.icon} {CATEGORIES.find(c => c.id === post.category)?.name}
+                                        </div>
                                     </div>
-                                    <CardTitle className="text-lg text-white group-hover:text-blue-300 transition-colors line-clamp-2">
-                                        {post.title}
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-slate-500 text-sm line-clamp-2 mb-4">
-                                        {getTextSummary(post.content, 80)}
-                                    </p>
-
-                                    {/* Special badges */}
-                                    {post.category === 'MARKET' && post.price && (
-                                        <div className="mb-3 text-green-400 font-bold text-sm">
-                                            ₩{post.price.toLocaleString()}
-                                        </div>
-                                    )}
-                                    {post.category === 'MEETUP' && post.meetupLocation && (
-                                        <div className="mb-3 text-purple-400 text-xs flex items-center gap-1">
-                                            <MapPin className="w-3 h-3" /> {post.meetupLocation}
-                                        </div>
-                                    )}
-
-                                    <div className="flex items-center justify-between text-sm text-slate-500">
-                                        <span className="flex items-center gap-2">
-                                            <div className="w-2 h-2 rounded-full bg-slate-600" />
+                                    <div className="flex items-center gap-3 text-xs text-slate-500">
+                                        <span className="flex items-center gap-1">
+                                            <div className="w-5 h-5 bg-slate-800 rounded-full flex items-center justify-center text-[10px] font-bold text-slate-400">
+                                                {post.author.username?.[0]?.toUpperCase()}
+                                            </div>
                                             {post.author.username}
                                         </span>
+                                        <span>•</span>
                                         <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ko })}</span>
+                                        {post.category === 'MARKET' && post.price && (
+                                            <>
+                                                <span>•</span>
+                                                <span className="text-green-400 font-semibold">₩{post.price.toLocaleString()}</span>
+                                            </>
+                                        )}
+                                        {post.category === 'MEETUP' && post.meetupLocation && (
+                                            <>
+                                                <span>•</span>
+                                                <span className="text-purple-400 flex items-center gap-1">
+                                                    <MapPin className="w-3 h-3" />
+                                                    {post.meetupLocation}
+                                                </span>
+                                            </>
+                                        )}
                                     </div>
-                                    <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/5 text-xs text-slate-500">
-                                        <span className="flex items-center gap-1">
-                                            <Heart className="w-3 h-3" /> {post._count.likes}
-                                        </span>
-                                        <span className="flex items-center gap-1">
-                                            <MessageCircle className="w-3 h-3" /> {post._count.comments}
-                                        </span>
-                                    </div>
-                                </CardContent>
-                            </Card>
+                                </div>
+
+                                {/* Right: Stats */}
+                                <div className="flex items-center gap-4 text-slate-500 text-xs shrink-0">
+                                    <span className="flex items-center gap-1 hover:text-red-400 transition-colors">
+                                        <Heart className="w-3.5 h-3.5" />
+                                        <span className="font-medium">{post._count.likes}</span>
+                                    </span>
+                                    <span className="flex items-center gap-1 hover:text-blue-400 transition-colors">
+                                        <MessageCircle className="w-3.5 h-3.5" />
+                                        <span className="font-medium">{post._count.comments}</span>
+                                    </span>
+                                </div>
+                            </div>
+                        </motion.div>
                     ))}
                 </div>
             )}
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-2 mt-8">
+                        {/* Previous Button */}
+                        <button
+                            onClick={() => {
+                                setCurrentPage(prev => Math.max(1, prev - 1));
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            disabled={currentPage === 1}
+                            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                                currentPage === 1
+                                    ? 'bg-slate-800/50 text-slate-600 cursor-not-allowed'
+                                    : 'bg-slate-800/50 text-white hover:bg-slate-700 border border-white/10 hover:border-blue-500/50'
+                            }`}
+                        >
+                            이전
+                        </button>
+
+                        {/* Page Numbers */}
+                        <div className="flex items-center gap-1">
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                                // Show first page, last page, current page, and pages around current
+                                const showPage =
+                                    page === 1 ||
+                                    page === totalPages ||
+                                    (page >= currentPage - 1 && page <= currentPage + 1);
+
+                                // Show ellipsis
+                                const showEllipsisBefore = page === currentPage - 2 && currentPage > 3;
+                                const showEllipsisAfter = page === currentPage + 2 && currentPage < totalPages - 2;
+
+                                if (showEllipsisBefore || showEllipsisAfter) {
+                                    return (
+                                        <span key={page} className="px-2 text-slate-500">
+                                            ...
+                                        </span>
+                                    );
+                                }
+
+                                if (!showPage) return null;
+
+                                return (
+                                    <button
+                                        key={page}
+                                        onClick={() => {
+                                            setCurrentPage(page);
+                                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                                        }}
+                                        className={`min-w-[40px] h-10 rounded-lg font-medium transition-all ${
+                                            currentPage === page
+                                                ? 'bg-blue-600 text-white border border-blue-500'
+                                                : 'bg-slate-800/50 text-slate-300 hover:bg-slate-700 hover:text-white border border-white/10 hover:border-blue-500/50'
+                                        }`}
+                                    >
+                                        {page}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* Next Button */}
+                        <button
+                            onClick={() => {
+                                setCurrentPage(prev => Math.min(totalPages, prev + 1));
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            disabled={currentPage === totalPages}
+                            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                                currentPage === totalPages
+                                    ? 'bg-slate-800/50 text-slate-600 cursor-not-allowed'
+                                    : 'bg-slate-800/50 text-white hover:bg-slate-700 border border-white/10 hover:border-blue-500/50'
+                            }`}
+                        >
+                            다음
+                        </button>
+                    </div>
+                )}
 
                 {/* Call to Action */}
                 <Card className="bg-gradient-to-r from-purple-900/40 to-blue-900/40 border-white/10">

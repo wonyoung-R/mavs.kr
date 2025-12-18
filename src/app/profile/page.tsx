@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/db/supabase';
+import { updateProfile, getProfile } from '@/app/actions/profile';
 import { ArrowLeft, User, Save, Check } from 'lucide-react';
 
 export default function ProfilePage() {
@@ -31,15 +31,11 @@ export default function ProfilePage() {
         if (!user) return;
 
         try {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('name')
-                .eq('id', user.id)
-                .single();
+            const profile = await getProfile();
 
-            if (!error && data?.name) {
-                setNickname(data.name);
-                setOriginalNickname(data.name);
+            if (profile?.name) {
+                setNickname(profile.name);
+                setOriginalNickname(profile.name);
             } else {
                 // Use Google name or email as default
                 const defaultName = user.user_metadata?.name || user.email?.split('@')[0] || '';
@@ -48,6 +44,10 @@ export default function ProfilePage() {
             }
         } catch (err) {
             console.error('Failed to fetch profile:', err);
+            // Use Google name or email as default on error
+            const defaultName = user.user_metadata?.name || user.email?.split('@')[0] || '';
+            setNickname(defaultName);
+            setOriginalNickname(defaultName);
         }
     };
 
@@ -56,27 +56,19 @@ export default function ProfilePage() {
 
         setSaving(true);
         try {
-            // Upsert profile with nickname
-            const { error } = await supabase
-                .from('profiles')
-                .upsert({
-                    id: user.id,
-                    email: user.email,
-                    name: nickname.trim(),
-                    avatar_url: user.user_metadata?.avatar_url || null,
-                    role: userRole,
-                }, { onConflict: 'id' });
+            const formData = new FormData();
+            formData.append('nickname', nickname.trim());
 
-            if (error) {
-                console.error('Error saving nickname:', error);
-                alert('닉네임 저장에 실패했습니다.');
-            } else {
+            const result = await updateProfile(formData);
+
+            if (result.success) {
                 setOriginalNickname(nickname.trim());
                 setSaved(true);
                 setTimeout(() => setSaved(false), 2000);
             }
         } catch (err) {
             console.error('Failed to save nickname:', err);
+            alert(err instanceof Error ? err.message : '닉네임 저장에 실패했습니다.');
         } finally {
             setSaving(false);
         }
