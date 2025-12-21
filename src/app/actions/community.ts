@@ -51,13 +51,13 @@ export async function createCommunityPost(formData: FormData, accessToken?: stri
     // Try token first, then fallback to cookies (like column.ts does)
     let user;
     console.log('[Community Action] accessToken provided:', !!accessToken);
-    
+
     if (accessToken) {
         const { data, error } = await supabase.auth.getUser(accessToken);
         console.log('[Community Action] Token auth result:', error ? error.message : 'success');
         if (!error) user = data.user;
     }
-    
+
     // Fallback to cookies if token didn't work
     if (!user) {
         console.log('[Community Action] Trying cookie auth...');
@@ -70,7 +70,7 @@ export async function createCommunityPost(formData: FormData, accessToken?: stri
         console.log('[Community Action] No user found, throwing error');
         throw new Error('로그인이 필요합니다.');
     }
-    
+
     console.log('[Community Action] User authenticated:', user.email);
 
     // Find or create user in Prisma
@@ -147,7 +147,7 @@ export async function deleteCommunityPost(postId: string, accessToken?: string) 
         const { data, error } = await supabase.auth.getUser(accessToken);
         if (!error) user = data.user;
     }
-    
+
     if (!user) {
         const { data } = await supabase.auth.getUser();
         user = data.user;
@@ -184,6 +184,101 @@ export async function deleteCommunityPost(postId: string, accessToken?: string) 
     return { success: true };
 }
 
+export async function updateCommunityPost(postId: string, formData: FormData, accessToken?: string) {
+    const title = formData.get('title') as string;
+    const content = formData.get('content') as string;
+    const category = (formData.get('category') as string)?.toUpperCase() || 'FREE';
+    const price = formData.get('price') as string;
+    const meetupLocation = formData.get('meetupLocation') as string;
+    const meetupDate = formData.get('meetupDate') as string;
+    const meetupPurpose = formData.get('meetupPurpose') as string;
+
+    if (!title?.trim() || !content?.trim()) {
+        throw new Error('제목과 내용을 입력해주세요.');
+    }
+
+    if (!COMMUNITY_CATEGORIES.includes(category)) {
+        throw new Error('올바른 카테고리를 선택해주세요.');
+    }
+
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                getAll() { return cookieStore.getAll(); },
+                setAll(cookiesToSet) {
+                    try {
+                        cookiesToSet.forEach(({ name, value, options }) =>
+                            cookieStore.set(name, value, options)
+                        );
+                    } catch {}
+                },
+            },
+        }
+    );
+
+    let user;
+    if (accessToken) {
+        const { data, error } = await supabase.auth.getUser(accessToken);
+        if (!error) user = data.user;
+    }
+
+    if (!user) {
+        const { data } = await supabase.auth.getUser();
+        user = data.user;
+    }
+
+    if (!user || !user.email) {
+        throw new Error('로그인이 필요합니다.');
+    }
+
+    const post = await prisma.post.findUnique({
+        where: { id: postId },
+        include: { author: true }
+    });
+
+    if (!post) {
+        throw new Error('게시글을 찾을 수 없습니다.');
+    }
+
+    if (post.author.email !== user.email && !ADMIN_EMAILS.includes(user.email || '')) {
+        throw new Error('수정 권한이 없습니다.');
+    }
+
+    const updateData: any = {
+        title,
+        content,
+        category: category as any,
+        price: null,
+        meetupLocation: null,
+        meetupDate: null,
+        meetupPurpose: null,
+    };
+
+    if (category === 'MARKET' && price) {
+        updateData.price = parseInt(price);
+    }
+
+    if (category === 'MEETUP') {
+        if (meetupLocation) updateData.meetupLocation = meetupLocation;
+        if (meetupDate) updateData.meetupDate = new Date(meetupDate);
+        if (meetupPurpose) updateData.meetupPurpose = meetupPurpose;
+    }
+
+    await prisma.post.update({
+        where: { id: postId },
+        data: updateData
+    });
+
+    revalidatePath('/');
+    revalidatePath('/community');
+    revalidatePath(`/community/${postId}`);
+
+    return { success: true };
+}
+
 export async function toggleLike(postId: string, accessToken?: string) {
     const cookieStore = await cookies();
     const supabase = createServerClient(
@@ -213,7 +308,7 @@ export async function toggleLike(postId: string, accessToken?: string) {
         const { data, error } = await supabase.auth.getUser(accessToken);
         if (!error) user = data.user;
     }
-    
+
     if (!user) {
         const { data } = await supabase.auth.getUser();
         user = data.user;

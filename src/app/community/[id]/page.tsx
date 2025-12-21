@@ -172,7 +172,16 @@ export default async function CommunityDetailPage({ params }: PageProps) {
               <ArrowLeft className="w-4 h-4" /> 목록으로 돌아가기
             </Button>
           </Link>
-          {canDelete && <CommunityDeleteButton postId={post.id} />}
+          <div className="flex items-center gap-2">
+            {canDelete && (
+              <Link href={`/community/${post.id}/edit`}>
+                <Button variant="outline" size="sm" className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white h-9">
+                  수정
+                </Button>
+              </Link>
+            )}
+            {canDelete && <CommunityDeleteButton postId={post.id} />}
+          </div>
         </div>
 
         {/* Post Header */}
@@ -248,8 +257,8 @@ export default async function CommunityDetailPage({ params }: PageProps) {
         </article>
 
         {/* Comments Section */}
-        <CommentSection 
-          postId={post.id} 
+        <CommentSection
+          postId={post.id}
           initialComments={transformedComments}
           commentCount={post._count.comments}
         />

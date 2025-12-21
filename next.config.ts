@@ -26,6 +26,10 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'nycoldtrqbkevvgoajlq.supabase.co',
+      },
+      {
+        protocol: 'https',
         hostname: 'thesmokingcuban.com',
       },
       {
