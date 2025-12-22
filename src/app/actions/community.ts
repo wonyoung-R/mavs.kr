@@ -156,6 +156,123 @@ export async function createCommunityPost(formData: FormData, accessToken?: stri
     return { success: true, postId: post.id };
 }
 
+export async function updateCommunityPost(postId: string, formData: FormData, accessToken?: string) {
+    const title = formData.get('title') as string;
+    const content = formData.get('content') as string;
+    const price = formData.get('price') as string;
+    const meetupLocation = formData.get('meetupLocation') as string;
+    const meetupDate = formData.get('meetupDate') as string;
+    const meetupPurpose = formData.get('meetupPurpose') as string;
+    const imagesJson = formData.get('images') as string;
+    const snsLinksJson = formData.get('snsLinks') as string;
+
+    if (!title?.trim() || !content?.trim()) {
+        throw new Error('제목과 내용을 입력해주세요.');
+    }
+
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                getAll() {
+                    return cookieStore.getAll();
+                },
+                setAll(cookiesToSet) {
+                    try {
+                        cookiesToSet.forEach(({ name, value, options }) =>
+                            cookieStore.set(name, value, options)
+                        );
+                    } catch {
+                        // Ignore
+                    }
+                },
+            },
+        }
+    );
+
+    // Try token first, then fallback to cookies
+    let user;
+    if (accessToken) {
+        const { data, error } = await supabase.auth.getUser(accessToken);
+        if (!error) user = data.user;
+    }
+
+    if (!user) {
+        const { data } = await supabase.auth.getUser();
+        user = data.user;
+    }
+
+    if (!user || !user.email) {
+        throw new Error('로그인이 필요합니다.');
+    }
+
+    const post = await prisma.post.findUnique({
+        where: { id: postId },
+        include: { author: true }
+    });
+
+    if (!post) {
+        throw new Error('게시글을 찾을 수 없습니다.');
+    }
+
+    // Check permission
+    const isAuthor = post.author.email === user.email;
+    const isAdmin = ADMIN_EMAILS.includes(user.email || '');
+
+    if (!isAuthor && !isAdmin) {
+        throw new Error('수정 권한이 없습니다.');
+    }
+
+    // Build update data
+    const updateData: any = {
+        title,
+        content,
+        updatedAt: new Date(),
+    };
+
+    // Market specific fields
+    if (post.category === 'MARKET' && price) {
+        updateData.price = parseInt(price);
+    }
+
+    // Meetup specific fields
+    if (post.category === 'MEETUP') {
+        if (meetupLocation) updateData.meetupLocation = meetupLocation;
+        if (meetupDate) updateData.meetupDate = new Date(meetupDate);
+        if (meetupPurpose) updateData.meetupPurpose = meetupPurpose;
+    }
+
+    // News specific fields
+    if (post.category === 'NEWS') {
+        if (imagesJson) {
+            try {
+                updateData.images = JSON.parse(imagesJson);
+            } catch (e) {
+                updateData.images = [];
+            }
+        }
+        if (snsLinksJson) {
+            try {
+                updateData.snsLinks = JSON.parse(snsLinksJson);
+            } catch (e) {
+                updateData.snsLinks = [];
+            }
+        }
+    }
+
+    await prisma.post.update({
+        where: { id: postId },
+        data: updateData
+    });
+
+    revalidatePath('/');
+    revalidatePath('/community');
+
+    return { success: true };
+}
+
 export async function deleteCommunityPost(postId: string, accessToken?: string) {
     const cookieStore = await cookies();
     const supabase = createServerClient(

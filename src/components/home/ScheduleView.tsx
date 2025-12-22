@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Calendar, Clock, MapPin, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getTeamLogo } from '@/lib/utils/team-logos';
+import MavericksLoading from '@/components/ui/MavericksLoading';
 
 interface ScheduleViewProps {
     allGames: any[];
@@ -139,6 +140,14 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
         });
     };
 
+    if (loadingGames && allGames.length === 0) {
+        return (
+            <div className="w-full min-h-[calc(100vh-200px)] flex items-center justify-center">
+                <MavericksLoading fullScreen={false} />
+            </div>
+        );
+    }
+
     return (
         <motion.div
             initial={{ opacity: 0, x: 20 }}
@@ -164,28 +173,28 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
                             nextGame.status === 'live'
                                 ? 'bg-gradient-to-br from-green-900/60 via-green-800/40 to-emerald-900/40 border-green-500/50'
                                 : 'bg-gradient-to-br from-blue-900/60 via-blue-800/40 to-purple-900/40 border-blue-500/30'
-                        } rounded-2xl overflow-hidden shadow-xl hover:shadow-blue-900/30 transition-all duration-300 hover:scale-[1.02]`}>
-                            <CardContent className="p-6">
+                        } rounded-xl md:rounded-2xl overflow-hidden shadow-xl hover:shadow-blue-900/30 transition-all duration-300 hover:scale-[1.02]`}>
+                            <CardContent className="p-3 md:p-6">
                                 {/* Header with Date & Time */}
-                                <div className="flex flex-col items-center mb-6">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <div className={`w-2 h-2 rounded-full animate-pulse ${
+                                <div className="flex flex-col items-center mb-3 md:mb-6">
+                                    <div className="flex items-center gap-2 mb-1 md:mb-2">
+                                        <div className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full animate-pulse ${
                                             nextGame.status === 'live' ? 'bg-green-400' : 'bg-blue-400'
                                         }`} />
-                                        <span className={`text-sm font-bold uppercase tracking-wider ${
+                                        <span className={`text-xs md:text-sm font-bold uppercase tracking-wider whitespace-nowrap ${
                                             nextGame.status === 'live' ? 'text-green-400' : 'text-blue-400'
                                         }`}>
                                             {nextGame.status === 'live' ? '🔴 LIVE NOW' : 'Next Game'}
                                         </span>
                                     </div>
-                                    <div className="flex items-center gap-3 text-white">
-                                        <div className="flex items-center gap-2">
-                                            <Calendar className="w-4 h-4 text-blue-400" />
+                                    <div className="flex items-center gap-2 md:gap-3 text-white text-xs md:text-base">
+                                        <div className="flex items-center gap-1 md:gap-2 whitespace-nowrap">
+                                            <Calendar className="w-3 h-3 md:w-4 md:h-4 text-blue-400" />
                                             <span className="font-bold">{formatKSTDate(nextGame.game_date_kst)}</span>
                                         </div>
                                         <span className="text-white/30">|</span>
-                                        <div className="flex items-center gap-2">
-                                            <Clock className="w-4 h-4 text-blue-400" />
+                                        <div className="flex items-center gap-1 md:gap-2 whitespace-nowrap">
+                                            <Clock className="w-3 h-3 md:w-4 md:h-4 text-blue-400" />
                                             {nextGame.status === 'live' ? (
                                                 <span className="font-mono font-bold text-green-300 animate-pulse">
                                                     Q{nextGame.period} {nextGame.time_remaining}
@@ -198,10 +207,10 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
                                 </div>
 
                                 {/* Matchup */}
-                                <div className="flex items-center justify-center gap-6 md:gap-12 mb-4">
+                                <div className="flex items-center justify-center gap-4 md:gap-12 mb-2 md:mb-4">
                                     {/* Away Team */}
-                                    <div className="flex flex-col items-center gap-2">
-                                        <div className="relative w-16 h-16 md:w-24 md:h-24 drop-shadow-2xl">
+                                    <div className="flex flex-col items-center gap-1 md:gap-2">
+                                        <div className="relative w-12 h-12 md:w-24 md:h-24 drop-shadow-2xl">
                                             <Image
                                                 src={getTeamLogo(nextGame.is_home ? nextGame.opponent : 'Mavericks')}
                                                 alt="Away Team"
@@ -210,11 +219,11 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
                                                 unoptimized
                                             />
                                         </div>
-                                        <span className={`text-sm md:text-lg font-bold ${!nextGame.is_home ? 'text-blue-400' : 'text-white'}`}>
+                                        <span className={`text-xs md:text-lg font-bold whitespace-nowrap ${!nextGame.is_home ? 'text-blue-400' : 'text-white'}`}>
                                             {nextGame.is_home ? nextGame.opponent : 'DAL'}
                                         </span>
                                         {nextGame.status === 'live' && (
-                                            <span className="text-2xl md:text-3xl font-mono font-black text-white">
+                                            <span className="text-xl md:text-3xl font-mono font-black text-white">
                                                 {nextGame.is_home ? nextGame.opponent_score : nextGame.mavs_score}
                                             </span>
                                         )}
@@ -223,18 +232,18 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
                                     {/* VS or Score */}
                                     <div className="flex flex-col items-center">
                                         {nextGame.status === 'live' ? (
-                                            <span className="text-2xl md:text-3xl font-black text-white/50">-</span>
+                                            <span className="text-xl md:text-3xl font-black text-white/50">-</span>
                                         ) : (
                                             <>
-                                        <Zap className="w-6 h-6 text-yellow-400 mb-2" />
-                                        <span className="text-2xl md:text-3xl font-black text-white/50">VS</span>
+                                        <Zap className="w-4 h-4 md:w-6 md:h-6 text-yellow-400 mb-1 md:mb-2" />
+                                        <span className="text-xl md:text-3xl font-black text-white/50">VS</span>
                                             </>
                                         )}
                                     </div>
 
                                     {/* Home Team */}
-                                    <div className="flex flex-col items-center gap-2">
-                                        <div className="relative w-16 h-16 md:w-24 md:h-24 drop-shadow-2xl">
+                                    <div className="flex flex-col items-center gap-1 md:gap-2">
+                                        <div className="relative w-12 h-12 md:w-24 md:h-24 drop-shadow-2xl">
                                             <Image
                                                 src={getTeamLogo(nextGame.is_home ? 'Mavericks' : nextGame.opponent)}
                                                 alt="Home Team"
@@ -242,11 +251,11 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
                                                 className="object-contain"
                                             />
                                         </div>
-                                        <span className={`text-sm md:text-lg font-bold ${nextGame.is_home ? 'text-blue-400' : 'text-white'}`}>
+                                        <span className={`text-xs md:text-lg font-bold whitespace-nowrap ${nextGame.is_home ? 'text-blue-400' : 'text-white'}`}>
                                             {nextGame.is_home ? 'DAL' : nextGame.opponent}
                                         </span>
                                         {nextGame.status === 'live' && (
-                                            <span className="text-2xl md:text-3xl font-mono font-black text-white">
+                                            <span className="text-xl md:text-3xl font-mono font-black text-white">
                                                 {nextGame.is_home ? nextGame.mavs_score : nextGame.opponent_score}
                                             </span>
                                         )}
@@ -254,12 +263,12 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
                                 </div>
 
                                 {/* Venue & Home/Away */}
-                                <div className="flex items-center justify-center gap-3 text-sm text-slate-400">
-                                    <div className="flex items-center gap-1.5">
-                                        <MapPin className="w-3.5 h-3.5 text-purple-400" />
-                                        <span>{nextGame.venue}</span>
+                                <div className="flex items-center justify-center gap-2 md:gap-3 text-xs md:text-sm text-slate-400">
+                                    <div className="flex items-center gap-1 md:gap-1.5 whitespace-nowrap">
+                                        <MapPin className="w-3 h-3 md:w-3.5 md:h-3.5 text-purple-400" />
+                                        <span className="truncate max-w-[120px] md:max-w-none">{nextGame.venue}</span>
                                     </div>
-                                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${nextGame.is_home ? 'bg-blue-600/30 text-blue-300' : 'bg-purple-600/30 text-purple-300'}`}>
+                                    <span className={`px-1.5 md:px-2 py-0.5 rounded text-[10px] md:text-xs font-bold whitespace-nowrap ${nextGame.is_home ? 'bg-blue-600/30 text-blue-300' : 'bg-purple-600/30 text-purple-300'}`}>
                                         {nextGame.is_home ? 'HOME' : 'AWAY'}
                                     </span>
                                 </div>

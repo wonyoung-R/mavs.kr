@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { LogIn, LogOut, User, ChevronDown, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { Footer } from '@/components/layout/Footer';
 
 // Type definitions for Game data
 interface MavericksGame {
@@ -162,6 +163,7 @@ export default function NewHomePage() {
   const [loadingGames, setLoadingGames] = useState(true);
   const [todaysMavsGame, setTodaysMavsGame] = useState<any>(null);
   const [loadingTodaysGame, setLoadingTodaysGame] = useState(true);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   // Handle tab change with URL update
   const handleTabChange = (tabId: string) => {
@@ -181,23 +183,11 @@ export default function NewHomePage() {
     }
   }, [searchParams]);
 
-  // Handle initial scroll position based on tab
+  // Handle scroll position based on tab change
   useEffect(() => {
-    // 모바일에서만 적용 (768px 이하)
-    const isMobile = window.innerWidth < 768;
-    if (!isMobile) return;
-
-    if (activeTab === 'home') {
-      // 홈 탭: footer가 보이도록 약간 아래로 스크롤
-      setTimeout(() => {
-        const scrollAmount = window.innerHeight * 0.15; // 화면 높이의 15% 정도 스크롤
-        window.scrollTo({ top: scrollAmount, behavior: 'smooth' });
-      }, 100);
-    } else {
-      // 다른 탭: 최상단으로 스크롤
-      setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 100);
+    // 탭 변경 시 콘텐츠 스크롤을 최상단으로 리셋
+    if (contentRef.current) {
+      contentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [activeTab]);
 
@@ -264,11 +254,11 @@ export default function NewHomePage() {
   ];
 
   return (
-    <div className="min-h-screen w-full bg-[#050510] relative flex flex-col items-center overflow-x-hidden">
+    <div className="h-screen w-full bg-[#050510] relative flex flex-col overflow-hidden">
       {/* Fixed Background Container - prevents separate scrolling */}
-      <div className="fixed inset-0 z-0 overflow-hidden">
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         {/* Animated Mavericks Logo Background */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] md:w-[800px] h-[600px] md:h-[800px] opacity-[0.08] animate-wave pointer-events-none">
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] md:w-[800px] h-[600px] md:h-[800px] opacity-[0.08] animate-wave">
           <img
             src="https://upload.wikimedia.org/wikipedia/en/thumb/9/97/Dallas_Mavericks_logo.svg/1200px-Dallas_Mavericks_logo.svg.png"
             alt="Mavericks Logo"
@@ -280,54 +270,65 @@ export default function NewHomePage() {
         </div>
 
         {/* Background Gradient */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] md:w-[1200px] h-[800px] md:h-[1200px] bg-blue-600/10 rounded-full blur-[150px] pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] md:w-[1200px] h-[800px] md:h-[1200px] bg-blue-600/10 rounded-full blur-[150px]" />
 
         {/* Original Background */}
-        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-[#050510] to-[#050510] pointer-events-none"></div>
-        <div className="absolute bottom-0 right-0 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-blue-600/5 rounded-full blur-[100px] animate-pulse pointer-events-none"></div>
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-[#050510] to-[#050510]"></div>
+        <div className="absolute bottom-0 right-0 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-blue-600/5 rounded-full blur-[100px] animate-pulse"></div>
       </div>
 
-      {/* Top Navigation Buttons - Hidden on mobile (shown in hamburger menu) */}
-      <div className="hidden md:flex absolute top-4 right-4 z-50 items-center gap-3">
-        <ProfileDropdown />
+      {/* Header - Fixed Top Navigation Area */}
+      <div className="relative z-50 flex-shrink-0">
+        <div className="flex items-center justify-center pt-4 pb-2">
+          <TabNavigation
+            tabs={tabs}
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+          />
+        </div>
+        {/* Desktop Profile Dropdown */}
+        <div className="hidden md:flex absolute top-4 right-4 items-center gap-3">
+          <ProfileDropdown />
+        </div>
       </div>
 
-      {/* Navigation */}
-      <div className="relative z-50 pt-4 pb-0">
-        <TabNavigation
-          tabs={tabs}
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-        />
+      {/* Scrollable Content Area */}
+      <div
+        ref={contentRef}
+        className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden"
+      >
+        <div className="w-full max-w-7xl mx-auto px-4 pt-4 pb-8">
+          <AnimatePresence mode="wait">
+            {activeTab === 'home' && (
+              <HomeView
+                key="home"
+                todaysMavsGame={todaysMavsGame}
+                loadingTodaysGame={loadingTodaysGame}
+              />
+            )}
+            {activeTab === 'schedule' && (
+              <ScheduleView
+                key="schedule"
+                allGames={allGames}
+                loadingGames={loadingGames}
+              />
+            )}
+            {activeTab === 'news' && (
+              <NewsView key="news" />
+            )}
+            {activeTab === 'column' && (
+              <ColumnView key="column" />
+            )}
+            {activeTab === 'community' && (
+              <CommunityView key="community" />
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="relative z-10 flex-1 w-full max-w-7xl mx-auto flex flex-col px-4 pt-4 h-full justify-center">
-        <AnimatePresence mode="wait">
-          {activeTab === 'home' && (
-            <HomeView
-              key="home"
-              todaysMavsGame={todaysMavsGame}
-              loadingTodaysGame={loadingTodaysGame}
-            />
-          )}
-          {activeTab === 'schedule' && (
-            <ScheduleView
-              key="schedule"
-              allGames={allGames}
-              loadingGames={loadingGames}
-            />
-          )}
-          {activeTab === 'news' && (
-            <NewsView key="news" />
-          )}
-          {activeTab === 'column' && (
-            <ColumnView key="column" />
-          )}
-          {activeTab === 'community' && (
-            <CommunityView key="community" />
-          )}
-        </AnimatePresence>
+      {/* Footer - Fixed Bottom */}
+      <div className="relative z-10 flex-shrink-0">
+        <Footer />
       </div>
 
       <style jsx global>{`

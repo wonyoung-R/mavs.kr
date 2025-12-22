@@ -151,7 +151,7 @@ export function ColumnView() {
 
     if (loading) {
         return (
-            <div className="min-h-[400px] flex items-center justify-center">
+            <div className="w-full min-h-[calc(100vh-200px)] flex items-center justify-center">
                 <MavericksLoading fullScreen={false} />
             </div>
         );
@@ -237,70 +237,46 @@ export function ColumnView() {
                     </article>
 
                     {/* Comments Section */}
-                    <div className="bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                                <MessageCircle className="w-5 h-5" />
+                    <div className="bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/10 p-3 md:p-6">
+                        <div className="flex items-center justify-between mb-4 md:mb-6">
+                            <h3 className="text-base md:text-xl font-bold text-white flex items-center gap-2">
+                                <MessageCircle className="w-4 h-4 md:w-5 md:h-5" />
                                 댓글 {comments.length}
                             </h3>
                         </div>
 
-                        {/* Comment Input */}
-                        <div className="mb-6 pb-6 border-b border-white/10">
-                            <textarea
-                                value={commentContent}
-                                onChange={(e) => setCommentContent(e.target.value)}
-                                placeholder="댓글을 입력하세요..."
-                                rows={3}
-                                className="w-full bg-slate-800/50 border-2 border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 resize-none
-                                           focus:outline-none focus:border-blue-500 focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20
-                                           transition-all duration-200"
-                            />
-                            <div className="flex justify-between items-center mt-3">
-                                <span className="text-xs text-slate-500">{user ? user.email : '로그인이 필요합니다'}로 작성</span>
-                                <Button
-                                    onClick={handleCommentSubmit}
-                                    disabled={isSubmittingComment || !commentContent.trim()}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 disabled:opacity-50"
-                                >
-                                    <Send className="w-4 h-4 mr-2" />
-                                    {isSubmittingComment ? '등록 중...' : '등록'}
-                                </Button>
-                            </div>
-                        </div>
-
-                        {/* Comments List */}
-                        <div className="space-y-4">
+                        {/* Comments List - Now First */}
+                        <div className="space-y-3 md:space-y-4 mb-4 md:mb-6">
                             {loadingComments ? (
-                                <div className="text-center py-8 text-slate-400">
-                                    <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
+                                <div className="text-center py-6 md:py-8 text-slate-400">
+                                    <div className="animate-spin w-5 h-5 md:w-6 md:h-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
                                 </div>
                             ) : comments.length === 0 ? (
-                                <div className="text-center py-8 text-slate-400">
+                                <div className="text-center py-6 md:py-8 text-slate-400 text-sm md:text-base">
                                     첫 댓글을 작성해보세요!
                                 </div>
                             ) : (
-                                <div className="space-y-4">
+                                <div className="space-y-3 md:space-y-4">
                                     {comments
                                         .filter((comment: any) => !comment.parentId)
                                         .map((comment: any) => {
                                             const renderComment = (cmt: any, depth = 0) => (
-                                                <div key={cmt.id} className={`${depth > 0 ? 'ml-8 mt-4' : ''}`}>
-                                                    <div className="flex gap-3 p-4 bg-slate-800/30 rounded-lg">
-                                                        <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center flex-shrink-0">
-                                                            <User className="w-4 h-4 text-slate-300" />
+                                                <div key={cmt.id} className={`${depth > 0 ? 'ml-4 md:ml-8 mt-3 md:mt-4' : ''}`}>
+                                                    <div className="flex gap-2 md:gap-3 p-3 md:p-4 bg-slate-800/30 rounded-lg">
+                                                        <div className="w-6 h-6 md:w-8 md:h-8 bg-slate-700 rounded-full flex items-center justify-center flex-shrink-0">
+                                                            <User className="w-3 h-3 md:w-4 md:h-4 text-slate-300" />
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-center gap-2 mb-1">
-                                                                <span className="text-sm font-medium text-white">{cmt.author.username}</span>
-                                                                <span className="text-xs text-slate-500">
+                                                                <span className="text-xs md:text-sm font-medium text-white">{cmt.author.username}</span>
+                                                                <span className="text-[10px] md:text-xs text-slate-500">
                                                                     {formatDistanceToNow(new Date(cmt.createdAt), { addSuffix: true, locale: ko })}
                                                                 </span>
                                                             </div>
-                                                            <p className="text-sm text-slate-300 whitespace-pre-wrap break-words mb-2">{cmt.content}</p>
+                                                            <p className="text-xs md:text-sm text-slate-300 whitespace-pre-wrap break-words mb-2">{cmt.content}</p>
                                                             <button
                                                                 onClick={() => setReplyingTo(replyingTo === cmt.id ? null : cmt.id)}
-                                                                className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                                                                className="text-[10px] md:text-xs text-blue-400 hover:text-blue-300 transition-colors"
                                                             >
                                                                 {replyingTo === cmt.id ? '취소' : '답글'}
                                                             </button>
@@ -309,15 +285,15 @@ export function ColumnView() {
 
                                                     {/* Reply input form */}
                                                     {replyingTo === cmt.id && (
-                                                        <div className="ml-8 mt-2">
+                                                        <div className="ml-4 md:ml-8 mt-2">
                                                             <div className="flex gap-2">
                                                                 <input
                                                                     type="text"
                                                                     value={replyContent}
                                                                     onChange={(e) => setReplyContent(e.target.value)}
                                                                     placeholder={`@${cmt.author.username}님에게 답글...`}
-                                                                    className="flex-1 bg-slate-800/50 border-2 border-slate-700 rounded-lg px-4 py-2 text-sm text-white placeholder-slate-500
-                                                                               focus:outline-none focus:border-blue-500 focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20"
+                                                                    className="flex-1 bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm text-white placeholder-slate-500
+                                                                               focus:outline-none focus:border-blue-500 focus:bg-slate-800 focus:ring-1 focus:ring-blue-500/20"
                                                                     onKeyDown={(e) => {
                                                                         if (e.key === 'Enter' && !e.shiftKey) {
                                                                             e.preventDefault();
@@ -328,10 +304,10 @@ export function ColumnView() {
                                                                 <button
                                                                     onClick={() => handleReplySubmit(cmt.id)}
                                                                     disabled={isSubmittingReply || !replyContent.trim()}
-                                                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                                                    className="px-3 py-1.5 md:px-4 md:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-xs md:text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 md:gap-2"
                                                                 >
                                                                     <Send className="w-3 h-3" />
-                                                                    {isSubmittingReply ? '등록 중...' : '등록'}
+                                                                    <span className="hidden md:inline">{isSubmittingReply ? '등록 중...' : '등록'}</span>
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -348,6 +324,30 @@ export function ColumnView() {
                                         })}
                                 </div>
                             )}
+                        </div>
+
+                        {/* Comment Input - Now Below Comments */}
+                        <div className="pt-4 md:pt-6 border-t border-white/10">
+                            <textarea
+                                value={commentContent}
+                                onChange={(e) => setCommentContent(e.target.value)}
+                                placeholder="댓글을 입력하세요..."
+                                rows={2}
+                                className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 md:px-4 md:py-3 text-sm md:text-base text-white placeholder-slate-500 resize-none
+                                           focus:outline-none focus:border-blue-500 focus:bg-slate-800 focus:ring-1 focus:ring-blue-500/20
+                                           transition-all duration-200"
+                            />
+                            <div className="flex justify-between items-center mt-2 md:mt-3">
+                                <span className="text-[10px] md:text-xs text-slate-500 truncate max-w-[120px] md:max-w-none">{user ? user.email : '로그인 필요'}</span>
+                                <Button
+                                    onClick={handleCommentSubmit}
+                                    disabled={isSubmittingComment || !commentContent.trim()}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 md:px-6 py-1.5 md:py-2 text-xs md:text-sm disabled:opacity-50"
+                                >
+                                    <Send className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+                                    {isSubmittingComment ? '등록 중...' : '등록'}
+                                </Button>
+                            </div>
                         </div>
                     </div>
 
@@ -408,8 +408,8 @@ export function ColumnView() {
             {/* Featured Column Hero */}
             {featuredPost && (
                 <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    className="relative rounded-2xl overflow-hidden aspect-[16/10] md:aspect-[21/9] group cursor-pointer border border-white/10"
+                    whileHover={{ scale: 1.01 }}
+                    className="relative rounded-xl md:rounded-2xl overflow-hidden aspect-[4/3] md:aspect-[21/9] group cursor-pointer border border-white/10"
                     onClick={() => setSelectedPost(featuredPost)}
                 >
                         <div className="absolute inset-0">
@@ -422,36 +422,36 @@ export function ColumnView() {
                             />
                         </div>
 
-                        <div className="absolute bottom-0 left-0 w-full p-4 md:p-8 z-20">
-                            <div className="flex items-center gap-2 mb-2 md:mb-4">
-                                <span className="px-2 md:px-3 py-1 rounded-full bg-blue-600 text-white text-xs font-medium">Featured</span>
-                                <span className="flex items-center text-slate-300 text-xs md:text-sm gap-1">
-                                    <Calendar className="w-3 h-3" /> {formatDistanceToNow(new Date(featuredPost.createdAt), { addSuffix: true, locale: ko })}
+                        <div className="absolute bottom-0 left-0 w-full p-3 md:p-8 z-20">
+                            <div className="flex items-center gap-2 mb-1.5 md:mb-4">
+                                <span className="px-2 py-0.5 md:py-1 rounded-full bg-blue-600 text-white text-[10px] md:text-xs font-medium">Featured</span>
+                                <span className="flex items-center text-slate-300 text-[10px] md:text-sm gap-1">
+                                    <Calendar className="w-2.5 h-2.5 md:w-3 md:h-3" /> {formatDistanceToNow(new Date(featuredPost.createdAt), { addSuffix: true, locale: ko })}
                                 </span>
                             </div>
-                            <h3 className="text-xl md:text-3xl lg:text-4xl font-bold text-white mb-2 md:mb-3 group-hover:text-blue-400 transition-colors line-clamp-2">
+                            <h3 className="text-base md:text-3xl lg:text-4xl font-bold text-white mb-1.5 md:mb-3 group-hover:text-blue-400 transition-colors line-clamp-2">
                                 {featuredPost.title}
                             </h3>
                             <p className="text-slate-300 text-sm md:text-lg line-clamp-2 mb-3 md:mb-6 max-w-3xl hidden md:block">
                                 {getTextSummary(featuredPost.content)}
                             </p>
-                            <div className="flex items-center gap-3 md:gap-4">
-                                <div className="flex items-center gap-2 md:gap-3">
-                                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-700 flex items-center justify-center border border-white/20 overflow-hidden">
+                            <div className="flex items-center gap-2 md:gap-4">
+                                <div className="flex items-center gap-1.5 md:gap-3">
+                                    <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-slate-700 flex items-center justify-center border border-white/20 overflow-hidden">
                                         {featuredPost.author.image ? (
                                             <img src={featuredPost.author.image} alt={featuredPost.author.username} className="w-full h-full rounded-full object-cover" />
                                         ) : (
-                                            <User className="w-4 h-4 md:w-5 md:h-5 text-white" />
+                                            <User className="w-3 h-3 md:w-5 md:h-5 text-white" />
                                         )}
                                     </div>
                                     <div>
-                                        <p className="text-white font-medium text-xs md:text-sm">{featuredPost.author.username}</p>
-                                        <p className="text-blue-400 text-xs">Columnist</p>
+                                        <p className="text-white font-medium text-[10px] md:text-sm">{featuredPost.author.username}</p>
+                                        <p className="text-blue-400 text-[9px] md:text-xs">Columnist</p>
                                     </div>
                                 </div>
-                                <div className="h-6 md:h-8 w-px bg-white/20" />
-                                <span className="text-slate-400 text-xs md:text-sm flex items-center gap-1">
-                                    <BookOpen className="w-3 h-3 md:w-4 md:h-4" /> {featuredPost._count.comments} 댓글
+                                <div className="h-4 md:h-8 w-px bg-white/20" />
+                                <span className="text-slate-400 text-[10px] md:text-sm flex items-center gap-1">
+                                    <BookOpen className="w-2.5 h-2.5 md:w-4 md:h-4" /> {featuredPost._count.comments} 댓글
                                 </span>
                             </div>
                         </div>
@@ -459,24 +459,24 @@ export function ColumnView() {
             )}
 
             {/* Recent Columns Grid */}
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
                 {recentPosts.map((post) => (
                         <Card key={post.id} className="h-full bg-slate-900/50 border-white/10 hover:border-blue-500/50 transition-colors group cursor-pointer" onClick={() => setSelectedPost(post)}>
-                            <CardHeader>
-                                <div className="flex justify-between items-start mb-2">
-                                    <span className="text-xs font-medium text-blue-400 bg-blue-400/10 px-2 py-1 rounded">
+                            <CardHeader className="p-3 md:p-6">
+                                <div className="flex justify-between items-start mb-1 md:mb-2">
+                                    <span className="text-[10px] md:text-xs font-medium text-blue-400 bg-blue-400/10 px-1.5 md:px-2 py-0.5 md:py-1 rounded">
                                         Column
                                     </span>
-                                    <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-blue-400 -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all" />
+                                    <ArrowRight className="w-3 h-3 md:w-4 md:h-4 text-slate-500 group-hover:text-blue-400 -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all" />
                                 </div>
-                                <CardTitle className="text-lg text-white group-hover:text-blue-300 transition-colors line-clamp-2">
+                                <CardTitle className="text-sm md:text-lg text-white group-hover:text-blue-300 transition-colors line-clamp-2">
                                     {post.title}
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent>
-                                <div className="flex items-center justify-between text-sm text-slate-400">
-                                    <span className="flex items-center gap-2">
-                                        <div className="w-2 h-2 rounded-full bg-slate-500" />
+                            <CardContent className="p-3 md:p-6 pt-0 md:pt-0">
+                                <div className="flex items-center justify-between text-[10px] md:text-sm text-slate-400">
+                                    <span className="flex items-center gap-1 md:gap-2">
+                                        <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-slate-500" />
                                         {post.author.username}
                                     </span>
                                     <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ko })}</span>
@@ -488,18 +488,18 @@ export function ColumnView() {
 
             {/* Call to Action for Writers */}
             <Card className="bg-gradient-to-r from-blue-900/40 to-purple-900/40 border-white/10">
-                <CardContent className="p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                <CardContent className="p-4 md:p-8 flex flex-col md:flex-row items-center justify-between gap-3 md:gap-6">
                     <div>
-                        <h4 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-                            <Star className="w-5 h-5 text-yellow-500" />
+                        <h4 className="text-base md:text-xl font-bold text-white mb-1 md:mb-2 flex items-center gap-2">
+                            <Star className="w-4 h-4 md:w-5 md:h-5 text-yellow-500" />
                             Mavs Columnist가 되어보세요
                         </h4>
-                        <p className="text-slate-300">
-                            나만의 시선으로 댈러스의 이야기를 들려주세요. 우수 칼럼니스트에게는 소정의 혜택이 주어집니다.
+                        <p className="text-slate-300 text-xs md:text-base">
+                            나만의 시선으로 댈러스의 이야기를 들려주세요.
                         </p>
                     </div>
                     <Link href="/login?redirect=/column">
-                        <button className="px-6 py-3 bg-white text-slate-900 rounded-xl font-bold hover:bg-blue-50 transition-colors whitespace-nowrap">
+                        <button className="px-4 md:px-6 py-2 md:py-3 bg-white text-slate-900 rounded-lg md:rounded-xl font-bold text-sm md:text-base hover:bg-blue-50 transition-colors whitespace-nowrap">
                             칼럼 기고하기
                         </button>
                     </Link>
@@ -511,17 +511,17 @@ export function ColumnView() {
 
     // Main Layout with Fixed Header
     return (
-        <div className="w-full max-w-5xl mx-auto space-y-8 px-4 pt-4 pb-20">
+        <div className="w-full max-w-5xl mx-auto space-y-4 md:space-y-8 px-3 md:px-4 pt-3 md:pt-4 pb-16 md:pb-20">
             {/* Fixed Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-4 mb-4 md:mb-6">
                 <div>
-                    <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3 mb-2">
+                    <h2 className="text-xl md:text-3xl font-bold text-white flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
                         ✍️ 매버릭스 칼럼
-                        <span className="text-sm font-normal text-slate-400">
+                        <span className="text-xs md:text-sm font-normal text-slate-400">
                             ({posts.length}개)
                         </span>
                     </h2>
-                    <p className="text-slate-400 text-sm md:text-base">전문가들의 시선으로 보는 댈러스 매버릭스</p>
+                    <p className="text-slate-400 text-xs md:text-base">전문가들의 시선으로 보는 댈러스 매버릭스</p>
                 </div>
             </div>
 

@@ -15,15 +15,15 @@ export function HomeView({ todaysMavsGame, loadingTodaysGame }: HomeViewProps) {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 1.05 }}
             transition={{ duration: 0.5 }}
-            className="w-full h-full flex flex-col items-center justify-center relative pt-12"
+            className="w-full min-h-[calc(100vh-200px)] flex flex-col items-center justify-center relative"
         >
             {/* Hero Content */}
             <div className="text-center z-10">
-                <h1 className="font-anton text-7xl md:text-9xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-white to-white/10 tracking-tighter mb-6">
+                <h1 className="font-anton text-5xl md:text-9xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-white to-white/10 tracking-tighter mb-4 md:mb-6">
                     MAVERICKS KOREA
                 </h1>
                 <motion.p
-                    className="font-serif text-2xl md:text-2xl text-blue-200/80 font-light tracking-widest uppercase"
+                    className="font-serif text-lg md:text-2xl text-blue-200/80 font-light tracking-widest uppercase"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}

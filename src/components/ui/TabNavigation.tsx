@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Menu, X, User, LogOut, FileText, Shield, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -23,29 +23,10 @@ interface TabNavigationProps {
 export function TabNavigation({ tabs, activeTab, onTabChange, className }: TabNavigationProps) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isProfileExpanded, setIsProfileExpanded] = useState(false);
-    const [isScrolled, setIsScrolled] = useState(false);
     const { user, loading, signOut, userRole } = useAuth();
 
     const isAdmin = userRole === 'admin';
     const isColumnist = userRole === 'columnist' || isAdmin;
-
-    // Track scroll position - works on both desktop and mobile
-    useEffect(() => {
-        const handleScroll = () => {
-            const scrollTop = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
-            setIsScrolled(scrollTop > 10);
-        };
-
-        // Listen to multiple scroll events for better mobile support
-        window.addEventListener('scroll', handleScroll, { passive: true });
-        document.addEventListener('scroll', handleScroll, { passive: true });
-        handleScroll();
-
-        return () => {
-            window.removeEventListener('scroll', handleScroll);
-            document.removeEventListener('scroll', handleScroll);
-        };
-    }, []);
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
@@ -105,11 +86,7 @@ export function TabNavigation({ tabs, activeTab, onTabChange, className }: TabNa
             <div className="md:hidden fixed top-4 right-4 z-50">
                 <button
                     onClick={toggleMenu}
-                    className={`p-2.5 border rounded-full text-white transition-all duration-300 ${
-                        isScrolled 
-                            ? 'bg-[#0a0a1a] backdrop-blur-xl border-blue-500/30 shadow-xl shadow-blue-900/20' 
-                            : 'bg-white/10 backdrop-blur-sm border-white/20'
-                    }`}
+                    className="p-2.5 border rounded-full text-white transition-all duration-300 bg-[#0a0a1a] backdrop-blur-xl border-blue-500/30 shadow-xl shadow-blue-900/20"
                 >
                     {isMenuOpen ? <X size={22} /> : <Menu size={22} />}
                 </button>

@@ -1,17 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { MessageCircle, Heart, MapPin, Calendar, ArrowRight, Users, DollarSign, ArrowLeft, Send, Image as ImageIcon, Link as LinkIcon, Plus, X, ChevronRight, User } from 'lucide-react';
+import { MessageCircle, Heart, MapPin, Calendar, ArrowRight, Users, DollarSign, ArrowLeft, Send, Image as ImageIcon, Link as LinkIcon, Plus, X, ChevronLeft, ChevronRight, User } from 'lucide-react';
 import Link from 'next/link';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import MavericksLoading from '@/components/ui/MavericksLoading';
 import TiptapEditor from '@/components/editor/TiptapEditor';
 import { useAuth } from '@/contexts/AuthContext';
-import { createCommunityPost, toggleLike } from '@/app/actions/community';
+import { createCommunityPost, updateCommunityPost, deleteCommunityPost, toggleLike } from '@/app/actions/community';
+import { supabase } from '@/lib/db/supabase';
+import { Pencil, Trash2 } from 'lucide-react';
 import { createComment, getComments } from '@/app/actions/comment';
 
 interface CommunityPost {
@@ -26,6 +28,8 @@ interface CommunityPost {
     createdAt: string;
     author: {
         id: string;
+        email: string;
+        name: string | null;
         username: string;
         image: string | null;
     };
@@ -76,7 +80,9 @@ export function CommunityView() {
     const [showWriteForm, setShowWriteForm] = useState(false);
     const [selectedPost, setSelectedPost] = useState<CommunityPost | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
+    const [detailListPage, setDetailListPage] = useState(1); // 상세 페이지 내 리스트 페이지네이션
     const ITEMS_PER_PAGE = 10; // 첫 페이지: 1개 featured + 9개 list, 나머지 페이지: 10개 list
+    const DETAIL_LIST_PER_PAGE = 5; // 상세 페이지 내 리스트 페이지당 항목 수
 
     // Write form states
     const [writeCategory, setWriteCategory] = useState('FREE');
@@ -104,6 +110,28 @@ export function CommunityView() {
     // Like states
     const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
     const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
+
+    // Edit mode states
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [editTitle, setEditTitle] = useState('');
+    const [editContent, setEditContent] = useState('');
+    const [editPrice, setEditPrice] = useState('');
+    const [editMeetupLocation, setEditMeetupLocation] = useState('');
+    const [editMeetupDate, setEditMeetupDate] = useState('');
+    const [editMeetupPurpose, setEditMeetupPurpose] = useState('');
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    // Check if current user is the author
+    const isAuthor = (post: CommunityPost) => {
+        if (!user) return false;
+        return user.email === post.author.email;
+    };
+
+    // Get display name (nickname first, then username)
+    const getDisplayName = (author: CommunityPost['author']) => {
+        return author.name || author.username;
+    };
 
     const fetchPosts = async (category: string) => {
         try {
@@ -150,10 +178,14 @@ export function CommunityView() {
         } else {
             setComments([]);
         }
+        // Reset edit mode and detail list page when post changes
+        setIsEditMode(false);
+        setDetailListPage(1);
     }, [selectedPost]);
 
     const handleCategoryChange = (categoryId: string) => {
         setSelectedCategory(categoryId);
+        setSelectedPost(null); // 카테고리 변경 시 상세 페이지 닫기
         setCurrentPage(1); // 카테고리 변경 시 첫 페이지로
     };
 
@@ -287,6 +319,99 @@ export function CommunityView() {
         }
     };
 
+    // Start editing a post
+    const handleEditStart = (post: CommunityPost) => {
+        setEditTitle(post.title);
+        setEditContent(post.content);
+        setEditPrice(post.price?.toString() || '');
+        setEditMeetupLocation(post.meetupLocation || '');
+        setEditMeetupDate(post.meetupDate ? new Date(post.meetupDate).toISOString().slice(0, 16) : '');
+        setEditMeetupPurpose(post.meetupPurpose || 'DRINK');
+        setIsEditMode(true);
+    };
+
+    // Cancel editing
+    const handleEditCancel = () => {
+        setIsEditMode(false);
+        setEditTitle('');
+        setEditContent('');
+        setEditPrice('');
+        setEditMeetupLocation('');
+        setEditMeetupDate('');
+        setEditMeetupPurpose('');
+    };
+
+    // Submit edit
+    const handleEditSubmit = async () => {
+        if (!selectedPost || !session?.access_token) return;
+
+        if (!editTitle.trim() || !editContent.trim()) {
+            alert('제목과 내용을 입력해주세요.');
+            return;
+        }
+
+        setIsUpdating(true);
+        try {
+            const formData = new FormData();
+            formData.append('title', editTitle.trim());
+            formData.append('content', editContent);
+            if (selectedPost.category === 'MARKET' && editPrice) {
+                formData.append('price', editPrice);
+            }
+            if (selectedPost.category === 'MEETUP') {
+                formData.append('meetupLocation', editMeetupLocation);
+                formData.append('meetupDate', editMeetupDate);
+                formData.append('meetupPurpose', editMeetupPurpose);
+            }
+
+            await updateCommunityPost(selectedPost.id, formData, session.access_token);
+
+            // Update local state
+            const updatedPost = {
+                ...selectedPost,
+                title: editTitle.trim(),
+                content: editContent,
+                price: editPrice ? parseInt(editPrice) : null,
+                meetupLocation: editMeetupLocation || null,
+                meetupDate: editMeetupDate || null,
+                meetupPurpose: editMeetupPurpose || null,
+            };
+            setSelectedPost(updatedPost);
+            setPosts(prev => prev.map(p => p.id === selectedPost.id ? updatedPost : p));
+
+            setIsEditMode(false);
+            alert('게시글이 수정되었습니다.');
+        } catch (error) {
+            console.error('Update error:', error);
+            alert('수정 실패: ' + (error instanceof Error ? error.message : '알 수 없는 오류'));
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    // Delete post
+    const handleDelete = async () => {
+        if (!selectedPost || !session?.access_token) return;
+
+        if (!confirm('정말로 이 게시글을 삭제하시겠습니까?')) return;
+
+        setIsDeleting(true);
+        try {
+            await deleteCommunityPost(selectedPost.id, session.access_token);
+
+            // Remove from local state
+            setPosts(prev => prev.filter(p => p.id !== selectedPost.id));
+            setSelectedPost(null);
+
+            alert('게시글이 삭제되었습니다.');
+        } catch (error) {
+            console.error('Delete error:', error);
+            alert('삭제 실패: ' + (error instanceof Error ? error.message : '알 수 없는 오류'));
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -379,7 +504,7 @@ export function CommunityView() {
 
     if (loading) {
         return (
-            <div className="min-h-[400px] flex items-center justify-center">
+            <div className="w-full min-h-[calc(100vh-200px)] flex items-center justify-center">
                 <MavericksLoading fullScreen={false} />
             </div>
         );
@@ -629,7 +754,8 @@ export function CommunityView() {
         if (selectedPost) {
             const categoryInfo = CATEGORIES.find(c => c.id === selectedPost.category);
             // Filter out selected post from the list
-            const otherPosts = posts.filter(p => p.id !== selectedPost.id);
+            // Filter posts to show only same category posts (excluding current post)
+            const otherPosts = posts.filter(p => p.id !== selectedPost.id && p.category === selectedPost.category);
 
             return (
                 <motion.div
@@ -686,21 +812,43 @@ export function CommunityView() {
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center font-bold text-slate-300">
-                                    {selectedPost.author.username?.[0]?.toUpperCase() || 'U'}
+                                    {getDisplayName(selectedPost.author)?.[0]?.toUpperCase() || 'U'}
                                 </div>
                                 <div>
-                                    <div className="font-medium text-white">{selectedPost.author.username}</div>
+                                    <div className="font-medium text-white">{getDisplayName(selectedPost.author)}</div>
                                     <div className="text-xs text-slate-500">Member</div>
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-4 text-slate-400">
+                            <div className="flex items-center gap-2 md:gap-4">
+                                {/* Edit/Delete buttons for author */}
+                                {isAuthor(selectedPost) && !isEditMode && (
+                                    <>
+                                        <button
+                                            onClick={() => handleEditStart(selectedPost)}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
+                                        >
+                                            <Pencil className="w-4 h-4" />
+                                            <span className="hidden md:inline">수정</span>
+                                        </button>
+                                        <button
+                                            onClick={handleDelete}
+                                            disabled={isDeleting}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                            <span className="hidden md:inline">{isDeleting ? '삭제 중...' : '삭제'}</span>
+                                        </button>
+                                    </>
+                                )}
+
+                                {/* Like button */}
                                 <button
                                     onClick={() => handleLikeToggle(selectedPost.id)}
-                                    className={`flex items-center gap-1.5 transition-colors ${
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors ${
                                         likedPosts.has(selectedPost.id)
-                                            ? 'text-red-500'
-                                            : 'hover:text-red-400'
+                                            ? 'text-red-500 bg-red-500/10'
+                                            : 'text-slate-400 hover:text-red-400 hover:bg-red-500/10'
                                     }`}
                                 >
                                     <Heart className={`w-5 h-5 ${likedPosts.has(selectedPost.id) ? 'fill-red-500' : ''}`} />
@@ -710,81 +858,139 @@ export function CommunityView() {
                         </div>
                     </header>
 
-                    {/* Post Content */}
-                    <article className="prose prose-invert prose-lg max-w-none mb-12 bg-slate-900/50 rounded-2xl p-6 border border-white/10">
-                        <div
-                            className="text-slate-200 [&_p]:text-slate-200 [&_h1]:text-white [&_h2]:text-white [&_h3]:text-white [&_h4]:text-white [&_li]:text-slate-200 [&_span]:text-slate-200 [&_div]:text-slate-200 [&_strong]:text-white"
-                            dangerouslySetInnerHTML={{ __html: selectedPost.content }}
-                        />
-                    </article>
+                    {/* Edit Mode Form */}
+                    {isEditMode ? (
+                        <div className="bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/10 p-6 mb-12">
+                            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                <Pencil className="w-5 h-5" /> 게시글 수정
+                            </h3>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-400 mb-2">제목</label>
+                                    <input
+                                        type="text"
+                                        value={editTitle}
+                                        onChange={(e) => setEditTitle(e.target.value)}
+                                        className="w-full bg-slate-800/50 border-2 border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                                    />
+                                </div>
+
+                                {/* Market: Price */}
+                                {selectedPost.category === 'MARKET' && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-400 mb-2">가격 (원)</label>
+                                        <input
+                                            type="number"
+                                            value={editPrice}
+                                            onChange={(e) => setEditPrice(e.target.value)}
+                                            className="w-full bg-slate-800/50 border-2 border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Meetup: Location & Date */}
+                                {selectedPost.category === 'MEETUP' && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-400 mb-2">장소</label>
+                                            <input
+                                                type="text"
+                                                value={editMeetupLocation}
+                                                onChange={(e) => setEditMeetupLocation(e.target.value)}
+                                                className="w-full bg-slate-800/50 border-2 border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-400 mb-2">날짜/시간</label>
+                                            <input
+                                                type="datetime-local"
+                                                value={editMeetupDate}
+                                                onChange={(e) => setEditMeetupDate(e.target.value)}
+                                                className="w-full bg-slate-800/50 border-2 border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-400 mb-2">내용</label>
+                                    <TiptapEditor
+                                        content={editContent}
+                                        onChange={setEditContent}
+                                        placeholder="내용을 입력하세요..."
+                                    />
+                                </div>
+
+                                <div className="flex gap-3 pt-4">
+                                    <button
+                                        onClick={handleEditCancel}
+                                        className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                                    >
+                                        취소
+                                    </button>
+                                    <button
+                                        onClick={handleEditSubmit}
+                                        disabled={isUpdating}
+                                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors disabled:opacity-50"
+                                    >
+                                        {isUpdating ? '저장 중...' : '저장'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        /* Post Content */
+                        <article className="prose prose-invert prose-lg max-w-none mb-12 bg-slate-900/50 rounded-2xl p-6 border border-white/10">
+                            <div
+                                className="text-slate-200 [&_p]:text-slate-200 [&_h1]:text-white [&_h2]:text-white [&_h3]:text-white [&_h4]:text-white [&_li]:text-slate-200 [&_span]:text-slate-200 [&_div]:text-slate-200 [&_strong]:text-white"
+                                dangerouslySetInnerHTML={{ __html: selectedPost.content }}
+                            />
+                        </article>
+                    )}
 
                     {/* Comments Section */}
-                    <div className="bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                                <MessageCircle className="w-5 h-5" />
+                    <div className="bg-slate-900/50 backdrop-blur-xl rounded-2xl border border-white/10 p-3 md:p-6">
+                        <div className="flex items-center justify-between mb-4 md:mb-6">
+                            <h3 className="text-base md:text-xl font-bold text-white flex items-center gap-2">
+                                <MessageCircle className="w-4 h-4 md:w-5 md:h-5" />
                                 댓글 {comments.length}
                             </h3>
                         </div>
 
-                        {/* Comment Input */}
-                        <div className="mb-6 pb-6 border-b border-white/10">
-                            <textarea
-                                value={commentContent}
-                                onChange={(e) => setCommentContent(e.target.value)}
-                                placeholder="댓글을 입력하세요..."
-                                rows={3}
-                                className="w-full bg-slate-800/50 border-2 border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 resize-none
-                                           focus:outline-none focus:border-blue-500 focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20
-                                           transition-all duration-200"
-                            />
-                            <div className="flex justify-between items-center mt-3">
-                                <span className="text-xs text-slate-500">{user ? user.email : '로그인이 필요합니다'}로 작성</span>
-                                <Button
-                                    onClick={handleCommentSubmit}
-                                    disabled={isSubmittingComment || !commentContent.trim()}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 disabled:opacity-50"
-                                >
-                                    <Send className="w-4 h-4 mr-2" />
-                                    {isSubmittingComment ? '등록 중...' : '등록'}
-                                </Button>
-                            </div>
-                        </div>
-
-                        {/* Comments List */}
-                        <div className="space-y-4">
+                        {/* Comments List - Now First */}
+                        <div className="space-y-3 md:space-y-4 mb-4 md:mb-6">
                             {loadingComments ? (
-                                <div className="text-center py-8 text-slate-400">
-                                    <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
+                                <div className="text-center py-6 md:py-8 text-slate-400">
+                                    <div className="animate-spin w-5 h-5 md:w-6 md:h-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
                                 </div>
                             ) : comments.length === 0 ? (
-                                <div className="text-center py-8 text-slate-400">
+                                <div className="text-center py-6 md:py-8 text-slate-400 text-sm md:text-base">
                                     첫 댓글을 작성해보세요!
                                 </div>
                             ) : (
-                                <div className="space-y-4">
+                                <div className="space-y-3 md:space-y-4">
                                     {comments
                                         .filter((comment: any) => !comment.parentId)
                                         .map((comment: any) => {
                                             const replies = comments.filter((c: any) => c.parentId === comment.id);
 
                                             const renderComment = (cmt: any, depth = 0) => (
-                                                <div key={cmt.id} className={`${depth > 0 ? 'ml-8 mt-4' : ''}`}>
-                                                    <div className="flex gap-3 p-4 bg-slate-800/30 rounded-lg">
-                                                        <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center flex-shrink-0">
-                                                            <User className="w-4 h-4 text-slate-300" />
+                                                <div key={cmt.id} className={`${depth > 0 ? 'ml-4 md:ml-8 mt-3 md:mt-4' : ''}`}>
+                                                    <div className="flex gap-2 md:gap-3 p-3 md:p-4 bg-slate-800/30 rounded-lg">
+                                                        <div className="w-6 h-6 md:w-8 md:h-8 bg-slate-700 rounded-full flex items-center justify-center flex-shrink-0">
+                                                            <User className="w-3 h-3 md:w-4 md:h-4 text-slate-300" />
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-center gap-2 mb-1">
-                                                                <span className="text-sm font-medium text-white">{cmt.author.username}</span>
-                                                                <span className="text-xs text-slate-500">
+                                                                <span className="text-xs md:text-sm font-medium text-white">{cmt.author.name || cmt.author.username}</span>
+                                                                <span className="text-[10px] md:text-xs text-slate-500">
                                                                     {formatDistanceToNow(new Date(cmt.createdAt), { addSuffix: true, locale: ko })}
                                                                 </span>
                                                             </div>
-                                                            <p className="text-sm text-slate-300 whitespace-pre-wrap break-words mb-2">{cmt.content}</p>
+                                                            <p className="text-xs md:text-sm text-slate-300 whitespace-pre-wrap break-words mb-2">{cmt.content}</p>
                                                             <button
                                                                 onClick={() => setReplyingTo(replyingTo === cmt.id ? null : cmt.id)}
-                                                                className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                                                                className="text-[10px] md:text-xs text-blue-400 hover:text-blue-300 transition-colors"
                                                             >
                                                                 {replyingTo === cmt.id ? '취소' : '답글'}
                                                             </button>
@@ -793,15 +999,15 @@ export function CommunityView() {
 
                                                     {/* Reply input form */}
                                                     {replyingTo === cmt.id && (
-                                                        <div className="ml-8 mt-2">
+                                                        <div className="ml-4 md:ml-8 mt-2">
                                                             <div className="flex gap-2">
                                                                 <input
                                                                     type="text"
                                                                     value={replyContent}
                                                                     onChange={(e) => setReplyContent(e.target.value)}
                                                                     placeholder={`@${cmt.author.username}님에게 답글...`}
-                                                                    className="flex-1 bg-slate-800/50 border-2 border-slate-700 rounded-lg px-4 py-2 text-sm text-white placeholder-slate-500
-                                                                               focus:outline-none focus:border-blue-500 focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20"
+                                                                    className="flex-1 bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm text-white placeholder-slate-500
+                                                                               focus:outline-none focus:border-blue-500 focus:bg-slate-800 focus:ring-1 focus:ring-blue-500/20"
                                                                     onKeyDown={(e) => {
                                                                         if (e.key === 'Enter' && !e.shiftKey) {
                                                                             e.preventDefault();
@@ -812,10 +1018,10 @@ export function CommunityView() {
                                                                 <button
                                                                     onClick={() => handleReplySubmit(cmt.id)}
                                                                     disabled={isSubmittingReply || !replyContent.trim()}
-                                                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                                                    className="px-3 py-1.5 md:px-4 md:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-xs md:text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 md:gap-2"
                                                                 >
                                                                     <Send className="w-3 h-3" />
-                                                                    {isSubmittingReply ? '등록 중...' : '등록'}
+                                                                    <span className="hidden md:inline">{isSubmittingReply ? '등록 중...' : '등록'}</span>
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -833,69 +1039,187 @@ export function CommunityView() {
                                 </div>
                             )}
                         </div>
-                    </div>
 
-                    {/* Other Posts Section */}
-                    <div className="border-t border-white/10 pt-8">
-                        <h3 className="text-2xl font-bold text-white mb-6">다른 게시글</h3>
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {otherPosts.slice(0, 6).map((post) => (
-                                <Card
-                                    key={post.id}
-                                    className="h-full bg-slate-900/50 border-white/10 hover:border-blue-500/50 transition-all group cursor-pointer"
-                                    onClick={() => {
-                                        setSelectedPost(post);
-                                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                                    }}
+                        {/* Comment Input - Now Below Comments */}
+                        <div className="pt-4 md:pt-6 border-t border-white/10">
+                            <textarea
+                                value={commentContent}
+                                onChange={(e) => setCommentContent(e.target.value)}
+                                placeholder="댓글을 입력하세요..."
+                                rows={2}
+                                className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 md:px-4 md:py-3 text-sm md:text-base text-white placeholder-slate-500 resize-none
+                                           focus:outline-none focus:border-blue-500 focus:bg-slate-800 focus:ring-1 focus:ring-blue-500/20
+                                           transition-all duration-200"
+                            />
+                            <div className="flex justify-between items-center mt-2 md:mt-3">
+                                <span className="text-[10px] md:text-xs text-slate-500 truncate max-w-[120px] md:max-w-none">{user ? user.email : '로그인 필요'}</span>
+                                <Button
+                                    onClick={handleCommentSubmit}
+                                    disabled={isSubmittingComment || !commentContent.trim()}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 md:px-6 py-1.5 md:py-2 text-xs md:text-sm disabled:opacity-50"
                                 >
-                                    <CardHeader className="pb-3">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <span className={`text-xs font-medium px-2 py-1 rounded border ${CATEGORY_COLORS[post.category] || CATEGORY_COLORS.FREE}`}>
-                                                {CATEGORIES.find(c => c.id === post.category)?.icon}
-                                            </span>
-                                            <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-blue-400 -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all" />
-                                        </div>
-                                        <CardTitle className="text-lg text-white group-hover:text-blue-300 transition-colors line-clamp-2">
-                                            {post.title}
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <p className="text-slate-500 text-sm line-clamp-2 mb-4">
-                                            {getTextSummary(post.content, 80)}
-                                        </p>
-
-                                        {/* Special badges */}
-                                        {post.category === 'MARKET' && post.price && (
-                                            <div className="mb-3 text-green-400 font-bold text-sm">
-                                                ₩{post.price.toLocaleString()}
-                                            </div>
-                                        )}
-                                        {post.category === 'MEETUP' && post.meetupLocation && (
-                                            <div className="mb-3 text-purple-400 text-xs flex items-center gap-1">
-                                                <MapPin className="w-3 h-3" /> {post.meetupLocation}
-                                            </div>
-                                        )}
-
-                                        <div className="flex items-center justify-between text-sm text-slate-500">
-                                            <span className="flex items-center gap-2">
-                                                <div className="w-2 h-2 rounded-full bg-slate-600" />
-                                                {post.author.username}
-                                            </span>
-                                            <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ko })}</span>
-                                        </div>
-                                        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/5 text-xs text-slate-500">
-                                            <span className="flex items-center gap-1">
-                                                <Heart className="w-3 h-3" /> {post._count.likes}
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <MessageCircle className="w-3 h-3" /> {post._count.comments}
-                                            </span>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
+                                    <Send className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+                                    {isSubmittingComment ? '등록 중...' : '등록'}
+                                </Button>
+                            </div>
                         </div>
                     </div>
+
+                    {/* Other Posts Section - Same Category List */}
+                    {(() => {
+                        const filteredPosts = otherPosts.filter(p => p.id !== selectedPost.id);
+                        const detailTotalPages = Math.ceil(filteredPosts.length / DETAIL_LIST_PER_PAGE);
+                        const startIndex = (detailListPage - 1) * DETAIL_LIST_PER_PAGE;
+                        const paginatedPosts = filteredPosts.slice(startIndex, startIndex + DETAIL_LIST_PER_PAGE);
+
+                        return (
+                            <div className="border-t border-white/10 pt-8">
+                                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                                    {CATEGORIES.find(c => c.id === selectedPost.category)?.icon} {CATEGORIES.find(c => c.id === selectedPost.category)?.name} 게시판
+                                    <span className="text-sm font-normal text-slate-500">({filteredPosts.length}개)</span>
+                                </h3>
+
+                                {/* Post List - Card Style */}
+                                {filteredPosts.length > 0 ? (
+                                    <div key={`list-${selectedPost.id}-${detailListPage}`} className="space-y-2">
+                                        {paginatedPosts.map((post) => (
+                                            <motion.div
+                                                key={post.id}
+                                                initial={{ opacity: 0, x: -20 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                transition={{ duration: 0.2 }}
+                                                onClick={() => {
+                                                    setSelectedPost(post);
+                                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                }}
+                                                className="bg-slate-900/30 backdrop-blur-sm border border-white/5 hover:border-blue-500/30 hover:bg-slate-900/50 transition-all group rounded-lg p-4 cursor-pointer"
+                                            >
+                                                <div className="flex items-center justify-between gap-4">
+                                                    {/* Left: Title and Meta */}
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-3 mb-2">
+                                                            <h4 className="text-base font-semibold text-white group-hover:text-blue-400 transition-colors truncate">
+                                                                {post.title}
+                                                            </h4>
+                                                        </div>
+                                                        <div className="flex items-center gap-3 text-xs text-slate-500">
+                                                            <span className="flex items-center gap-1">
+                                                                <div className="w-5 h-5 bg-slate-800 rounded-full flex items-center justify-center text-[10px] font-bold text-slate-400">
+                                                                    {(post.author.name || post.author.username)?.[0]?.toUpperCase()}
+                                                                </div>
+                                                                {post.author.name || post.author.username}
+                                                            </span>
+                                                            <span>•</span>
+                                                            <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ko })}</span>
+                                                            {post.category === 'MARKET' && post.price && (
+                                                                <>
+                                                                    <span>•</span>
+                                                                    <span className="text-green-400 font-semibold">₩{post.price.toLocaleString()}</span>
+                                                                </>
+                                                            )}
+                                                            {post.category === 'MEETUP' && post.meetupLocation && (
+                                                                <>
+                                                                    <span>•</span>
+                                                                    <span className="text-purple-400 flex items-center gap-1">
+                                                                        <MapPin className="w-3 h-3" />
+                                                                        {post.meetupLocation}
+                                                                    </span>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Right: Stats */}
+                                                    <div className="flex items-center gap-4 text-slate-500 text-xs shrink-0">
+                                                        <span className="flex items-center gap-1 hover:text-red-400 transition-colors">
+                                                            <Heart className="w-3.5 h-3.5" />
+                                                            <span className="font-medium">{post._count.likes}</span>
+                                                        </span>
+                                                        <span className="flex items-center gap-1 hover:text-blue-400 transition-colors">
+                                                            <MessageCircle className="w-3.5 h-3.5" />
+                                                            <span className="font-medium">{post._count.comments}</span>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-8 text-slate-500">
+                                        이 게시판에 다른 게시글이 없습니다.
+                                    </div>
+                                )}
+
+                                {/* Pagination */}
+                                {detailTotalPages > 1 && (
+                                    <div className="flex items-center justify-center gap-2 mt-6">
+                                        {/* Previous Button */}
+                                        <button
+                                            onClick={() => setDetailListPage(prev => Math.max(1, prev - 1))}
+                                            disabled={detailListPage === 1}
+                                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                                                detailListPage === 1
+                                                    ? 'bg-slate-800/50 text-slate-600 cursor-not-allowed'
+                                                    : 'bg-slate-800/50 text-white hover:bg-slate-700 border border-white/10 hover:border-blue-500/50'
+                                            }`}
+                                        >
+                                            이전
+                                        </button>
+
+                                        {/* Page Numbers */}
+                                        <div className="flex items-center gap-1">
+                                            {Array.from({ length: detailTotalPages }, (_, i) => i + 1).map((page) => {
+                                                const showPage =
+                                                    page === 1 ||
+                                                    page === detailTotalPages ||
+                                                    (page >= detailListPage - 1 && page <= detailListPage + 1);
+
+                                                const showEllipsisBefore = page === detailListPage - 2 && detailListPage > 3;
+                                                const showEllipsisAfter = page === detailListPage + 2 && detailListPage < detailTotalPages - 2;
+
+                                                if (showEllipsisBefore || showEllipsisAfter) {
+                                                    return (
+                                                        <span key={page} className="px-2 text-slate-500 text-sm">
+                                                            ...
+                                                        </span>
+                                                    );
+                                                }
+
+                                                if (!showPage) return null;
+
+                                                return (
+                                                    <button
+                                                        key={page}
+                                                        onClick={() => setDetailListPage(page)}
+                                                        className={`min-w-[32px] h-8 rounded-lg text-sm font-medium transition-all ${
+                                                            detailListPage === page
+                                                                ? 'bg-blue-600 text-white border border-blue-500'
+                                                                : 'bg-slate-800/50 text-slate-300 hover:bg-slate-700 hover:text-white border border-white/10 hover:border-blue-500/50'
+                                                        }`}
+                                                    >
+                                                        {page}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {/* Next Button */}
+                                        <button
+                                            onClick={() => setDetailListPage(prev => Math.min(detailTotalPages, prev + 1))}
+                                            disabled={detailListPage === detailTotalPages}
+                                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                                                detailListPage === detailTotalPages
+                                                    ? 'bg-slate-800/50 text-slate-600 cursor-not-allowed'
+                                                    : 'bg-slate-800/50 text-white hover:bg-slate-700 border border-white/10 hover:border-blue-500/50'
+                                            }`}
+                                        >
+                                            다음
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })()}
                 </motion.div>
             );
         }
@@ -924,67 +1248,67 @@ export function CommunityView() {
             {featuredPost && (
                 <motion.div
                     whileHover={{ scale: 1.01 }}
-                    className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-white/10 p-8 group cursor-pointer"
+                    className="relative rounded-xl md:rounded-2xl overflow-hidden bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-white/10 p-4 md:p-8 group cursor-pointer"
                     onClick={() => setSelectedPost(featuredPost)}
                 >
-                        <div className="flex items-start justify-between gap-6">
+                        <div className="flex items-start justify-between gap-3 md:gap-6">
                             <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${CATEGORY_COLORS[featuredPost.category] || CATEGORY_COLORS.FREE}`}>
+                                <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-4">
+                                    <span className={`px-2 md:px-3 py-0.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium border ${CATEGORY_COLORS[featuredPost.category] || CATEGORY_COLORS.FREE}`}>
                                         {CATEGORIES.find(c => c.id === featuredPost.category)?.icon} {CATEGORIES.find(c => c.id === featuredPost.category)?.name || '자유게시판'}
                                     </span>
-                                    <span className="text-slate-500 text-sm">
+                                    <span className="text-slate-500 text-[10px] md:text-sm">
                                         {formatDistanceToNow(new Date(featuredPost.createdAt), { addSuffix: true, locale: ko })}
                                     </span>
                                 </div>
-                                <h3 className="text-2xl md:text-3xl font-bold text-white mb-6 group-hover:text-blue-400 transition-colors">
+                                <h3 className="text-base md:text-3xl font-bold text-white mb-3 md:mb-6 group-hover:text-blue-400 transition-colors line-clamp-2">
                                     {featuredPost.title}
                                 </h3>
 
                                 {/* Special badges */}
-                                <div className="flex flex-wrap gap-3 mb-6">
+                                <div className="flex flex-wrap gap-2 md:gap-3 mb-3 md:mb-6">
                                     {featuredPost.category === 'MARKET' && featuredPost.price && (
-                                        <span className="inline-flex items-center gap-1 text-green-400 bg-green-900/30 px-3 py-1.5 rounded-lg text-sm font-bold">
-                                            <DollarSign className="w-4 h-4" /> ₩{featuredPost.price.toLocaleString()}
+                                        <span className="inline-flex items-center gap-1 text-green-400 bg-green-900/30 px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[10px] md:text-sm font-bold">
+                                            <DollarSign className="w-3 h-3 md:w-4 md:h-4" /> ₩{featuredPost.price.toLocaleString()}
                                         </span>
                                     )}
                                     {featuredPost.category === 'MEETUP' && featuredPost.meetupLocation && (
-                                        <span className="inline-flex items-center gap-1 text-purple-400 bg-purple-900/30 px-3 py-1.5 rounded-lg text-sm">
-                                            <MapPin className="w-4 h-4" /> {featuredPost.meetupLocation}
+                                        <span className="inline-flex items-center gap-1 text-purple-400 bg-purple-900/30 px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[10px] md:text-sm">
+                                            <MapPin className="w-3 h-3 md:w-4 md:h-4" /> {featuredPost.meetupLocation}
                                         </span>
                                     )}
                                     {featuredPost.category === 'MEETUP' && featuredPost.meetupDate && (
-                                        <span className="inline-flex items-center gap-1 text-purple-400 bg-purple-900/30 px-3 py-1.5 rounded-lg text-sm">
-                                            <Calendar className="w-4 h-4" /> {format(new Date(featuredPost.meetupDate), 'M/d HH:mm')}
+                                        <span className="inline-flex items-center gap-1 text-purple-400 bg-purple-900/30 px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-[10px] md:text-sm">
+                                            <Calendar className="w-3 h-3 md:w-4 md:h-4" /> {format(new Date(featuredPost.meetupDate), 'M/d HH:mm')}
                                         </span>
                                     )}
                                 </div>
 
-                                <div className="flex items-center gap-6">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center text-sm font-bold text-white">
-                                            {featuredPost.author.username?.[0]?.toUpperCase()}
+                                <div className="flex items-center gap-3 md:gap-6">
+                                    <div className="flex items-center gap-1.5 md:gap-2">
+                                        <div className="w-6 h-6 md:w-8 md:h-8 bg-slate-700 rounded-full flex items-center justify-center text-[10px] md:text-sm font-bold text-white">
+                                            {(featuredPost.author.name || featuredPost.author.username)?.[0]?.toUpperCase()}
                                         </div>
-                                        <span className="text-white font-medium">{featuredPost.author.username}</span>
+                                        <span className="text-white font-medium text-xs md:text-base">{featuredPost.author.name || featuredPost.author.username}</span>
                                     </div>
-                                    <div className="flex items-center gap-4 text-slate-500 text-sm">
+                                    <div className="flex items-center gap-2 md:gap-4 text-slate-500 text-[10px] md:text-sm">
                                         <span className="flex items-center gap-1">
-                                            <Heart className="w-4 h-4" /> {featuredPost._count.likes}
+                                            <Heart className="w-3 h-3 md:w-4 md:h-4" /> {featuredPost._count.likes}
                                         </span>
                                         <span className="flex items-center gap-1">
-                                            <MessageCircle className="w-4 h-4" /> {featuredPost._count.comments}
+                                            <MessageCircle className="w-3 h-3 md:w-4 md:h-4" /> {featuredPost._count.comments}
                                         </span>
                                     </div>
                                 </div>
                             </div>
-                            <ArrowRight className="w-6 h-6 text-slate-500 group-hover:text-blue-400 group-hover:translate-x-2 transition-all flex-shrink-0" />
+                            <ArrowRight className="w-4 h-4 md:w-6 md:h-6 text-slate-500 group-hover:text-blue-400 group-hover:translate-x-2 transition-all flex-shrink-0" />
                         </div>
                     </motion.div>
             )}
 
             {/* Recent Posts List */}
             {recentPosts.length > 0 && (
-                <div className="space-y-2">
+                <div className="space-y-1.5 md:space-y-2">
                     {recentPosts.map((post) => (
                         <motion.div
                             key={post.id}
@@ -992,27 +1316,27 @@ export function CommunityView() {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.2 }}
                             onClick={() => setSelectedPost(post)}
-                            className="bg-slate-900/30 backdrop-blur-sm border border-white/5 hover:border-blue-500/30 hover:bg-slate-900/50 transition-all group rounded-lg p-4 cursor-pointer"
+                            className="bg-slate-900/30 backdrop-blur-sm border border-white/5 hover:border-blue-500/30 hover:bg-slate-900/50 transition-all group rounded-lg p-3 md:p-4 cursor-pointer"
                         >
-                            <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center justify-between gap-2 md:gap-4">
                                 {/* Left: Title and Meta */}
                                 <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <h3 className="text-base font-semibold text-white group-hover:text-blue-400 transition-colors truncate">
+                                    <div className="flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
+                                        <h3 className="text-sm md:text-base font-semibold text-white group-hover:text-blue-400 transition-colors truncate">
                                             {post.title}
                                         </h3>
-                                        <div className={`px-2 py-0.5 rounded text-[10px] border shrink-0 ${CATEGORY_COLORS[post.category] || CATEGORY_COLORS.FREE}`}>
+                                        <div className={`px-1.5 md:px-2 py-0.5 rounded text-[8px] md:text-[10px] border shrink-0 ${CATEGORY_COLORS[post.category] || CATEGORY_COLORS.FREE}`}>
                                             {CATEGORIES.find(c => c.id === post.category)?.icon} {CATEGORIES.find(c => c.id === post.category)?.name}
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3 text-xs text-slate-500">
+                                    <div className="flex items-center gap-2 md:gap-3 text-[10px] md:text-xs text-slate-500">
                                         <span className="flex items-center gap-1">
-                                            <div className="w-5 h-5 bg-slate-800 rounded-full flex items-center justify-center text-[10px] font-bold text-slate-400">
-                                                {post.author.username?.[0]?.toUpperCase()}
+                                            <div className="w-4 h-4 md:w-5 md:h-5 bg-slate-800 rounded-full flex items-center justify-center text-[8px] md:text-[10px] font-bold text-slate-400">
+                                                {(post.author.name || post.author.username)?.[0]?.toUpperCase()}
                                             </div>
-                                            {post.author.username}
+                                            <span className="hidden md:inline">{post.author.name || post.author.username}</span>
                                         </span>
-                                        <span>•</span>
+                                        <span className="hidden md:inline">•</span>
                                         <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ko })}</span>
                                         {post.category === 'MARKET' && post.price && (
                                             <>
@@ -1022,8 +1346,8 @@ export function CommunityView() {
                                         )}
                                         {post.category === 'MEETUP' && post.meetupLocation && (
                                             <>
-                                                <span>•</span>
-                                                <span className="text-purple-400 flex items-center gap-1">
+                                                <span className="hidden md:inline">•</span>
+                                                <span className="text-purple-400 hidden md:flex items-center gap-1">
                                                     <MapPin className="w-3 h-3" />
                                                     {post.meetupLocation}
                                                 </span>
@@ -1033,13 +1357,13 @@ export function CommunityView() {
                                 </div>
 
                                 {/* Right: Stats */}
-                                <div className="flex items-center gap-4 text-slate-500 text-xs shrink-0">
-                                    <span className="flex items-center gap-1 hover:text-red-400 transition-colors">
-                                        <Heart className="w-3.5 h-3.5" />
+                                <div className="flex items-center gap-2 md:gap-4 text-slate-500 text-[10px] md:text-xs shrink-0">
+                                    <span className="flex items-center gap-0.5 md:gap-1 hover:text-red-400 transition-colors">
+                                        <Heart className="w-3 h-3 md:w-3.5 md:h-3.5" />
                                         <span className="font-medium">{post._count.likes}</span>
                                     </span>
-                                    <span className="flex items-center gap-1 hover:text-blue-400 transition-colors">
-                                        <MessageCircle className="w-3.5 h-3.5" />
+                                    <span className="flex items-center gap-0.5 md:gap-1 hover:text-blue-400 transition-colors">
+                                        <MessageCircle className="w-3 h-3 md:w-3.5 md:h-3.5" />
                                         <span className="font-medium">{post._count.comments}</span>
                                     </span>
                                 </div>
@@ -1130,19 +1454,19 @@ export function CommunityView() {
 
                 {/* Call to Action */}
                 <Card className="bg-gradient-to-r from-purple-900/40 to-blue-900/40 border-white/10">
-                    <CardContent className="p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                    <CardContent className="p-4 md:p-8 flex flex-col md:flex-row items-center justify-between gap-3 md:gap-6">
                         <div>
-                            <h4 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-                                <Users className="w-5 h-5 text-purple-400" />
+                            <h4 className="text-base md:text-xl font-bold text-white mb-1 md:mb-2 flex items-center gap-2">
+                                <Users className="w-4 h-4 md:w-5 md:h-5 text-purple-400" />
                                 매버릭스 팬들과 함께하세요
                             </h4>
-                            <p className="text-slate-300">
-                                자유롭게 이야기를 나누고, 굿즈를 거래하고, 오프라인 모임을 만들어보세요!
+                            <p className="text-slate-300 text-xs md:text-base">
+                                자유롭게 이야기를 나누고, 굿즈를 거래하고, 모임을 만들어보세요!
                             </p>
                         </div>
                         <button
                             onClick={handleWriteClick}
-                            className="px-6 py-3 bg-white text-slate-900 rounded-xl font-bold hover:bg-blue-50 transition-colors whitespace-nowrap"
+                            className="px-4 md:px-6 py-2 md:py-3 bg-white text-slate-900 rounded-lg md:rounded-xl font-bold text-sm md:text-base hover:bg-blue-50 transition-colors whitespace-nowrap"
                         >
                             새 글 작성하기
                         </button>
@@ -1154,36 +1478,92 @@ export function CommunityView() {
 
     // Main Layout with Fixed Header
     return (
-        <div className="w-full max-w-6xl mx-auto space-y-8">
+        <div className="w-full max-w-6xl mx-auto space-y-4 md:space-y-8 px-1 md:px-0">
             {/* Fixed Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-4">
                 <div>
-                    <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3 mb-2">
+                    <h2 className="text-xl md:text-3xl font-bold text-white flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
                         💬 매버릭스 커뮤니티
-                        <span className="text-sm font-normal text-slate-400">
+                        <span className="text-xs md:text-sm font-normal text-slate-400">
                             ({posts.length}개)
                         </span>
                     </h2>
-                    <p className="text-slate-400 text-sm md:text-base">댈러스 매버릭스 팬들과의 소통 공간</p>
+                    <p className="text-slate-400 text-xs md:text-base">댈러스 매버릭스 팬들과의 소통 공간</p>
                 </div>
             </div>
 
-            {/* Fixed Category Tabs */}
-            <div className="flex overflow-x-auto pb-4 gap-2 custom-scrollbar">
-                {CATEGORIES.map((category) => (
-                    <button
-                        key={category.id}
-                        onClick={() => handleCategoryChange(category.id)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap transition-all border ${
-                            selectedCategory === category.id
-                                ? 'bg-blue-600 border-blue-500 text-white'
-                                : 'bg-slate-900/50 border-white/10 text-slate-400 hover:border-blue-500/50 hover:text-white'
-                        }`}
-                    >
-                        <span>{category.icon}</span>
-                        <span>{category.name}</span>
-                    </button>
-                ))}
+            {/* Fixed Category Tabs - Schedule Style */}
+            <div className="flex items-center gap-1 md:gap-2 w-full">
+                {/* Left Arrow */}
+                <button
+                    onClick={() => {
+                        const currentIndex = CATEGORIES.findIndex(c => c.id === selectedCategory);
+                        if (currentIndex > 0) {
+                            handleCategoryChange(CATEGORIES[currentIndex - 1].id);
+                        }
+                    }}
+                    disabled={CATEGORIES.findIndex(c => c.id === selectedCategory) === 0}
+                    className={`flex-shrink-0 p-1.5 md:p-2 rounded-full transition-all duration-200 ${
+                        CATEGORIES.findIndex(c => c.id === selectedCategory) > 0
+                            ? 'bg-white/10 text-white hover:bg-blue-600/50 active:scale-95'
+                            : 'bg-white/5 text-gray-600 cursor-not-allowed'
+                    }`}
+                >
+                    <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
+                </button>
+
+                {/* Category Pills - Scrollable */}
+                <div
+                    className="flex-1 overflow-x-auto scrollbar-hide"
+                    style={{
+                        scrollbarWidth: 'none',
+                        msOverflowStyle: 'none',
+                        WebkitOverflowScrolling: 'touch'
+                    }}
+                >
+                    <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl w-max mx-auto">
+                        {CATEGORIES.map((category) => (
+                            <motion.button
+                                key={category.id}
+                                onClick={() => handleCategoryChange(category.id)}
+                                whileTap={{ scale: 0.95 }}
+                                className={`relative flex items-center gap-1 px-2.5 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-all duration-300 whitespace-nowrap ${
+                                    selectedCategory === category.id
+                                        ? 'text-white'
+                                        : 'text-gray-400 hover:text-white'
+                                }`}
+                            >
+                                {selectedCategory === category.id && (
+                                    <motion.div
+                                        layoutId="activeCategory"
+                                        className="absolute inset-0 bg-blue-600 rounded-lg shadow-lg shadow-blue-500/30"
+                                        transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
+                                    />
+                                )}
+                                <span className="relative z-10">{category.icon}</span>
+                                <span className="relative z-10">{category.name}</span>
+                            </motion.button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Right Arrow */}
+                <button
+                    onClick={() => {
+                        const currentIndex = CATEGORIES.findIndex(c => c.id === selectedCategory);
+                        if (currentIndex < CATEGORIES.length - 1) {
+                            handleCategoryChange(CATEGORIES[currentIndex + 1].id);
+                        }
+                    }}
+                    disabled={CATEGORIES.findIndex(c => c.id === selectedCategory) === CATEGORIES.length - 1}
+                    className={`flex-shrink-0 p-1.5 md:p-2 rounded-full transition-all duration-200 ${
+                        CATEGORIES.findIndex(c => c.id === selectedCategory) < CATEGORIES.length - 1
+                            ? 'bg-white/10 text-white hover:bg-blue-600/50 active:scale-95'
+                            : 'bg-white/5 text-gray-600 cursor-not-allowed'
+                    }`}
+                >
+                    <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
+                </button>
             </div>
 
             {/* Dynamic Content Area */}

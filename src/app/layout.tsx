@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter, Anton } from "next/font/google";
 import "./globals.css";
 
-import { Footer } from "@/components/layout/Footer";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { InstagramFloatingButton } from "@/components/ui/InstagramFloatingButton";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
@@ -55,12 +54,9 @@ export default function RootLayout({
       <body className={`${inter.variable} ${anton.variable} font-sans antialiased bg-[#050510] min-h-screen`}>
         <AuthProvider>
           <ScrollToTop />
-          <div className="min-h-screen flex flex-col">
-            <main className="flex-1">
-              {children}
-            </main>
-            <Footer />
-          </div>
+          <main className="min-h-screen">
+            {children}
+          </main>
           <InstagramFloatingButton />
         </AuthProvider>
       </body>

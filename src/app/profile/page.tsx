@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/db/supabase';
 import { updateProfile, getProfile } from '@/app/actions/profile';
 import { ArrowLeft, User, Save, Check } from 'lucide-react';
 
@@ -31,7 +32,9 @@ export default function ProfilePage() {
         if (!user) return;
 
         try {
-            const profile = await getProfile();
+            const { data: { session } } = await supabase.auth.getSession();
+            const accessToken = session?.access_token;
+            const profile = await getProfile(accessToken);
 
             if (profile?.name) {
                 setNickname(profile.name);
@@ -56,10 +59,17 @@ export default function ProfilePage() {
 
         setSaving(true);
         try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const accessToken = session?.access_token;
+
+            if (!accessToken) {
+                throw new Error('로그인 세션이 만료되었습니다. 다시 로그인해주세요.');
+            }
+
             const formData = new FormData();
             formData.append('nickname', nickname.trim());
 
-            const result = await updateProfile(formData);
+            const result = await updateProfile(formData, accessToken);
 
             if (result.success) {
                 setOriginalNickname(nickname.trim());

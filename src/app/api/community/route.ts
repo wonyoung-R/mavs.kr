@@ -57,6 +57,8 @@ export async function GET(request: NextRequest) {
                 author: {
                     select: {
                         id: true,
+                        email: true,
+                        name: true,
                         username: true,
                         image: true
                     }

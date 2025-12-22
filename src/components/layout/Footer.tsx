@@ -14,8 +14,8 @@ export function Footer() {
             </p>
           </div>
 
-          {/* Links - Compact */}
-          <div className="flex gap-6 text-sm">
+          {/* Links - Compact (Hidden on mobile) */}
+          <div className="hidden md:flex gap-6 text-sm">
             <Link href="/?tab=news" className="text-slate-400 hover:text-blue-400 transition-colors">뉴스</Link>
             <Link href="/?tab=schedule" className="text-slate-400 hover:text-blue-400 transition-colors">경기</Link>
             <Link href="/?tab=community" className="text-slate-400 hover:text-blue-400 transition-colors">커뮤니티</Link>

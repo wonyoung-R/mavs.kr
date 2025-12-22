@@ -162,7 +162,11 @@ export function NewsView() {
   };
 
   if (loading && articles.length === 0) {
-    return <MavericksLoading fullScreen={false} />;
+    return (
+      <div className="w-full min-h-[calc(100vh-200px)] flex items-center justify-center">
+        <MavericksLoading fullScreen={false} />
+      </div>
+    );
   }
 
   return (
