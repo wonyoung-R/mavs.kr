@@ -1,14 +1,16 @@
-import { prisma } from '@/lib/db/prisma';
-import { notFound, redirect } from 'next/navigation';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 import { ArrowLeft, Clock, TrendingUp, Trash2, Edit } from 'lucide-react';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
 import DynamicJSXRenderer from '@/components/analysis/DynamicJSXRenderer';
 import { deleteAnalysis } from '@/app/actions/analysis';
+import { useAuth } from '@/contexts/AuthContext';
+import MavericksLoading from '@/components/ui/MavericksLoading';
 
 interface PageProps {
   params: Promise<{
@@ -18,78 +20,74 @@ interface PageProps {
 
 const ADMIN_EMAILS = ['mavsdotkr@gmail.com'];
 
-export default async function AnalysisDetailPage({ params }: PageProps) {
-  const { id } = await params;
+export default function AnalysisDetailPage({ params }: PageProps) {
+  const router = useRouter();
+  const { user, session, userRole } = useAuth();
+  const [post, setPost] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [id, setId] = useState<string>('');
 
-  // Increment view count
-  await prisma.post.update({
-    where: { id },
-    data: { viewCount: { increment: 1 } },
-  });
+  useEffect(() => {
+    params.then(p => setId(p.id));
+  }, [params]);
 
-  const post = await prisma.post.findUnique({
-    where: { id },
-    include: {
-      author: {
-        select: {
-          username: true,
-          image: true,
-          email: true,
-          role: true,
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchPost = async () => {
+      try {
+        const response = await fetch(`/api/analysis/${id}`);
+        if (!response.ok) {
+          router.push('/analysis');
+          return;
         }
-      },
-      _count: {
-        select: {
-          comments: true,
-          votes: true,
-        }
+        const data = await response.json();
+        setPost(data);
+      } catch (error) {
+        console.error('Failed to fetch post:', error);
+        router.push('/analysis');
+      } finally {
+        setLoading(false);
       }
+    };
+
+    fetchPost();
+  }, [id, router]);
+
+  const handleDelete = async () => {
+    if (!confirm('정말로 이 분석글을 삭제하시겠습니까?')) {
+      return;
     }
-  });
+
+    try {
+      await deleteAnalysis(id, session?.access_token);
+      router.push('/analysis');
+    } catch (error) {
+      console.error('Delete error:', error);
+      alert('삭제 실패: ' + (error instanceof Error ? error.message : '알 수 없는 오류'));
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
+        <div className="w-full min-h-screen flex items-center justify-center">
+          <MavericksLoading fullScreen={false} />
+        </div>
+      </div>
+    );
+  }
 
   if (!post) {
-    notFound();
+    return null;
   }
 
-  // Get current user
-  let user = null;
-  let canEdit = false;
-
-  try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (supabaseUrl && supabaseAnonKey) {
-      const cookieStore = await cookies();
-      const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
-              );
-            } catch {
-              // Ignore
-            }
-          },
-        },
-      });
-
-      const { data } = await supabase.auth.getUser();
-      user = data.user;
-
-      // Check if user can edit/delete (author or admin)
-      canEdit = user ? (
-        user.email === post.author.email ||
-        ADMIN_EMAILS.includes(user.email || '')
-      ) : false;
-    }
-  } catch (error) {
-    console.error('Auth error:', error);
-  }
+  // Check if user can edit/delete (author or admin)
+  const canEdit = user ? (
+    user.email === post.author.email ||
+    userRole === 'admin' ||
+    ADMIN_EMAILS.includes(user.email || '')
+  ) : false;
 
   return (
     <div className="min-h-screen w-full bg-[#050510] relative text-white">
@@ -108,16 +106,14 @@ export default async function AnalysisDetailPage({ params }: PageProps) {
           </Link>
           {canEdit && (
             <div className="flex gap-2">
-              <form action={deleteAnalysis.bind(null, post.id)}>
-                <Button
-                  type="submit"
-                  variant="ghost"
-                  className="text-red-400 hover:text-red-300 hover:bg-red-900/20 gap-2"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  삭제
-                </Button>
-              </form>
+              <Button
+                onClick={handleDelete}
+                variant="ghost"
+                className="text-red-400 hover:text-red-300 hover:bg-red-900/20 gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                삭제
+              </Button>
             </div>
           )}
         </div>
