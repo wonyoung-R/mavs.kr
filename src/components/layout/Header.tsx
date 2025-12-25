@@ -25,12 +25,11 @@ export function Header() {
   }, []);
 
   const navLinks = [
-    { href: '/', label: '홈' },
-    { href: '/news', label: '뉴스' },
-    { href: '/?tab=column', label: '칼럼' },
-    { href: '/games', label: '경기' },
-    { href: '/players', label: '선수' },
-    { href: '/?tab=community', label: '커뮤니티' },
+    { href: '/', label: 'Home' },
+    { href: '/games', label: 'Schedule' },
+    { href: '/news', label: 'News' },
+    { href: '/?tab=column', label: 'Column&Analysis' },
+    { href: '/?tab=community', label: 'Community' },
   ];
 
   return (

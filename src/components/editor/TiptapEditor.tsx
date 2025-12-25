@@ -11,9 +11,10 @@ import {
     Bold, Italic, List, ListOrdered, Quote,
     Heading1, Heading2, Image as ImageIcon,
     Youtube as YoutubeIcon, Link as LinkIcon,
-    Undo, Redo, Strikethrough
+    Undo, Redo, Strikethrough, TrendingUp
 } from 'lucide-react';
 import { useCallback, useState } from 'react';
+import { JSXBlock } from './JSXBlockExtension';
 
 interface TiptapEditorProps {
     content: string;
@@ -41,6 +42,7 @@ const TiptapEditor = ({ content, onChange, placeholder = '내용을 입력하세
             Placeholder.configure({
                 placeholder,
             }),
+            JSXBlock,
         ],
         immediatelyRender: false,
         content,
@@ -61,8 +63,16 @@ const TiptapEditor = ({ content, onChange, placeholder = '내용을 입력하세
         input.accept = 'image/*';
         input.onchange = async () => {
             if (input.files?.length) {
-                setIsUploading(true);
                 const file = input.files[0];
+
+                // Check file size (5MB limit)
+                const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+                if (file.size > maxSize) {
+                    alert('이미지 크기는 5MB를 초과할 수 없습니다.\n현재 파일 크기: ' + (file.size / 1024 / 1024).toFixed(2) + 'MB');
+                    return;
+                }
+
+                setIsUploading(true);
                 const fileExt = file.name.split('.').pop();
                 const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
                 const filePath = `${fileName}`;
@@ -117,6 +127,46 @@ const TiptapEditor = ({ content, onChange, placeholder = '내용을 입력하세
 
         // update link
         editor?.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+    }, [editor]);
+
+    const addJSXBlock = useCallback(async () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.jsx,.js';
+        input.onchange = async () => {
+            if (input.files?.length) {
+                const file = input.files[0];
+
+                // Check file extension
+                if (!file.name.endsWith('.jsx') && !file.name.endsWith('.js')) {
+                    alert('.jsx 또는 .js 파일만 업로드 가능합니다.');
+                    return;
+                }
+
+                try {
+                    const jsxCode = await file.text();
+                    const id = `jsx-${Math.random().toString(36).substring(2)}`;
+
+                    // Encode JSX code to base64 for safe storage in HTML attribute (UTF-8 safe)
+                    const encoder = new TextEncoder();
+                    const data = encoder.encode(jsxCode);
+                    const base64Code = btoa(String.fromCharCode(...data));
+
+                    // Insert JSX block into editor
+                    editor?.chain().focus().insertContent({
+                        type: 'jsxBlock',
+                        attrs: {
+                            jsxCode: base64Code,
+                            id,
+                        },
+                    }).run();
+                } catch (error) {
+                    console.error('Error reading JSX file:', error);
+                    alert('JSX 파일을 읽는 중 오류가 발생했습니다.');
+                }
+            }
+        };
+        input.click();
     }, [editor]);
 
     if (!editor) {
@@ -196,6 +246,12 @@ const TiptapEditor = ({ content, onChange, placeholder = '내용을 입력하세
                         isActive={editor.isActive('youtube')}
                         icon={<YoutubeIcon className="w-4 h-4" />}
                         title="YouTube"
+                    />
+                    <ToolbarButton
+                        onClick={addJSXBlock}
+                        isActive={false}
+                        icon={<TrendingUp className="w-4 h-4" />}
+                        title="JSX 차트/시각화"
                     />
                     <div className="flex-1" />
                     <ToolbarButton

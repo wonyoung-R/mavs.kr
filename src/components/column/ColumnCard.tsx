@@ -12,6 +12,7 @@ interface ColumnCardProps {
         title: string;
         content: string;
         createdAt: Date;
+        category?: 'COLUMN' | 'ANALYSIS';
         author: {
             username: string;
             image: string | null;
@@ -46,6 +47,15 @@ export default function ColumnCard({ post }: ColumnCardProps) {
                     )}
                     <div className="p-5">
                         <div className="flex items-center gap-2 mb-3">
+                            {post.category && (
+                                <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                    post.category === 'ANALYSIS'
+                                        ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30'
+                                        : 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
+                                }`}>
+                                    {post.category === 'ANALYSIS' ? '분석' : '칼럼'}
+                                </span>
+                            )}
                             <div className="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-white">
                                 {post.author.username[0]?.toUpperCase()}
                             </div>

@@ -12,6 +12,8 @@ const ADMIN_EMAILS = ['mavsdotkr@gmail.com'];
 export async function createColumn(formData: FormData, token?: string) {
     const title = formData.get('title') as string
     const content = formData.get('content') as string
+    const category = (formData.get('category') as string) || 'COLUMN'
+    const postId = formData.get('id') as string | null
 
     if (!title || !content) {
         throw new Error('Title and content are required')
@@ -91,7 +93,7 @@ export async function createColumn(formData: FormData, token?: string) {
         const baseUsername = user.email?.split('@')[0] || `user_${Date.now()}`;
         let username = baseUsername;
         let counter = 1;
-        
+
         // Check if username already exists
         while (await prisma.user.findUnique({ where: { username } })) {
             username = `${baseUsername}${counter}`;
@@ -113,16 +115,47 @@ export async function createColumn(formData: FormData, token?: string) {
 
     const userId = dbUser.id;
 
-    await prisma.post.create({
-        data: {
-            title,
-            content,
-            category: 'COLUMN' as any,
-            authorId: userId,
-        },
-    })
+    // Update existing post
+    if (postId) {
+        const existingPost = await prisma.post.findUnique({
+            where: { id: postId },
+            include: { author: true }
+        });
+
+        if (!existingPost) {
+            throw new Error('Post not found');
+        }
+
+        // Check permission
+        const isAdmin = ADMIN_EMAILS.includes(user.email!);
+        const isAuthor = existingPost.author.email === user.email;
+
+        if (!isAdmin && !isAuthor) {
+            throw new Error('You do not have permission to edit this post');
+        }
+
+        await prisma.post.update({
+            where: { id: postId },
+            data: {
+                title,
+                content,
+                category: category as any,
+            },
+        });
+    } else {
+        // Create new post
+        await prisma.post.create({
+            data: {
+                title,
+                content,
+                category: category as any,
+                authorId: userId,
+            },
+        });
+    }
 
     revalidatePath('/column')
+    revalidatePath('/?tab=column')
     return { success: true }
 }
 
@@ -198,6 +231,7 @@ export async function deleteColumn(postId: string, token?: string) {
     })
 
     revalidatePath('/column')
+    revalidatePath('/?tab=column')
     return { success: true }
 }
 

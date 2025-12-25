@@ -1570,6 +1570,17 @@ export function CommunityView() {
             <AnimatePresence mode="wait">
                 {renderContent()}
             </AnimatePresence>
+
+            {/* Submitting Overlay */}
+            {isSubmitting && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+                    <div className="bg-slate-900/90 border border-white/10 rounded-xl p-8 flex flex-col items-center gap-4">
+                        <MavericksLoading fullScreen={false} />
+                        <p className="text-white text-lg font-medium">게시글을 등록하고 있습니다...</p>
+                        <p className="text-slate-400 text-sm">잠시만 기다려주세요</p>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

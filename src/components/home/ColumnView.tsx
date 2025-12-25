@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { BookOpen, User, Calendar, ArrowRight, Star, ArrowLeft, MessageCircle, Heart, Send } from 'lucide-react';
+import { BookOpen, User, Calendar, ArrowRight, Star, ArrowLeft, MessageCircle, Heart, Send, PenLine, TrendingUp, Plus, Edit2, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -11,15 +11,21 @@ import MavericksLoading from '@/components/ui/MavericksLoading';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/contexts/AuthContext';
 import { createComment, getComments } from '@/app/actions/comment';
+import ColumnContentRenderer from '@/components/column/ColumnContentRenderer';
+import { WritePostForm } from './WritePostForm';
+import { deleteColumn } from '@/app/actions/column';
+import { deleteAnalysis } from '@/app/actions/analysis';
 
 interface ColumnPost {
     id: string;
     title: string;
     content: string;
     createdAt: string;
+    category: 'COLUMN' | 'ANALYSIS';
     author: {
         username: string;
         image: string | null;
+        email: string;
     };
     _count: {
         comments: number;
@@ -28,10 +34,15 @@ interface ColumnPost {
 }
 
 export function ColumnView() {
-    const { user, session } = useAuth();
+    const { user, session, userRole } = useAuth();
     const [posts, setPosts] = useState<ColumnPost[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedPost, setSelectedPost] = useState<ColumnPost | null>(null);
+    const [isWriteMode, setIsWriteMode] = useState(false);
+    const [editPost, setEditPost] = useState<any>(null);
+
+    // Check if user can write
+    const canWrite = userRole === 'admin' || userRole === 'columnist';
 
     // Comment states
     const [commentContent, setCommentContent] = useState('');
@@ -44,11 +55,15 @@ export function ColumnView() {
 
     const fetchPosts = async () => {
         try {
+            // /api/columns already returns both COLUMN and ANALYSIS posts
             const response = await fetch('/api/columns');
             const data = await response.json();
-            setPosts(data.posts || []);
+
+            if (data.success) {
+                setPosts(data.posts || []);
+            }
         } catch (err) {
-            console.error('Failed to load columns:', err);
+            console.error('Failed to load posts:', err);
         }
     };
 
@@ -168,12 +183,117 @@ export function ColumnView() {
 
     // Extract text summary from HTML content
     const getTextSummary = (content: string, maxLength = 150) => {
-        const text = content.replace(/<[^>]*>/g, '');
+        // Remove JSX block placeholders completely (don't show them in preview)
+        let cleanContent = content
+            // Remove data-type="jsx-block" divs
+            .replace(/<div[^>]*data-type="jsx-block"[^>]*>[\s\S]*?<\/div>/g, '')
+            // Remove jsx-block-placeholder divs
+            .replace(/<div[^>]*jsx-block-placeholder[^>]*>[\s\S]*?<\/div>/g, '')
+            // Remove any remaining jsx-related content
+            .replace(/📊\s*JSX\s*차트\/시각화\s*블록/g, '')
+            .replace(/미리보기는\s*게시\s*후\s*확인할\s*수\s*있습니다/g, '');
+
+        // Remove all HTML tags
+        const text = cleanContent.replace(/<[^>]*>/g, '').trim();
         return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
     };
 
     // Render Detail or List Content
+    const handleEdit = (post: ColumnPost) => {
+        setEditPost({
+            id: post.id,
+            title: post.title,
+            content: post.content,
+            category: post.category,
+        });
+        setIsWriteMode(true);
+        setSelectedPost(null);
+    };
+
+    const handleDelete = async (postId: string, category: 'COLUMN' | 'ANALYSIS') => {
+        if (!confirm('정말 삭제하시겠습니까?')) {
+            return;
+        }
+
+        try {
+            if (category === 'COLUMN') {
+                await deleteColumn(postId, session?.access_token);
+            } else {
+                await deleteAnalysis(postId, session?.access_token);
+            }
+            setSelectedPost(null);
+            fetchPosts();
+        } catch (error) {
+            console.error('Delete error:', error);
+            alert('삭제 실패: ' + (error instanceof Error ? error.message : '알 수 없는 오류'));
+        }
+    };
+
+    const canEditPost = (post: ColumnPost) => {
+        if (!user) return false;
+        return user.email === post.author.email || userRole === 'admin';
+    };
+
     const renderContent = () => {
+        // Check if user is logged in
+        if (!loading && !user) {
+            return (
+                <motion.div
+                    key="login-required"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                    className="flex items-center justify-center min-h-[400px]"
+                >
+                    <Card className="bg-slate-900/50 backdrop-blur-xl border-white/10 max-w-md w-full">
+                        <CardContent className="p-8 text-center">
+                            <div className="mb-6">
+                                <div className="w-20 h-20 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <BookOpen className="w-10 h-10 text-blue-400" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-white mb-2">로그인이 필요합니다</h3>
+                                <p className="text-slate-400">
+                                    칼럼과 분석글을 읽으려면 로그인이 필요합니다.
+                                </p>
+                            </div>
+                            <Link href="/login?redirect=/?tab=column">
+                                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                                    로그인하기
+                                </Button>
+                            </Link>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+            );
+        }
+
+        if (isWriteMode) {
+            return (
+                <motion.div
+                    key="write"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                >
+                    <WritePostForm
+                        session={session}
+                        editPost={editPost}
+                        onCancel={() => {
+                            setIsWriteMode(false);
+                            setEditPost(null);
+                        }}
+                        onSuccess={() => {
+                            setIsWriteMode(false);
+                            setEditPost(null);
+                            fetchPosts(); // Reload posts
+                        }}
+                    />
+                </motion.div>
+            );
+        }
+
         if (selectedPost) {
             // Filter out selected post from the list
             const otherPosts = posts.filter(p => p.id !== selectedPost.id);
@@ -191,18 +311,47 @@ export function ColumnView() {
                     {/* Post Header */}
                     <header className="border-b border-white/10 pb-8">
                         <div className="flex items-center gap-3 mb-6 flex-wrap">
-                            <span className="px-3 py-1 rounded-full bg-blue-600/20 text-blue-400 border border-blue-500/20 text-sm font-medium">
-                                ✍️ 칼럼
-                            </span>
+                            {selectedPost.type === 'ANALYSIS' ? (
+                                <span className="px-3 py-1 rounded-full bg-purple-600/20 text-purple-400 border border-purple-500/20 text-sm font-medium">
+                                    📊 분석글
+                                </span>
+                            ) : (
+                                <span className="px-3 py-1 rounded-full bg-blue-600/20 text-blue-400 border border-blue-500/20 text-sm font-medium">
+                                    ✍️ 칼럼
+                                </span>
+                            )}
                             <span className="text-slate-500 text-sm flex items-center gap-1">
                                 <Calendar className="w-3 h-3" />
                                 {formatDistanceToNow(new Date(selectedPost.createdAt), { addSuffix: true, locale: ko })}
                             </span>
                         </div>
 
-                        <h1 className="text-3xl md:text-5xl font-bold mb-6 leading-tight text-white">
-                            {selectedPost.title}
-                        </h1>
+                        <div className="flex items-start justify-between gap-4 mb-6">
+                            <h1 className="text-2xl md:text-4xl font-bold leading-tight text-white flex-1">
+                                {selectedPost.title}
+                            </h1>
+
+                            {canEditPost(selectedPost) && (
+                                <div className="flex gap-2 flex-shrink-0">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleEdit(selectedPost)}
+                                        className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
+                                    >
+                                        <Edit2 className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleDelete(selectedPost.id, selectedPost.category)}
+                                        className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
 
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -229,11 +378,10 @@ export function ColumnView() {
                     </header>
 
                     {/* Post Content */}
-                    <article className="prose prose-invert prose-lg max-w-none mb-12 bg-slate-900/50 rounded-2xl p-6 border border-white/10">
-                        <div
-                            className="text-slate-200 [&_p]:text-slate-200 [&_h1]:text-white [&_h2]:text-white [&_h3]:text-white [&_h4]:text-white [&_li]:text-slate-200 [&_span]:text-slate-200 [&_div]:text-slate-200 [&_strong]:text-white"
-                            dangerouslySetInnerHTML={{ __html: selectedPost.content }}
-                        />
+                    <article className="mb-12 bg-slate-900/50 rounded-2xl p-6 border border-white/10">
+                        <div className="text-slate-200 [&_p]:text-slate-200 [&_h1]:text-white [&_h2]:text-white [&_h3]:text-white [&_h4]:text-white [&_li]:text-slate-200 [&_span]:text-slate-200 [&_div]:text-slate-200 [&_strong]:text-white">
+                            <ColumnContentRenderer htmlContent={selectedPost.content} />
+                        </div>
                     </article>
 
                     {/* Comments Section */}
@@ -360,15 +508,25 @@ export function ColumnView() {
                                     key={post.id}
                                     className="h-full bg-slate-900/50 border-white/10 hover:border-blue-500/50 transition-colors group cursor-pointer"
                                     onClick={() => {
-                                        setSelectedPost(post);
-                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                        if (post.category === 'ANALYSIS') {
+                                            window.location.href = `/analysis/${post.id}`;
+                                        } else {
+                                            setSelectedPost(post);
+                                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                                        }
                                     }}
                                 >
                                     <CardHeader>
                                         <div className="flex justify-between items-start mb-2">
-                                            <span className="text-xs font-medium text-blue-400 bg-blue-400/10 px-2 py-1 rounded">
-                                                Column
-                                            </span>
+                                            {post.category === 'ANALYSIS' ? (
+                                                <span className="text-xs font-medium text-purple-400 bg-purple-400/10 px-2 py-1 rounded">
+                                                    분석글
+                                                </span>
+                                            ) : (
+                                                <span className="text-xs font-medium text-blue-400 bg-blue-400/10 px-2 py-1 rounded">
+                                                    칼럼
+                                                </span>
+                                            )}
                                             <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-blue-400 -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all" />
                                         </div>
                                         <CardTitle className="text-lg text-white group-hover:text-blue-300 transition-colors line-clamp-2">
@@ -410,7 +568,13 @@ export function ColumnView() {
                 <motion.div
                     whileHover={{ scale: 1.01 }}
                     className="relative rounded-xl md:rounded-2xl overflow-hidden aspect-[4/3] md:aspect-[21/9] group cursor-pointer border border-white/10"
-                    onClick={() => setSelectedPost(featuredPost)}
+                    onClick={() => {
+                        if (featuredPost.type === 'ANALYSIS') {
+                            window.location.href = `/analysis/${featuredPost.id}`;
+                        } else {
+                            setSelectedPost(featuredPost);
+                        }
+                    }}
                 >
                         <div className="absolute inset-0">
                             {/* Gradient Overlay */}
@@ -423,8 +587,13 @@ export function ColumnView() {
                         </div>
 
                         <div className="absolute bottom-0 left-0 w-full p-3 md:p-8 z-20">
-                            <div className="flex items-center gap-2 mb-1.5 md:mb-4">
+                            <div className="flex items-center gap-2 mb-1.5 md:mb-4 flex-wrap">
                                 <span className="px-2 py-0.5 md:py-1 rounded-full bg-blue-600 text-white text-[10px] md:text-xs font-medium">Featured</span>
+                                {featuredPost.type === 'ANALYSIS' ? (
+                                    <span className="px-2 py-0.5 md:py-1 rounded-full bg-purple-600/80 text-white text-[10px] md:text-xs font-medium">분석글</span>
+                                ) : (
+                                    <span className="px-2 py-0.5 md:py-1 rounded-full bg-slate-700/80 text-white text-[10px] md:text-xs font-medium">칼럼</span>
+                                )}
                                 <span className="flex items-center text-slate-300 text-[10px] md:text-sm gap-1">
                                     <Calendar className="w-2.5 h-2.5 md:w-3 md:h-3" /> {formatDistanceToNow(new Date(featuredPost.createdAt), { addSuffix: true, locale: ko })}
                                 </span>
@@ -461,12 +630,20 @@ export function ColumnView() {
             {/* Recent Columns Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
                 {recentPosts.map((post) => (
-                        <Card key={post.id} className="h-full bg-slate-900/50 border-white/10 hover:border-blue-500/50 transition-colors group cursor-pointer" onClick={() => setSelectedPost(post)}>
+                        <Card key={post.id} className="h-full bg-slate-900/50 border-white/10 hover:border-blue-500/50 transition-colors group cursor-pointer" onClick={() => {
+                            setSelectedPost(post);
+                        }}>
                             <CardHeader className="p-3 md:p-6">
                                 <div className="flex justify-between items-start mb-1 md:mb-2">
-                                    <span className="text-[10px] md:text-xs font-medium text-blue-400 bg-blue-400/10 px-1.5 md:px-2 py-0.5 md:py-1 rounded">
-                                        Column
-                                    </span>
+                                    {post.category === 'ANALYSIS' ? (
+                                        <span className="text-[10px] md:text-xs font-medium text-purple-400 bg-purple-400/10 px-1.5 md:px-2 py-0.5 md:py-1 rounded">
+                                            분석글
+                                        </span>
+                                    ) : (
+                                        <span className="text-[10px] md:text-xs font-medium text-blue-400 bg-blue-400/10 px-1.5 md:px-2 py-0.5 md:py-1 rounded">
+                                            칼럼
+                                        </span>
+                                    )}
                                     <ArrowRight className="w-3 h-3 md:w-4 md:h-4 text-slate-500 group-hover:text-blue-400 -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all" />
                                 </div>
                                 <CardTitle className="text-sm md:text-lg text-white group-hover:text-blue-300 transition-colors line-clamp-2">
@@ -516,13 +693,24 @@ export function ColumnView() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-4 mb-4 md:mb-6">
                 <div>
                     <h2 className="text-xl md:text-3xl font-bold text-white flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
-                        ✍️ 매버릭스 칼럼
+                        ✍️ 매버릭스 칼럼 & 분석
                         <span className="text-xs md:text-sm font-normal text-slate-400">
                             ({posts.length}개)
                         </span>
                     </h2>
                     <p className="text-slate-400 text-xs md:text-base">전문가들의 시선으로 보는 댈러스 매버릭스</p>
                 </div>
+
+                {/* Write Button */}
+                {canWrite && !isWriteMode && !selectedPost && (
+                    <Button
+                        onClick={() => setIsWriteMode(true)}
+                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-3 md:px-4 py-2 text-xs md:text-sm flex items-center gap-2"
+                    >
+                        <Plus className="w-4 h-4" />
+                        글쓰기
+                    </Button>
+                )}
             </div>
 
             {/* Dynamic Content Area */}
