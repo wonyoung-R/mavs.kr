@@ -16,12 +16,26 @@ export default function ColumnContentRenderer({ htmlContent }: ColumnContentRend
   const [contentParts, setContentParts] = useState<ContentPart[]>([]);
 
   useEffect(() => {
+    // Helper function to convert self-closing tags to JSX format
+    const fixSelfClosingTags = (html: string): string => {
+      // Fix common self-closing tags to JSX format
+      return html
+        .replace(/<br>/gi, '<br />')
+        .replace(/<hr>/gi, '<hr />')
+        .replace(/<img([^>]*[^/])>/gi, '<img$1 />')
+        .replace(/<input([^>]*[^/])>/gi, '<input$1 />')
+        .replace(/<meta([^>]*[^/])>/gi, '<meta$1 />')
+        .replace(/<link([^>]*[^/])>/gi, '<link$1 />');
+    };
     console.log('[ColumnContentRenderer] HTML Content:', htmlContent.substring(0, 500));
     console.log('[ColumnContentRenderer] Searching for JSX blocks...');
 
+    // Fix self-closing tags before parsing
+    const fixedHtmlContent = fixSelfClosingTags(htmlContent);
+
     // Create a temporary div to parse HTML
     const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = htmlContent;
+    tempDiv.innerHTML = fixedHtmlContent;
 
     // Find all JSX block elements
     const jsxBlocks = tempDiv.querySelectorAll('[data-type="jsx-block"]');
@@ -94,7 +108,7 @@ export default function ColumnContentRenderer({ htmlContent }: ColumnContentRend
     console.log('[ColumnContentRenderer] Total parts:', parts.length);
     console.log('[ColumnContentRenderer] Parts breakdown:', parts.map(p => p.type));
 
-    setContentParts(parts.length > 0 ? parts : [{ type: 'html', content: htmlContent }]);
+    setContentParts(parts.length > 0 ? parts : [{ type: 'html', content: fixedHtmlContent }]);
   }, [htmlContent]);
 
   if (contentParts.length === 0) {
