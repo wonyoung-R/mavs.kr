@@ -311,7 +311,7 @@ export function ColumnView() {
                     {/* Post Header */}
                     <header className="border-b border-white/10 pb-8">
                         <div className="flex items-center gap-3 mb-6 flex-wrap">
-                            {selectedPost.type === 'ANALYSIS' ? (
+                            {selectedPost.category === 'ANALYSIS' ? (
                                 <span className="px-3 py-1 rounded-full bg-purple-600/20 text-purple-400 border border-purple-500/20 text-sm font-medium">
                                     📊 분석글
                                 </span>
@@ -569,7 +569,7 @@ export function ColumnView() {
                     whileHover={{ scale: 1.01 }}
                     className="relative rounded-xl md:rounded-2xl overflow-hidden aspect-[4/3] md:aspect-[21/9] group cursor-pointer border border-white/10"
                     onClick={() => {
-                        if (featuredPost.type === 'ANALYSIS') {
+                        if (featuredPost.category === 'ANALYSIS') {
                             window.location.href = `/analysis/${featuredPost.id}`;
                         } else {
                             setSelectedPost(featuredPost);
@@ -589,7 +589,7 @@ export function ColumnView() {
                         <div className="absolute bottom-0 left-0 w-full p-3 md:p-8 z-20">
                             <div className="flex items-center gap-2 mb-1.5 md:mb-4 flex-wrap">
                                 <span className="px-2 py-0.5 md:py-1 rounded-full bg-blue-600 text-white text-[10px] md:text-xs font-medium">Featured</span>
-                                {featuredPost.type === 'ANALYSIS' ? (
+                                {featuredPost.category === 'ANALYSIS' ? (
                                     <span className="px-2 py-0.5 md:py-1 rounded-full bg-purple-600/80 text-white text-[10px] md:text-xs font-medium">분석글</span>
                                 ) : (
                                     <span className="px-2 py-0.5 md:py-1 rounded-full bg-slate-700/80 text-white text-[10px] md:text-xs font-medium">칼럼</span>
