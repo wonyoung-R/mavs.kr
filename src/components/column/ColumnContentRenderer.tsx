@@ -19,13 +19,27 @@ export default function ColumnContentRenderer({ htmlContent }: ColumnContentRend
     // Helper function to convert self-closing tags to JSX format
     const fixSelfClosingTags = (html: string): string => {
       // Fix common self-closing tags to JSX format
+      // Handle all variations of these tags: <br>, <br/>, <br />, etc.
       return html
-        .replace(/<br>/gi, '<br />')
-        .replace(/<hr>/gi, '<hr />')
-        .replace(/<img([^>]*[^/])>/gi, '<img$1 />')
-        .replace(/<input([^>]*[^/])>/gi, '<input$1 />')
-        .replace(/<meta([^>]*[^/])>/gi, '<meta$1 />')
-        .replace(/<link([^>]*[^/])>/gi, '<link$1 />');
+        .replace(/<br\s*\/?>/gi, '<br />')
+        .replace(/<hr\s*\/?>/gi, '<hr />')
+        .replace(/<img([^>]*?)\s*\/?>/gi, (match, attrs) => {
+          // Ensure img tag is self-closing
+          const trimmedAttrs = attrs.trim();
+          return trimmedAttrs ? `<img ${trimmedAttrs} />` : '<img />';
+        })
+        .replace(/<input([^>]*?)\s*\/?>/gi, (match, attrs) => {
+          const trimmedAttrs = attrs.trim();
+          return trimmedAttrs ? `<input ${trimmedAttrs} />` : '<input />';
+        })
+        .replace(/<meta([^>]*?)\s*\/?>/gi, (match, attrs) => {
+          const trimmedAttrs = attrs.trim();
+          return trimmedAttrs ? `<meta ${trimmedAttrs} />` : '<meta />';
+        })
+        .replace(/<link([^>]*?)\s*\/?>/gi, (match, attrs) => {
+          const trimmedAttrs = attrs.trim();
+          return trimmedAttrs ? `<link ${trimmedAttrs} />` : '<link />';
+        });
     };
     console.log('[ColumnContentRenderer] HTML Content:', htmlContent.substring(0, 500));
     console.log('[ColumnContentRenderer] Searching for JSX blocks...');
