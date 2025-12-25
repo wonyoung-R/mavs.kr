@@ -28,7 +28,7 @@ export function Header() {
     { href: '/', label: 'Home' },
     { href: '/games', label: 'Schedule' },
     { href: '/news', label: 'News' },
-    { href: '/?tab=column', label: 'Column&Analysis' },
+    { href: '/?tab=column', label: 'Column' },
     { href: '/?tab=community', label: 'Community' },
   ];
 

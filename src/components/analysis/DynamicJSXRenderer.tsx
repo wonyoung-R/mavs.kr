@@ -19,13 +19,39 @@ export default function DynamicJSXRenderer({ jsxCode }: DynamicJSXRendererProps)
     }
 
     try {
+      // Helper function to convert self-closing tags to JSX format
+      const fixSelfClosingTags = (code: string): string => {
+        return code
+          .replace(/<br\s*\/?>/gi, '<br />')
+          .replace(/<hr\s*\/?>/gi, '<hr />')
+          .replace(/<img([^>]*?)\s*\/?>/gi, (match, attrs) => {
+            const trimmedAttrs = attrs.trim();
+            return trimmedAttrs ? `<img ${trimmedAttrs} />` : '<img />';
+          })
+          .replace(/<input([^>]*?)\s*\/?>/gi, (match, attrs) => {
+            const trimmedAttrs = attrs.trim();
+            return trimmedAttrs ? `<input ${trimmedAttrs} />` : '<input />';
+          })
+          .replace(/<meta([^>]*?)\s*\/?>/gi, (match, attrs) => {
+            const trimmedAttrs = attrs.trim();
+            return trimmedAttrs ? `<meta ${trimmedAttrs} />` : '<meta />';
+          })
+          .replace(/<link([^>]*?)\s*\/?>/gi, (match, attrs) => {
+            const trimmedAttrs = attrs.trim();
+            return trimmedAttrs ? `<link ${trimmedAttrs} />` : '<link />';
+          });
+      };
+
       // Remove import and export statements - they're not needed
-      const cleanedCode = jsxCode
+      let cleanedCode = jsxCode
         .replace(/import\s+.*?from\s+['"].*?['"];?\s*/g, '')
         .replace(/import\s+['"].*?['"];?\s*/g, '')
         .replace(/export\s+default\s+/g, '')
         .replace(/export\s+/g, '')
         .trim();
+
+      // Fix self-closing tags to JSX format
+      cleanedCode = fixSelfClosingTags(cleanedCode);
 
       console.log('[DynamicJSXRenderer] Cleaned code:', cleanedCode.substring(0, 100));
 

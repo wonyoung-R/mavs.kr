@@ -9,7 +9,7 @@ import { ko } from 'date-fns/locale';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/contexts/AuthContext';
 import { WritePostForm } from './WritePostForm';
-import DynamicJSXRenderer from '@/components/analysis/DynamicJSXRenderer';
+import ColumnContentRenderer from '@/components/column/ColumnContentRenderer';
 import { deleteAnalysis } from '@/app/actions/analysis';
 
 interface Post {
@@ -238,7 +238,8 @@ export function AnalysisView() {
 
           {/* JSX Content */}
           <div className="bg-slate-900/30 border border-white/10 rounded-xl p-6">
-            <DynamicJSXRenderer jsxCode={selectedPost.content} />
+            {/* 모든 content를 ColumnContentRenderer로 처리 (JSX 블록 자동 추출) */}
+            <ColumnContentRenderer htmlContent={selectedPost.content} />
           </div>
         </motion.div>
       );

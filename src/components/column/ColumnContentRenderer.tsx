@@ -1,154 +1,128 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useLayoutEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import DynamicJSXRenderer from '@/components/analysis/DynamicJSXRenderer';
 
 interface ColumnContentRendererProps {
   htmlContent: string;
 }
 
-interface ContentPart {
-  type: 'html' | 'jsx';
-  content: string;
+interface JSXBlock {
+  element: Element;
+  code: string;
+  id: string;
+}
+
+// Helper function to decode base64 to JSX code
+function decodeBase64ToJsx(base64Code: string): string | null {
+  try {
+    // Try new UTF-8 safe method first
+    const binaryString = atob(base64Code);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return new TextDecoder().decode(bytes);
+  } catch (e) {
+    try {
+      // Fallback to old method for backward compatibility
+      return decodeURIComponent(escape(atob(base64Code)));
+    } catch (e2) {
+      console.error('[ColumnContentRenderer] Failed to decode base64:', e2);
+      return null;
+    }
+  }
+}
+
+// Check if content is pure JSX (not HTML with embedded JSX blocks)
+function isPureJsx(content: string): boolean {
+  const trimmed = content.trim();
+  // Pure JSX typically starts with: import, const, function, or ( for arrow function
+  // And does NOT start with HTML tags like <p>, <div>, <h1>, etc.
+  const jsxPatterns = [
+    /^import\s+/,
+    /^const\s+\w+\s*=\s*\(/,
+    /^function\s+\w+/,
+    /^export\s+(default\s+)?/,
+  ];
+
+  // If it looks like HTML (starts with common HTML tags), it's not pure JSX
+  if (/^<(p|div|h[1-6]|span|article|section|header|footer|ul|ol|li|table|br|hr|a|img)\b/i.test(trimmed)) {
+    return false;
+  }
+
+  return jsxPatterns.some(pattern => pattern.test(trimmed));
 }
 
 export default function ColumnContentRenderer({ htmlContent }: ColumnContentRendererProps) {
-  const [contentParts, setContentParts] = useState<ContentPart[]>([]);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [jsxBlocks, setJsxBlocks] = useState<JSXBlock[]>([]);
+  const [mounted, setMounted] = useState(false);
 
+  // Determine if content is pure JSX
+  const isPureJsxContent = useMemo(() => isPureJsx(htmlContent), [htmlContent]);
+
+  // Mark as mounted on client
   useEffect(() => {
-    // Helper function to convert self-closing tags to JSX format
-    const fixSelfClosingTags = (html: string): string => {
-      // Fix common self-closing tags to JSX format
-      // Handle all variations of these tags: <br>, <br/>, <br />, etc.
-      return html
-        .replace(/<br\s*\/?>/gi, '<br />')
-        .replace(/<hr\s*\/?>/gi, '<hr />')
-        .replace(/<img([^>]*?)\s*\/?>/gi, (match, attrs) => {
-          // Ensure img tag is self-closing
-          const trimmedAttrs = attrs.trim();
-          return trimmedAttrs ? `<img ${trimmedAttrs} />` : '<img />';
-        })
-        .replace(/<input([^>]*?)\s*\/?>/gi, (match, attrs) => {
-          const trimmedAttrs = attrs.trim();
-          return trimmedAttrs ? `<input ${trimmedAttrs} />` : '<input />';
-        })
-        .replace(/<meta([^>]*?)\s*\/?>/gi, (match, attrs) => {
-          const trimmedAttrs = attrs.trim();
-          return trimmedAttrs ? `<meta ${trimmedAttrs} />` : '<meta />';
-        })
-        .replace(/<link([^>]*?)\s*\/?>/gi, (match, attrs) => {
-          const trimmedAttrs = attrs.trim();
-          return trimmedAttrs ? `<link ${trimmedAttrs} />` : '<link />';
-        });
-    };
-    console.log('[ColumnContentRenderer] HTML Content:', htmlContent.substring(0, 500));
-    console.log('[ColumnContentRenderer] Searching for JSX blocks...');
+    setMounted(true);
+  }, []);
 
-    // Fix self-closing tags before parsing
-    const fixedHtmlContent = fixSelfClosingTags(htmlContent);
+  // Find and process JSX blocks after HTML is rendered (only for HTML+JSX mixed content)
+  useLayoutEffect(() => {
+    if (!mounted || !containerRef.current || isPureJsxContent) return;
 
-    // Create a temporary div to parse HTML
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = fixedHtmlContent;
+    const container = containerRef.current;
+    const jsxElements = container.querySelectorAll('[data-type="jsx-block"]');
 
-    // Find all JSX block elements
-    const jsxBlocks = tempDiv.querySelectorAll('[data-type="jsx-block"]');
-    console.log('[ColumnContentRenderer] Found JSX blocks count:', jsxBlocks.length);
+    console.log('[ColumnContentRenderer] Found JSX elements:', jsxElements.length);
 
-    if (jsxBlocks.length === 0) {
-      console.log('[ColumnContentRenderer] No JSX blocks found, rendering as HTML');
-      setContentParts([{ type: 'html', content: htmlContent }]);
-      return;
-    }
+    const blocks: JSXBlock[] = [];
+    jsxElements.forEach((element, index) => {
+      const dataJsxCode = element.getAttribute('data-jsx-code');
+      const id = element.getAttribute('data-id') || element.id || `jsx-block-${index}`;
 
-    const parts: ContentPart[] = [];
-    let currentHTML = '';
-
-    // Process all child nodes
-    Array.from(tempDiv.childNodes).forEach((node) => {
-      if (node.nodeType === Node.ELEMENT_NODE) {
-        const element = node as HTMLElement;
-
-        // Check if this is a JSX block
-        if (element.getAttribute('data-type') === 'jsx-block') {
-          // Save accumulated HTML
-          if (currentHTML.trim()) {
-            parts.push({ type: 'html', content: currentHTML });
-            currentHTML = '';
-          }
-
-          // Get JSX code
-          const base64Code = element.getAttribute('data-jsx-code');
-          console.log('[ColumnContentRenderer] Found JSX block with base64:', base64Code?.substring(0, 50));
-
-          if (base64Code) {
-            try {
-              let decodedJsxCode;
-
-              try {
-                // Try new UTF-8 safe method first
-                const binaryString = atob(base64Code);
-                const bytes = new Uint8Array(binaryString.length);
-                for (let i = 0; i < binaryString.length; i++) {
-                  bytes[i] = binaryString.charCodeAt(i);
-                }
-                decodedJsxCode = new TextDecoder().decode(bytes);
-              } catch (e) {
-                // Fallback to old method for backward compatibility
-                console.log('[ColumnContentRenderer] Trying fallback decoding method');
-                decodedJsxCode = decodeURIComponent(escape(atob(base64Code)));
-              }
-
-              console.log('[ColumnContentRenderer] Decoded JSX Code:', decodedJsxCode.substring(0, 100));
-              parts.push({ type: 'jsx', content: decodedJsxCode });
-            } catch (error) {
-              console.error('[ColumnContentRenderer] Error decoding JSX:', error);
-            }
-          }
-        } else {
-          // Regular HTML element
-          currentHTML += element.outerHTML;
+      if (dataJsxCode) {
+        const decodedJsx = decodeBase64ToJsx(dataJsxCode);
+        if (decodedJsx) {
+          console.log('[ColumnContentRenderer] Decoded JSX block:', id, 'length:', decodedJsx.length);
+          // Clear placeholder content
+          element.innerHTML = '';
+          element.className = 'jsx-block-container my-6';
+          blocks.push({ element, code: decodedJsx, id });
         }
-      } else if (node.nodeType === Node.TEXT_NODE) {
-        currentHTML += node.textContent || '';
       }
     });
 
-    // Add remaining HTML
-    if (currentHTML.trim()) {
-      parts.push({ type: 'html', content: currentHTML });
-    }
+    setJsxBlocks(blocks);
+  }, [htmlContent, mounted, isPureJsxContent]);
 
-    console.log('[ColumnContentRenderer] Total parts:', parts.length);
-    console.log('[ColumnContentRenderer] Parts breakdown:', parts.map(p => p.type));
-
-    setContentParts(parts.length > 0 ? parts : [{ type: 'html', content: fixedHtmlContent }]);
-  }, [htmlContent]);
-
-  if (contentParts.length === 0) {
-    return <div>Loading...</div>;
+  // If content is pure JSX, render it directly with DynamicJSXRenderer
+  if (isPureJsxContent) {
+    return (
+      <div className="not-prose">
+        <DynamicJSXRenderer jsxCode={htmlContent} />
+      </div>
+    );
   }
 
   return (
     <div className="prose prose-invert prose-lg max-w-none">
-      {contentParts.map((part, index) => {
-        if (part.type === 'jsx') {
-          console.log('[ColumnContentRenderer] Rendering JSX part:', index);
-          return (
-            <div key={`jsx-${index}`} className="my-6 not-prose">
-              <DynamicJSXRenderer jsxCode={part.content} />
-            </div>
-          );
-        } else {
-          console.log('[ColumnContentRenderer] Rendering HTML part:', index);
-          return (
-            <div
-              key={`html-${index}`}
-              dangerouslySetInnerHTML={{ __html: part.content }}
-            />
-          );
-        }
-      })}
+      {/* Render HTML content first */}
+      <div
+        ref={containerRef}
+        dangerouslySetInnerHTML={{ __html: htmlContent }}
+      />
+
+      {/* Render JSX components into their placeholder elements using portals */}
+      {mounted && jsxBlocks.map((block) =>
+        createPortal(
+          <div className="not-prose">
+            <DynamicJSXRenderer jsxCode={block.code} />
+          </div>,
+          block.element
+        )
+      )}
     </div>
   );
 }

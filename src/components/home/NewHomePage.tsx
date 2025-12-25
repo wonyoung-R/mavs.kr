@@ -249,7 +249,7 @@ export default function NewHomePage() {
     { id: 'home', label: 'Home' },
     { id: 'schedule', label: 'Schedule' },
     { id: 'news', label: 'News' },
-    { id: 'column', label: 'Column & Analysis' },
+    { id: 'column', label: 'Column' },
     { id: 'community', label: 'Community' },
   ];
 
