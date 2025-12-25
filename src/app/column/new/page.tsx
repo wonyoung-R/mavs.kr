@@ -255,7 +255,7 @@ function NewColumnForm() {
                                             {/* Preview or Code */}
                                             {isPreview ? (
                                                 <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
-                                                    <DynamicJSXRenderer code={jsxCode} />
+                                                    <DynamicJSXRenderer jsxCode={jsxCode} />
                                                 </div>
                                             ) : (
                                                 <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
