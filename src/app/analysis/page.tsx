@@ -15,6 +15,7 @@ export default async function AnalysisPage() {
       author: {
         select: {
           username: true,
+          name: true,
           image: true,
           role: true,
         }
@@ -134,9 +135,9 @@ export default async function AnalysisPage() {
                       <div className="flex items-center gap-4 text-sm text-slate-400">
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 bg-slate-800 rounded-full flex items-center justify-center text-xs font-bold">
-                            {post.author.username?.[0]?.toUpperCase() || 'U'}
+                            {(post.author.name || post.author.username)?.[0]?.toUpperCase() || 'U'}
                           </div>
-                          <span>{post.author.username}</span>
+                          <span>{post.author.name || post.author.username}</span>
                         </div>
 
                         <div className="flex items-center gap-1">

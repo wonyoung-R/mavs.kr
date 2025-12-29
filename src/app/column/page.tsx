@@ -17,6 +17,7 @@ export default async function ColumnPage() {
             author: {
                 select: {
                     username: true,
+                    name: true,
                     image: true
                 }
             },

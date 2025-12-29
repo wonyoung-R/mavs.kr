@@ -12,6 +12,7 @@ interface ColumnGridProps {
         createdAt: Date;
         author: {
             username: string;
+            name: string | null;
             image: string | null;
         };
         _count: {
