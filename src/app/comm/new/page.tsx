@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { ArrowLeft, Send } from 'lucide-react';
+import { ArrowLeft, Send, Save } from 'lucide-react';
 import TiptapEditor from '@/components/editor/TiptapEditor';
 import { useAuth } from '@/contexts/AuthContext';
 import { createColumn } from '@/app/actions/column';
@@ -21,12 +21,21 @@ function NewPostForm() {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [category, setCategory] = useState(isColumnMode ? 'COLUMN' : 'free');
-    
+    const [titleCharCount, setTitleCharCount] = useState(0);
+    const [lastSaved, setLastSaved] = useState<Date | null>(null);
+
     // Extra fields
     const [price, setPrice] = useState('');
     const [location, setLocation] = useState('');
-    
+
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const titleSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // 자동 저장 키 생성
+    const autosaveKey = isColumnMode
+        ? `column-draft-${user?.id || 'guest'}`
+        : `post-draft-${category}-${user?.id || 'guest'}`;
+    const titleAutosaveKey = `${autosaveKey}-title`;
 
     useEffect(() => {
         if (isColumnMode) {
@@ -39,6 +48,36 @@ function NewPostForm() {
             setCategory('COLUMN');
         }
     }, [isColumnMode, user, isColumnist, router]);
+
+    // 자동 저장된 제목 복원
+    useEffect(() => {
+        const savedTitle = localStorage.getItem(titleAutosaveKey);
+        if (savedTitle && !title) {
+            setTitle(savedTitle);
+            setTitleCharCount(savedTitle.length);
+        }
+    }, [titleAutosaveKey, title]);
+
+    // 제목 자동 저장
+    useEffect(() => {
+        if (titleSaveTimeoutRef.current) {
+            clearTimeout(titleSaveTimeoutRef.current);
+        }
+        setTitleCharCount(title.length);
+
+        if (title.trim()) {
+            titleSaveTimeoutRef.current = setTimeout(() => {
+                localStorage.setItem(titleAutosaveKey, title);
+                setLastSaved(new Date());
+            }, 1000);
+        }
+
+        return () => {
+            if (titleSaveTimeoutRef.current) {
+                clearTimeout(titleSaveTimeoutRef.current);
+            }
+        };
+    }, [title, titleAutosaveKey]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -54,16 +93,22 @@ function NewPostForm() {
             const formData = new FormData();
             formData.append('title', title);
             formData.append('content', content);
-            
+
             if (isColumnMode) {
                 await createColumn(formData, session?.access_token);
+                // 성공 시 자동 저장 삭제
+                localStorage.removeItem(autosaveKey);
+                localStorage.removeItem(titleAutosaveKey);
                 router.push('/?tab=column');
             } else {
                 formData.append('category', category);
                 if (category === 'market' && price) formData.append('price', price);
                 if (category === 'meetup' && location) formData.append('location', location);
-                
+
                 await createPost(formData, session?.access_token);
+                // 성공 시 자동 저장 삭제
+                localStorage.removeItem(autosaveKey);
+                localStorage.removeItem(titleAutosaveKey);
                 router.push('/comm');
             }
         } catch (error) {
@@ -72,6 +117,12 @@ function NewPostForm() {
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const clearAutosave = () => {
+        localStorage.removeItem(autosaveKey);
+        localStorage.removeItem(titleAutosaveKey);
+        setLastSaved(null);
     };
 
     if (isColumnMode && !isColumnist) return null;
@@ -121,7 +172,7 @@ function NewPostForm() {
                                         </select>
                                     </div>
                                 )}
-                                
+
                                 {category === 'market' && (
                                     <div className="md:col-span-1">
                                         <label className="block text-sm font-medium text-slate-400 mb-2">가격 (원)</label>
@@ -134,7 +185,7 @@ function NewPostForm() {
                                         />
                                     </div>
                                 )}
-                                
+
                                 {category === 'meetup' && (
                                     <div className="md:col-span-1">
                                         <label className="block text-sm font-medium text-slate-400 mb-2">장소</label>
@@ -149,7 +200,18 @@ function NewPostForm() {
                                 )}
 
                                 <div className={isColumnMode ? "md:col-span-4" : "md:col-span-3"}>
-                                    <label className="block text-sm font-medium text-slate-400 mb-2">제목</label>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="block text-sm font-medium text-slate-400">제목</label>
+                                        <div className="flex items-center space-x-2">
+                                            {lastSaved && (
+                                                <span className="text-xs text-gray-500 flex items-center space-x-1">
+                                                    <Save className="w-3 h-3" />
+                                                    <span>임시저장됨</span>
+                                                </span>
+                                            )}
+                                            <span className="text-xs text-gray-500">{titleCharCount}자</span>
+                                        </div>
+                                    </div>
                                     <input
                                         type="text"
                                         value={title}
@@ -163,32 +225,40 @@ function NewPostForm() {
                             {/* Content */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-400 mb-2">내용</label>
-                                {isColumnMode ? (
-                                    <TiptapEditor content={content} onChange={setContent} placeholder="칼럼 내용을 입력하세요..." />
-                                ) : (
-                                    <textarea
-                                        value={content}
-                                        onChange={(e) => setContent(e.target.value)}
-                                        placeholder="댈러스 매버릭스 팬들과 나누고 싶은 이야기를 적어주세요."
-                                        className="w-full h-96 bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-4 text-white focus:outline-none focus:border-blue-500 placeholder-slate-500 resize-none leading-relaxed"
-                                    />
-                                )}
+                                <TiptapEditor
+                                    content={content}
+                                    onChange={setContent}
+                                    placeholder={isColumnMode ? "칼럼 내용을 입력하세요..." : "댈러스 매버릭스 팬들과 나누고 싶은 이야기를 적어주세요."}
+                                    autosaveKey={autosaveKey}
+                                    showCharCount={true}
+                                />
                             </div>
 
                             {/* Actions */}
-                            <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white"
-                                    onClick={() => router.back()}
-                                >
-                                    취소
-                                </Button>
-                                <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-8" disabled={isSubmitting}>
-                                    <Send className="w-4 h-4 mr-2" />
-                                    {isColumnMode ? '칼럼 등록' : '등록하기'}
-                                </Button>
+                            <div className="flex justify-between items-center pt-4 border-t border-white/10">
+                                {lastSaved && (
+                                    <button
+                                        type="button"
+                                        onClick={clearAutosave}
+                                        className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                                    >
+                                        임시저장 삭제
+                                    </button>
+                                )}
+                                <div className="flex gap-3 ml-auto">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white"
+                                        onClick={() => router.back()}
+                                    >
+                                        취소
+                                    </Button>
+                                    <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-8" disabled={isSubmitting}>
+                                        <Send className="w-4 h-4 mr-2" />
+                                        {isColumnMode ? '칼럼 등록' : '등록하기'}
+                                    </Button>
+                                </div>
                             </div>
                         </form>
                     </CardContent>

@@ -252,16 +252,17 @@ export default function GameArchivePage() {
                           } border-t-0 border-r-0 border-b-0 hover:border-l-4 transition-all cursor-pointer group`}
                         >
                         <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
+                          {/* 모바일: 세로 레이아웃, 데스크톱: 가로 레이아웃 */}
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                             {/* 날짜 & 홈/원정 */}
-                            <div className="flex items-center space-x-4 min-w-[140px]">
+                            <div className="flex items-center space-x-2 md:space-x-4 md:min-w-[140px]">
                               <div className="flex items-center space-x-2">
-                                <Calendar className="w-4 h-4 text-gray-500" />
-                                <span className="text-gray-400 text-sm">
+                                <Calendar className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                                <span className="text-gray-400 text-xs md:text-sm whitespace-nowrap">
                                   {formatDate(game.scheduledAt)}
                                 </span>
                               </div>
-                              <span className={`text-xs px-2 py-0.5 rounded ${
+                              <span className={`text-xs px-2 py-0.5 rounded flex-shrink-0 ${
                                 isHome
                                   ? 'bg-blue-500/20 text-blue-400'
                                   : 'bg-gray-500/20 text-gray-400'
@@ -271,48 +272,48 @@ export default function GameArchivePage() {
                             </div>
 
                             {/* 매치업 */}
-                            <div className="flex items-center space-x-4 flex-1 justify-center">
+                            <div className="flex items-center space-x-2 md:space-x-4 flex-1 justify-center md:justify-center min-w-0">
                               {/* 매버릭스 */}
-                              <div className="flex items-center space-x-2">
+                              <div className="flex items-center space-x-1 md:space-x-2 min-w-0">
                                 <img
                                   src={getTeamLogo('Mavericks')}
                                   alt="Mavericks"
-                                  className="w-8 h-8 object-contain"
+                                  className="w-6 h-6 md:w-8 md:h-8 object-contain flex-shrink-0"
                                 />
-                                <span className="text-white font-semibold hidden sm:inline">
+                                <span className="text-white font-semibold hidden md:inline">
                                   매버릭스
                                 </span>
-                                <span className={`text-2xl font-bold ${
+                                <span className={`text-xl md:text-2xl font-bold whitespace-nowrap ${
                                   win ? 'text-green-400' : 'text-red-400'
                                 }`}>
                                   {mavsScore ?? '-'}
                                 </span>
                               </div>
 
-                              <span className="text-gray-600 text-sm">vs</span>
+                              <span className="text-gray-600 text-xs md:text-sm flex-shrink-0">vs</span>
 
                               {/* 상대팀 */}
-                              <div className="flex items-center space-x-2">
-                                <span className={`text-2xl font-bold ${
+                              <div className="flex items-center space-x-1 md:space-x-2 min-w-0">
+                                <span className={`text-xl md:text-2xl font-bold whitespace-nowrap ${
                                   !win ? 'text-green-400' : 'text-gray-400'
                                 }`}>
                                   {oppScore ?? '-'}
                                 </span>
-                                <span className="text-gray-300 hidden sm:inline">
+                                <span className="text-gray-300 hidden md:inline text-sm truncate max-w-[100px]">
                                   {formatTeamName(opponent)}
                                 </span>
                                 <img
                                   src={getTeamLogo(opponent)}
                                   alt={opponent}
-                                  className="w-8 h-8 object-contain"
+                                  className="w-6 h-6 md:w-8 md:h-8 object-contain flex-shrink-0"
                                 />
                               </div>
                             </div>
 
                             {/* 결과 */}
-                            <div className="min-w-[50px] text-right">
+                            <div className="flex justify-end md:justify-end md:min-w-[50px]">
                               <span
-                                className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${
+                                className={`inline-block px-2 md:px-3 py-1 rounded-full text-xs md:text-sm font-bold ${
                                   win
                                     ? 'bg-green-500/20 text-green-400'
                                     : 'bg-red-500/20 text-red-400'

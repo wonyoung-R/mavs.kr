@@ -160,3 +160,18 @@ body {
   color: #cbd5e1;
   border-left-color: #475569;
 }
+
+/* TiptapEditor 빈 줄 표시 */
+.ProseMirror p {
+  margin: 0.5em 0;
+  min-height: 1.5em;
+}
+
+.ProseMirror p:empty:before {
+  content: '\00a0';
+  visibility: hidden;
+}
+
+.ProseMirror p:empty {
+  min-height: 1.5em;
+}

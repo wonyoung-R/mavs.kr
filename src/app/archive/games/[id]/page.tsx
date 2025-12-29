@@ -394,3 +394,4 @@ export default function GameDetailPage({ params }: { params: Promise<{ id: strin
   );
 }
 
+

@@ -51,6 +51,7 @@
     "d3": "^7.9.0",
     "date-fns": "^4.1.0",
     "deepl-node": "^1.19.1",
+    "emoji-picker-react": "^4.16.1",
     "framer-motion": "^12.23.18",
     "googleapis": "^160.0.0",
     "gsap": "^3.13.0",
