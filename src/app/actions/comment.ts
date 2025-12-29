@@ -107,6 +107,7 @@ export async function createComment(
                 select: {
                     id: true,
                     username: true,
+                    name: true,
                     image: true,
                 }
             }
@@ -197,6 +198,7 @@ export async function getComments(postId: string) {
                 select: {
                     id: true,
                     username: true,
+                    name: true,
                     image: true,
                     email: true,
                 }
