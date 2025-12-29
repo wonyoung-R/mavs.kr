@@ -26,6 +26,7 @@ export default async function ColumnDetailPage({ params }: PageProps) {
       author: {
         select: {
           username: true,
+          name: true,
           image: true,
           email: true,
         }
@@ -132,10 +133,10 @@ export default async function ColumnDetailPage({ params }: PageProps) {
             <div className="flex items-center gap-3">
               {/* Author Avatar Placeholder */}
               <div className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center font-bold text-slate-300">
-                {post.author.username?.[0]?.toUpperCase() || 'U'}
+                {(post.author.name || post.author.username)?.[0]?.toUpperCase() || 'U'}
               </div>
               <div>
-                <div className="font-medium text-white">{post.author.username}</div>
+                <div className="font-medium text-white">{post.author.name || post.author.username}</div>
                 <div className="text-xs text-slate-500">Columnist</div>
               </div>
             </div>

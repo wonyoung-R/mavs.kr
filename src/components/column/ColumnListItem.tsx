@@ -14,6 +14,7 @@ interface ColumnListItemProps {
         createdAt: Date;
         author: {
             username: string;
+            name: string | null;
             image: string | null;
         };
         _count: {
@@ -46,9 +47,9 @@ export default function ColumnListItem({ post }: ColumnListItemProps) {
                             <div className="flex items-center gap-3 text-xs text-slate-500">
                                 <span className="flex items-center gap-1">
                                     <div className="w-5 h-5 bg-slate-800 rounded-full flex items-center justify-center text-[10px] font-bold text-slate-400">
-                                        {post.author.username[0]?.toUpperCase()}
+                                        {(post.author.name || post.author.username)?.[0]?.toUpperCase()}
                                     </div>
-                                    {post.author.username}
+                                    {post.author.name || post.author.username}
                                 </span>
                                 <span>•</span>
                                 <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ko })}</span>

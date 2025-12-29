@@ -24,6 +24,7 @@ export async function GET(
         author: {
           select: {
             username: true,
+            name: true,
             image: true,
             email: true,
             role: true,

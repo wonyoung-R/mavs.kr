@@ -16,6 +16,7 @@ export async function GET() {
         author: {
           select: {
             username: true,
+            name: true,
             image: true,
             role: true,
             email: true,

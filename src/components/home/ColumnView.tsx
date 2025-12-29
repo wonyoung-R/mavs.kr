@@ -24,6 +24,7 @@ interface ColumnPost {
     category: 'COLUMN' | 'ANALYSIS';
     author: {
         username: string;
+        name: string | null;
         image: string | null;
         email: string;
     };
@@ -357,13 +358,13 @@ export function ColumnView() {
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center font-bold text-slate-300 overflow-hidden">
                                     {selectedPost.author.image ? (
-                                        <img src={selectedPost.author.image} alt={selectedPost.author.username} className="w-full h-full object-cover" />
+                                        <img src={selectedPost.author.image} alt={selectedPost.author.name || selectedPost.author.username} className="w-full h-full object-cover" />
                                     ) : (
-                                        selectedPost.author.username?.[0]?.toUpperCase() || 'U'
+                                        (selectedPost.author.name || selectedPost.author.username)?.[0]?.toUpperCase() || 'U'
                                     )}
                                 </div>
                                 <div>
-                                    <div className="font-medium text-white">{selectedPost.author.username}</div>
+                                    <div className="font-medium text-white">{selectedPost.author.name || selectedPost.author.username}</div>
                                     <div className="text-xs text-slate-500">칼럼니스트</div>
                                 </div>
                             </div>
@@ -416,7 +417,7 @@ export function ColumnView() {
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-center gap-2 mb-1">
-                                                                <span className="text-xs md:text-sm font-medium text-white">{cmt.author.username}</span>
+                                                                <span className="text-xs md:text-sm font-medium text-white">{cmt.author.name || cmt.author.username}</span>
                                                                 <span className="text-[10px] md:text-xs text-slate-500">
                                                                     {formatDistanceToNow(new Date(cmt.createdAt), { addSuffix: true, locale: ko })}
                                                                 </span>
@@ -439,7 +440,7 @@ export function ColumnView() {
                                                                     type="text"
                                                                     value={replyContent}
                                                                     onChange={(e) => setReplyContent(e.target.value)}
-                                                                    placeholder={`@${cmt.author.username}님에게 답글...`}
+                                                                    placeholder={`@${cmt.author.name || cmt.author.username}님에게 답글...`}
                                                                     className="flex-1 bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm text-white placeholder-slate-500
                                                                                focus:outline-none focus:border-blue-500 focus:bg-slate-800 focus:ring-1 focus:ring-blue-500/20"
                                                                     onKeyDown={(e) => {
@@ -540,7 +541,7 @@ export function ColumnView() {
                                         <div className="flex items-center justify-between text-sm text-slate-400">
                                             <span className="flex items-center gap-2">
                                                 <div className="w-2 h-2 rounded-full bg-slate-500" />
-                                                {post.author.username}
+                                                {post.author.name || post.author.username}
                                             </span>
                                             <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ko })}</span>
                                         </div>
@@ -608,13 +609,13 @@ export function ColumnView() {
                                 <div className="flex items-center gap-1.5 md:gap-3">
                                     <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-slate-700 flex items-center justify-center border border-white/20 overflow-hidden">
                                         {featuredPost.author.image ? (
-                                            <img src={featuredPost.author.image} alt={featuredPost.author.username} className="w-full h-full rounded-full object-cover" />
+                                            <img src={featuredPost.author.image} alt={featuredPost.author.name || featuredPost.author.username} className="w-full h-full rounded-full object-cover" />
                                         ) : (
                                             <User className="w-3 h-3 md:w-5 md:h-5 text-white" />
                                         )}
                                     </div>
                                     <div>
-                                        <p className="text-white font-medium text-[10px] md:text-sm">{featuredPost.author.username}</p>
+                                        <p className="text-white font-medium text-[10px] md:text-sm">{featuredPost.author.name || featuredPost.author.username}</p>
                                         <p className="text-blue-400 text-[9px] md:text-xs">Columnist</p>
                                     </div>
                                 </div>

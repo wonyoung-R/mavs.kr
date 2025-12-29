@@ -13,6 +13,7 @@ interface Comment {
     author: {
         id: string;
         username: string;
+        name: string | null;
         image: string | null;
         email?: string;
     };
@@ -66,16 +67,16 @@ export default function CommentItem({
                 <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center text-sm font-bold text-slate-300">
-                            {comment.author.username?.[0]?.toUpperCase() || 'U'}
+                            {(comment.author.name || comment.author.username)?.[0]?.toUpperCase() || 'U'}
                         </div>
                         <div>
-                            <span className="font-medium text-white text-sm">{comment.author.username}</span>
+                            <span className="font-medium text-white text-sm">{comment.author.name || comment.author.username}</span>
                             <span className="text-slate-500 text-xs ml-2">
                                 {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: ko })}
                             </span>
                         </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
                         {!isReply && (
                             <button
@@ -115,7 +116,7 @@ export default function CommentItem({
                     <div className="bg-slate-900/30 rounded-xl border border-blue-500/20 overflow-hidden">
                         <div className="flex items-center gap-2 px-3 py-2 border-b border-white/5 bg-blue-500/5">
                             <CornerDownRight className="w-4 h-4 text-blue-400" />
-                            <span className="text-xs text-blue-400">{comment.author.username}님에게 답글 작성</span>
+                            <span className="text-xs text-blue-400">{comment.author.name || comment.author.username}님에게 답글 작성</span>
                         </div>
                         <textarea
                             value={replyContent}

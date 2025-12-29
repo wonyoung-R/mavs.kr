@@ -15,6 +15,7 @@ interface ColumnCardProps {
         category?: 'COLUMN' | 'ANALYSIS';
         author: {
             username: string;
+            name: string | null;
             image: string | null;
         };
         _count: {
@@ -57,9 +58,9 @@ export default function ColumnCard({ post }: ColumnCardProps) {
                                 </span>
                             )}
                             <div className="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-white">
-                                {post.author.username[0]?.toUpperCase()}
+                                {(post.author.name || post.author.username)?.[0]?.toUpperCase()}
                             </div>
-                            <span className="text-blue-400 text-sm font-medium">{post.author.username}</span>
+                            <span className="text-blue-400 text-sm font-medium">{post.author.name || post.author.username}</span>
                         </div>
 
                         <h3 className="text-lg font-bold text-white mb-4 group-hover:text-blue-300 transition-colors line-clamp-2">
