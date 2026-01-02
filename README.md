@@ -11,6 +11,7 @@
 - **💬 커뮤니티**: 팬들과의 소통을 위한 포럼 및 게임 스레드
 - **🔄 자동 업데이트**: 크론잡을 통한 정기적인 뉴스 및 경기 정보 업데이트
 - **🌐 다국어 지원**: 영어 뉴스를 한국어로 자동 번역
+- **📱 PWA 지원**: 모바일에서 앱처럼 사용 가능한 Progressive Web App
 
 ## 🛠️ 기술 스택
 
@@ -142,6 +143,9 @@ npm run crawl:news
 
 # 경기 정보 업데이트 테스트
 npm run update:games
+
+# PWA 아이콘 생성
+npm run generate:icons
 ```
 
 ## 🌐 API 엔드포인트
@@ -176,12 +180,26 @@ npm run db:migrate
 npm run db:seed
 ```
 
+## 📱 PWA (Progressive Web App)
+
+MAVS.KR은 PWA로 설정되어 있어 모바일에서 앱처럼 사용할 수 있습니다.
+
+### 주요 기능
+- ✅ 홈 화면에 추가 가능
+- ✅ 오프라인 지원
+- ✅ 앱처럼 실행 (Standalone 모드)
+- ✅ iOS 및 Android 지원
+
+자세한 내용은 **[PWA_GUIDE.md](./PWA_GUIDE.md)** 문서를 참조하세요.
+
 ## 🌐 배포
 
 ### Vercel 배포
 1. Vercel 계정에 GitHub 저장소 연결
 2. 환경 변수 설정
 3. 자동 배포 활성화
+
+**참고**: PWA는 HTTPS가 필수입니다. Vercel은 자동으로 HTTPS를 제공합니다.
 
 ### 환경 변수
 프로덕션 환경에서 다음 환경 변수들을 설정해야 합니다:

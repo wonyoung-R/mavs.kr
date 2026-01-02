@@ -493,6 +493,28 @@ vercel env add REDIS_URL
 # ... 기타 환경 변수
 ```
 
+## 📱 PWA (Progressive Web App) 설정
+
+MAVS.KR은 PWA로 설정되어 있어 모바일에서 네이티브 앱처럼 사용할 수 있습니다.
+
+### 주요 파일
+- `public/manifest.json`: PWA 매니페스트 파일
+- `public/sw.js`: Service Worker (오프라인 지원)
+- `public/icons/`: PWA 아이콘 (192x192, 512x512)
+- `src/components/layout/ServiceWorkerRegistration.tsx`: Service Worker 등록 컴포넌트
+
+### 아이콘 재생성
+```bash
+npm run generate:icons
+```
+
+### 테스트 방법
+1. 개발 서버 실행 후 브라우저 개발자 도구 > Application > Manifest 확인
+2. 모바일에서 "홈 화면에 추가" 기능 테스트
+3. Lighthouse로 PWA 점수 확인
+
+자세한 내용은 **[PWA_GUIDE.md](./PWA_GUIDE.md)** 문서를 참조하세요.
+
 ## 📈 모니터링 및 분석
 
 ### Sentry 설정

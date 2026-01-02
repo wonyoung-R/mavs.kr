@@ -40,7 +40,7 @@ export function InstagramFloatingButton() {
       href="https://www.instagram.com/mavs.kr"
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50 flex items-center gap-2 bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
+      className="fixed bottom-20 right-4 md:bottom-24 md:right-6 z-50 flex items-center gap-2 bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
       onMouseEnter={() => !isMobile && setIsExpanded(true)}
       onMouseLeave={() => !isMobile && setIsExpanded(false)}
       onClick={handleClick}
