@@ -56,6 +56,26 @@ export function ScheduleView({ allGames, loadingGames }: ScheduleViewProps) {
         }
     }, [selectedMonth]);
 
+    // Scroll to selected month when it changes
+    useEffect(() => {
+        if (selectedMonth && monthScrollRef.current) {
+            const monthIndex = MONTHS.findIndex(m => m.id === selectedMonth);
+            if (monthIndex !== -1) {
+                // Find the button element for the selected month
+                const buttons = monthScrollRef.current.querySelectorAll('button');
+                const targetButton = buttons[monthIndex];
+                if (targetButton) {
+                    // Scroll the button into view, centered
+                    targetButton.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'nearest',
+                        inline: 'center'
+                    });
+                }
+            }
+        }
+    }, [selectedMonth]);
+
     // 실시간 점수 업데이트: Schedule 탭이 활성화되어 있을 때 1분마다 live 경기 정보 갱신
     useEffect(() => {
         const fetchLiveScores = async () => {

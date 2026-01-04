@@ -266,7 +266,11 @@ export default async function CommunityDetailPage({ params }: PageProps) {
 
         {/* Post Content */}
         <article className="prose prose-invert prose-lg max-w-none mb-12">
-          <div dangerouslySetInnerHTML={{ __html: post.content }} />
+          <div
+            className="whitespace-pre-wrap [&_p]:whitespace-pre-wrap [&_div]:whitespace-pre-wrap"
+            style={{ whiteSpace: 'pre-wrap' }}
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
         </article>
 
         {/* Comments Section */}

@@ -942,7 +942,8 @@ export function CommunityView() {
                         /* Post Content */
                         <article className="prose prose-invert prose-lg max-w-none mb-12 bg-slate-900/50 rounded-2xl p-6 border border-white/10">
                             <div
-                                className="text-slate-200 [&_p]:text-slate-200 [&_h1]:text-white [&_h2]:text-white [&_h3]:text-white [&_h4]:text-white [&_li]:text-slate-200 [&_span]:text-slate-200 [&_div]:text-slate-200 [&_strong]:text-white"
+                                className="text-slate-200 whitespace-pre-wrap [&_p]:text-slate-200 [&_p]:whitespace-pre-wrap [&_h1]:text-white [&_h2]:text-white [&_h3]:text-white [&_h4]:text-white [&_li]:text-slate-200 [&_span]:text-slate-200 [&_div]:text-slate-200 [&_div]:whitespace-pre-wrap [&_strong]:text-white"
+                                style={{ whiteSpace: 'pre-wrap' }}
                                 dangerouslySetInnerHTML={{ __html: selectedPost.content }}
                             />
                         </article>
