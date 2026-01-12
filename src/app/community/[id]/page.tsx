@@ -4,7 +4,8 @@ import { formatDistanceToNow, format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
-import { ArrowLeft, Clock, Share, MapPin, Calendar, DollarSign } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, Calendar, DollarSign } from 'lucide-react';
+import ShareStoryButton from '@/components/ui/ShareStoryButton';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import CommunityDeleteButton from '@/components/community/DeleteButton';
@@ -194,7 +195,17 @@ export default async function CommunityDetailPage({ params }: PageProps) {
               <ArrowLeft className="w-4 h-4" /> 목록으로 돌아가기
             </Button>
           </Link>
-          {canDelete && <CommunityDeleteButton postId={post.id} />}
+          <div className="flex items-center gap-2">
+            <ShareStoryButton
+              title={post.title}
+              content={post.content}
+              author={post.author.name || post.author.username || '익명'}
+              category={categoryInfo.name}
+              categoryIcon={categoryInfo.icon}
+              className="p-2 hover:bg-white/10 rounded-lg"
+            />
+            {canDelete && <CommunityDeleteButton postId={post.id} />}
+          </div>
         </div>
 
         {/* Post Header */}
@@ -257,9 +268,13 @@ export default async function CommunityDetailPage({ params }: PageProps) {
 
             <div className="flex items-center gap-4 text-slate-400">
               <LikeButton postId={post.id} initialLiked={hasLiked} initialCount={post._count.likes} />
-              <button className="flex items-center gap-1.5 hover:text-blue-400 transition-colors">
-                <Share className="w-5 h-5" />
-              </button>
+              <ShareStoryButton
+                title={post.title}
+                content={post.content}
+                author={post.author.name || post.author.username || '익명'}
+                category={categoryInfo.name}
+                categoryIcon={categoryInfo.icon}
+              />
             </div>
           </div>
         </header>

@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { BookOpen, User, Calendar, ArrowRight, Star, ArrowLeft, MessageCircle, Heart, Send, PenLine, TrendingUp, Plus, Edit2, Trash2 } from 'lucide-react';
+import { BookOpen, User, Calendar, ArrowRight, Star, ArrowLeft, MessageCircle, Heart, Send, PenLine, TrendingUp, Plus, Edit2, Trash2, Share } from 'lucide-react';
+import ShareStoryButton from '@/components/ui/ShareStoryButton';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -332,26 +333,36 @@ export function ColumnView() {
                                 {selectedPost.title}
                             </h1>
 
-                            {canEditPost(selectedPost) && (
-                                <div className="flex gap-2 flex-shrink-0">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => handleEdit(selectedPost)}
-                                        className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
-                                    >
-                                        <Edit2 className="w-4 h-4" />
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => handleDelete(selectedPost.id, selectedPost.category)}
-                                        className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                </div>
-                            )}
+                            <div className="flex gap-2 flex-shrink-0">
+                                <ShareStoryButton
+                                    title={selectedPost.title}
+                                    content={selectedPost.content}
+                                    author={selectedPost.author.name || selectedPost.author.username}
+                                    category={selectedPost.category === 'ANALYSIS' ? '분석글' : '칼럼'}
+                                    categoryIcon={selectedPost.category === 'ANALYSIS' ? '📊' : '✍️'}
+                                    className="p-2 hover:bg-white/10 rounded-lg text-slate-400"
+                                />
+                                {canEditPost(selectedPost) && (
+                                    <>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => handleEdit(selectedPost)}
+                                            className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
+                                        >
+                                            <Edit2 className="w-4 h-4" />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => handleDelete(selectedPost.id, selectedPost.category)}
+                                            className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    </>
+                                )}
+                            </div>
                         </div>
 
                         <div className="flex items-center justify-between">

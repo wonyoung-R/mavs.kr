@@ -4,7 +4,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
-import { ArrowLeft, Clock, Heart, MessageCircle, Share } from 'lucide-react';
+import { ArrowLeft, Clock, Heart, MessageCircle } from 'lucide-react';
+import ShareStoryButton from '@/components/ui/ShareStoryButton';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import DeleteButton from '@/components/column/DeleteButton';
@@ -115,6 +116,14 @@ export default async function ColumnDetailPage({ params }: PageProps) {
             </Button>
           </Link>
           <div className="flex items-center gap-2">
+            <ShareStoryButton
+              title={post.title}
+              content={post.content}
+              author={post.author.name || post.author.username || '익명'}
+              category="컬럼"
+              categoryIcon="📝"
+              className="p-2 hover:bg-white/10 rounded-lg"
+            />
             {canEdit && <EditButton postId={post.id} />}
             {canDelete && <DeleteButton postId={post.id} />}
           </div>
@@ -153,9 +162,13 @@ export default async function ColumnDetailPage({ params }: PageProps) {
                 <Heart className="w-5 h-5" />
                 <span>{post._count.votes}</span>
               </button>
-              <button className="flex items-center gap-1.5 hover:text-blue-400 transition-colors">
-                <Share className="w-5 h-5" />
-              </button>
+              <ShareStoryButton
+                title={post.title}
+                content={post.content}
+                author={post.author.name || post.author.username || '익명'}
+                category="컬럼"
+                categoryIcon="📝"
+              />
             </div>
           </div>
         </header>
