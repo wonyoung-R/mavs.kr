@@ -63,29 +63,8 @@ const StoryCard = forwardRef<HTMLDivElement, StoryCardProps>(
           🏀
         </div>
 
-        {/* Header - Logo */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '20px',
-            marginBottom: '60px',
-            position: 'relative',
-            zIndex: 1,
-          }}
-        >
-          <span style={{ fontSize: '60px' }}>🏀</span>
-          <span
-            style={{
-              fontSize: '48px',
-              fontWeight: 'bold',
-              color: '#ffffff',
-              letterSpacing: '-1px',
-            }}
-          >
-            MAVS.KR
-          </span>
-        </div>
+        {/* Spacer for top */}
+        <div style={{ height: '40px' }} />
 
         {/* Main Content Card */}
         <div
@@ -205,38 +184,28 @@ const StoryCard = forwardRef<HTMLDivElement, StoryCardProps>(
           </div>
         </div>
 
-        {/* Footer */}
+        {/* Footer - Logo */}
         <div
           style={{
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
+            justifyContent: 'center',
             gap: '20px',
             marginTop: '60px',
             position: 'relative',
             zIndex: 1,
           }}
         >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              color: '#60a5fa',
-              fontSize: '32px',
-            }}
-          >
-            <span>👆</span>
-            <span>탭해서 전체 글 보기</span>
-          </div>
+          <span style={{ fontSize: '48px' }}>🏀</span>
           <span
             style={{
-              fontSize: '36px',
-              color: '#475569',
-              fontWeight: '600',
+              fontSize: '42px',
+              fontWeight: 'bold',
+              color: '#ffffff',
+              letterSpacing: '-1px',
             }}
           >
-            mavs.kr
+            MAVS.KR
           </span>
         </div>
       </div>
