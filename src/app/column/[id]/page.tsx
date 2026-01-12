@@ -8,6 +8,7 @@ import { ArrowLeft, Clock, Heart, MessageCircle, Share } from 'lucide-react';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import DeleteButton from '@/components/column/DeleteButton';
+import EditButton from '@/components/column/EditButton';
 import ColumnContentRenderer from '@/components/column/ColumnContentRenderer';
 
 interface PageProps {
@@ -47,6 +48,7 @@ export default async function ColumnDetailPage({ params }: PageProps) {
   // Get current user - 컬럼은 로그인 필수
   let user = null;
   let canDelete = false;
+  let canEdit = false;
 
   try {
     // 환경변수 확인
@@ -79,11 +81,13 @@ export default async function ColumnDetailPage({ params }: PageProps) {
       const { data } = await supabase.auth.getUser();
       user = data.user;
 
-      // Check if user can delete (author or admin)
-      canDelete = user ? (
+      // Check if user can delete or edit (author or admin)
+      const hasPermission = user ? (
         user.email === post.author.email ||
         ADMIN_EMAILS.includes(user.email || '')
       ) : false;
+      canDelete = hasPermission;
+      canEdit = hasPermission;
     } else {
       // Supabase가 설정되지 않은 경우 (개발 모드)
       // 로그인 페이지로 리다이렉트
@@ -110,7 +114,10 @@ export default async function ColumnDetailPage({ params }: PageProps) {
               <ArrowLeft className="w-4 h-4" /> 목록으로 돌아가기
             </Button>
           </Link>
-          {canDelete && <DeleteButton postId={post.id} />}
+          <div className="flex items-center gap-2">
+            {canEdit && <EditButton postId={post.id} />}
+            {canDelete && <DeleteButton postId={post.id} />}
+          </div>
         </div>
 
         {/* Post Header */}

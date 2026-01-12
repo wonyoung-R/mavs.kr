@@ -161,17 +161,65 @@ body {
   border-left-color: #475569;
 }
 
-/* TiptapEditor 빈 줄 표시 */
-.ProseMirror p {
-  margin: 0.5em 0;
-  min-height: 1.5em;
+/* TiptapEditor 스타일 */
+.ProseMirror {
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
-.ProseMirror p:empty:before {
+/* 문단 기본 스타일 - 연속 엔터(빈 줄) 지원 */
+.ProseMirror p {
+  margin: 0;
+  padding: 0.25em 0;
+  min-height: 1.5em;
+  line-height: 1.6;
+}
+
+/* 빈 paragraph에 공백 문자 추가하여 높이 유지 */
+.ProseMirror p:empty::before {
   content: '\00a0';
-  visibility: hidden;
+  color: transparent;
 }
 
 .ProseMirror p:empty {
   min-height: 1.5em;
+  display: block;
+}
+
+/* br 태그 스타일 (Shift+Enter 줄바꿈) */
+.ProseMirror br {
+  display: block;
+  content: "";
+  margin-top: 0;
+}
+
+/* 글씨 크기 스타일이 적용된 텍스트 */
+.ProseMirror span[style*="font-size"] {
+  display: inline;
+  line-height: 1.4;
+}
+
+/* Prose 내부 빈 줄(paragraph) 스타일 - 저장된 글에서도 줄바꿈 유지 */
+.prose p {
+  min-height: 1.5em;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.prose p:empty,
+.prose p:has(br:only-child) {
+  min-height: 1.5em;
+  display: block;
+}
+
+.prose p:empty::before {
+  content: '\00a0';
+  visibility: hidden;
+}
+
+/* br 태그 스타일 */
+.prose br {
+  display: block;
+  content: "";
+  margin-top: 0.25em;
 }

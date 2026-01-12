@@ -267,9 +267,14 @@ export default async function CommunityDetailPage({ params }: PageProps) {
         {/* Post Content */}
         <article className="prose prose-invert prose-lg max-w-none mb-12">
           <div
-            className="whitespace-pre-wrap [&_p]:whitespace-pre-wrap [&_div]:whitespace-pre-wrap"
+            className="whitespace-pre-wrap [&_p]:whitespace-pre-wrap [&_div]:whitespace-pre-wrap [&_p]:min-h-[1.5em]"
             style={{ whiteSpace: 'pre-wrap' }}
-            dangerouslySetInnerHTML={{ __html: post.content }}
+            dangerouslySetInnerHTML={{
+              __html: post.content
+                .replace(/<p><\/p>/gi, '<p><br></p>')
+                .replace(/<p>\s*<\/p>/gi, '<p><br></p>')
+                .replace(/<p>&nbsp;<\/p>/gi, '<p><br></p>')
+            }}
           />
         </article>
 

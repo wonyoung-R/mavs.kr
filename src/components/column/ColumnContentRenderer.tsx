@@ -35,6 +35,22 @@ function decodeBase64ToJsx(base64Code: string): string | null {
   }
 }
 
+// 빈 paragraph를 br로 변환하여 줄바꿈이 유지되도록 처리
+function processLineBreaks(html: string): string {
+  // 빈 <p></p> 또는 <p> </p> (공백만 있는)를 <br>로 변환
+  let processed = html
+    // 완전히 빈 paragraph
+    .replace(/<p><\/p>/gi, '<p><br></p>')
+    // 공백만 있는 paragraph
+    .replace(/<p>\s*<\/p>/gi, '<p><br></p>')
+    // &nbsp;만 있는 paragraph
+    .replace(/<p>&nbsp;<\/p>/gi, '<p><br></p>')
+    // 연속된 빈 paragraph들 사이의 공백 정리
+    .replace(/<\/p>\s*<p>/gi, '</p><p>');
+
+  return processed;
+}
+
 // Check if content is pure JSX (not HTML with embedded JSX blocks)
 function isPureJsx(content: string): boolean {
   const trimmed = content.trim();
@@ -111,7 +127,8 @@ export default function ColumnContentRenderer({ htmlContent }: ColumnContentRend
       {/* Render HTML content first */}
       <div
         ref={containerRef}
-        dangerouslySetInnerHTML={{ __html: htmlContent }}
+        className="whitespace-pre-line [&_p]:min-h-[1.5em] [&_p:empty]:min-h-[1.5em] [&_p:empty]:before:content-['\00a0']"
+        dangerouslySetInnerHTML={{ __html: processLineBreaks(htmlContent) }}
       />
 
       {/* Render JSX components into their placeholder elements using portals */}

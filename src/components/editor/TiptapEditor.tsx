@@ -6,15 +6,18 @@ import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import Youtube from '@tiptap/extension-youtube';
 import Placeholder from '@tiptap/extension-placeholder';
+import HardBreak from '@tiptap/extension-hard-break';
 import { supabase } from '@/lib/db/supabase';
 import {
     Bold, Italic, List, ListOrdered, Quote,
     Heading1, Heading2, Image as ImageIcon,
     Youtube as YoutubeIcon, Link as LinkIcon,
-    Undo, Redo, Strikethrough, TrendingUp, Smile, Save
+    Undo, Redo, Strikethrough, TrendingUp, Smile, Save,
+    Type, ChevronDown
 } from 'lucide-react';
 import { useCallback, useState, useEffect, useRef } from 'react';
 import { JSXBlock } from './JSXBlockExtension';
+import { FontSize, TextStyle, FONT_SIZES, FontSizeLevel } from './FontSizeExtension';
 import dynamic from 'next/dynamic';
 
 // 이모지 피커는 동적 로드 (SSR 방지)
@@ -50,13 +53,23 @@ const TiptapEditor = ({
     const [charCount, setCharCount] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [showFontSizeMenu, setShowFontSizeMenu] = useState(false);
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
     const emojiPickerRef = useRef<HTMLDivElement>(null);
+    const fontSizeMenuRef = useRef<HTMLDivElement>(null);
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const editor = useEditor({
         extensions: [
-            StarterKit,
+            StarterKit.configure({
+                // 기본 hardBreak 비활성화 (커스텀 사용)
+                hardBreak: false,
+            }),
+            HardBreak.configure({
+                keepMarks: true,
+            }),
+            TextStyle,
+            FontSize,
             Image.configure({
                 inline: true,
                 allowBase64: true,
@@ -102,26 +115,26 @@ const TiptapEditor = ({
                 style: 'white-space: pre-wrap;',
             },
             handleKeyDown: (view, event) => {
-                // Enter 키 처리: 빈 줄을 쉽게 만들 수 있도록
+                // Shift+Enter: 줄바꿈 (hard break) - 같은 문단 내 줄바꿈
+                if (event.key === 'Enter' && event.shiftKey) {
+                    editor?.chain().focus().setHardBreak().run();
+                    return true;
+                }
+
+                // 일반 Enter: 빈 줄에서는 <br> 삽입, 그 외에는 새 paragraph
                 if (event.key === 'Enter' && !event.shiftKey) {
                     const { state } = view;
                     const { selection } = state;
                     const { $from } = selection;
 
-                    // 현재 위치가 빈 paragraph인 경우, 또 다른 빈 paragraph 추가
+                    // 현재 paragraph가 비어있으면 <br> 삽입
                     if ($from.parent.textContent === '' && $from.parent.type.name === 'paragraph') {
-                        // 이미 빈 줄이면 그대로 진행 (기본 동작)
-                        return false;
+                        editor?.chain().focus().setHardBreak().run();
+                        return true;
                     }
 
-                    // 일반 Enter: 기본 동작 (새 paragraph 생성)
+                    // 그 외에는 기본 동작 (새 paragraph 생성)
                     return false;
-                }
-
-                // Shift+Enter: 줄바꿈 (hard break)
-                if (event.key === 'Enter' && event.shiftKey) {
-                    editor?.chain().focus().setHardBreak().run();
-                    return true;
                 }
 
                 return false;
@@ -166,9 +179,14 @@ const TiptapEditor = ({
         }
     }, [autosaveKey, editor, content]);
 
-    // 초기 글자 수 계산
+    // 외부에서 content가 변경되었을 때 에디터 내용 업데이트
     useEffect(() => {
-        if (editor && content) {
+        if (editor && content !== undefined) {
+            const currentContent = editor.getHTML();
+            // 현재 에디터 내용과 다를 때만 업데이트 (무한 루프 방지)
+            if (content !== currentContent && content !== '') {
+                editor.commands.setContent(content);
+            }
             const text = getTextFromHTML(content);
             setCharCount(text.length);
         }
@@ -187,6 +205,32 @@ const TiptapEditor = ({
             return () => document.removeEventListener('mousedown', handleClickOutside);
         }
     }, [showEmojiPicker]);
+
+    // 글씨 크기 메뉴 외부 클릭 시 닫기
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (fontSizeMenuRef.current && !fontSizeMenuRef.current.contains(event.target as Node)) {
+                setShowFontSizeMenu(false);
+            }
+        };
+
+        if (showFontSizeMenu) {
+            document.addEventListener('mousedown', handleClickOutside);
+            return () => document.removeEventListener('mousedown', handleClickOutside);
+        }
+    }, [showFontSizeMenu]);
+
+    // 글씨 크기 설정
+    const setFontSize = useCallback((level: FontSizeLevel) => {
+        editor?.chain().focus().setCustomFontSize(level).run();
+        setShowFontSizeMenu(false);
+    }, [editor]);
+
+    // 글씨 크기 초기화
+    const resetFontSize = useCallback(() => {
+        editor?.chain().focus().unsetCustomFontSize().run();
+        setShowFontSizeMenu(false);
+    }, [editor]);
 
     const handleImageUpload = useCallback(async (file: File) => {
         // Check file size (5MB limit)
@@ -381,6 +425,43 @@ const TiptapEditor = ({
                         icon={<Heading2 className="w-4 h-4" />}
                         title="H2"
                     />
+                    <div className="w-px h-6 bg-slate-700 mx-1" />
+                    {/* 글씨 크기 드롭다운 */}
+                    <div className="relative" ref={fontSizeMenuRef}>
+                        <button
+                            onClick={() => setShowFontSizeMenu(!showFontSizeMenu)}
+                            type="button"
+                            className={`p-2 rounded hover:bg-slate-700 transition-colors flex items-center gap-1 ${showFontSizeMenu ? 'bg-slate-700 text-blue-400' : 'text-slate-400'}`}
+                            title="글씨 크기"
+                        >
+                            <Type className="w-4 h-4" />
+                            <ChevronDown className="w-3 h-3" />
+                        </button>
+                        {showFontSizeMenu && (
+                            <div className="absolute top-full left-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-lg z-50 py-1 min-w-[120px]">
+                                <button
+                                    onClick={resetFontSize}
+                                    type="button"
+                                    className="w-full px-3 py-2 text-left text-slate-300 hover:bg-slate-700 transition-colors text-sm"
+                                >
+                                    기본 크기
+                                </button>
+                                <div className="h-px bg-slate-700 my-1" />
+                                {([1, 2, 3, 4, 5] as FontSizeLevel[]).map((level) => (
+                                    <button
+                                        key={level}
+                                        onClick={() => setFontSize(level)}
+                                        type="button"
+                                        className="w-full px-3 py-2 text-left text-slate-300 hover:bg-slate-700 transition-colors flex items-center justify-between"
+                                        style={{ fontSize: FONT_SIZES[level] }}
+                                    >
+                                        <span>크기 {level}</span>
+                                        <span className="text-xs text-slate-500 ml-2">{FONT_SIZES[level]}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                     <div className="w-px h-6 bg-slate-700 mx-1" />
                     <ToolbarButton
                         onClick={() => editor.chain().focus().toggleBulletList().run()}

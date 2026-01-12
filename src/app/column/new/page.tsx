@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { ArrowLeft, Send, Upload, TrendingUp, FileCode, Eye, X, PenLine } from 'lucide-react';
+import { ArrowLeft, Send, Upload, TrendingUp, FileCode, Eye, X, PenLine, Loader2 } from 'lucide-react';
 import TiptapEditor from '@/components/editor/TiptapEditor';
 import DynamicJSXRenderer from '@/components/analysis/DynamicJSXRenderer';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,6 +13,8 @@ import { createAnalysis } from '@/app/actions/analysis';
 
 function NewColumnForm() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const editPostId = searchParams.get('edit');
     const { user, isColumnist, session, loading } = useAuth();
 
     // Tab state
@@ -21,6 +23,11 @@ function NewColumnForm() {
     // Column state
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
+
+    // Edit mode state
+    const [isLoadingPost, setIsLoadingPost] = useState(!!editPostId);
+    const [isEditMode, setIsEditMode] = useState(!!editPostId);
+    const [postLoaded, setPostLoaded] = useState(false);
 
     // Analysis state
     const [jsxCode, setJsxCode] = useState('');
@@ -39,6 +46,34 @@ function NewColumnForm() {
             }
         }
     }, [user, isColumnist, loading, router]);
+
+    // Edit 모드일 때 기존 글 로딩
+    useEffect(() => {
+        if (editPostId && !postLoaded) {
+            setIsLoadingPost(true);
+            setIsEditMode(true);
+
+            fetch(`/api/columns/${editPostId}`)
+                .then(res => {
+                    if (!res.ok) throw new Error('글을 불러올 수 없습니다.');
+                    return res.json();
+                })
+                .then(data => {
+                    console.log('Loaded post data:', data);
+                    setTitle(data.title || '');
+                    setContent(data.content || '');
+                    setPostLoaded(true);
+                })
+                .catch(err => {
+                    console.error('Failed to load post:', err);
+                    alert('글을 불러오는데 실패했습니다.');
+                    router.push('/?tab=column');
+                })
+                .finally(() => {
+                    setIsLoadingPost(false);
+                });
+        }
+    }, [editPostId, postLoaded, router]);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -85,9 +120,12 @@ function NewColumnForm() {
                 const formData = new FormData();
                 formData.append('title', title);
                 formData.append('content', content);
+                if (editPostId) {
+                    formData.append('id', editPostId);
+                }
 
                 await createColumn(formData, session?.access_token);
-                router.push('/?tab=column');
+                router.push(editPostId ? `/column/${editPostId}` : '/?tab=column');
             } catch (error) {
                 console.error(error);
                 alert('작성 실패: ' + (error instanceof Error ? error.message : '알 수 없는 오류'));
@@ -116,9 +154,16 @@ function NewColumnForm() {
         }
     };
 
-    if (loading || !user || !isColumnist) {
+    if (loading || !user || !isColumnist || isLoadingPost) {
         // Show loading or nothing while redirecting
-        return <div className="min-h-screen bg-[#050510] pt-24 text-center text-white">Loading...</div>;
+        return (
+            <div className="min-h-screen bg-[#050510] pt-24 flex items-center justify-center text-white">
+                <div className="flex items-center gap-3">
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                    <span>{isLoadingPost ? '글 불러오는 중...' : 'Loading...'}</span>
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -141,7 +186,7 @@ function NewColumnForm() {
                         <ArrowLeft className="w-5 h-5" />
                     </Button>
                     <h1 className="text-2xl font-bold">
-                        글쓰기
+                        {isEditMode ? '칼럼 수정' : '글쓰기'}
                     </h1>
                 </div>
 
@@ -300,7 +345,7 @@ function NewColumnForm() {
                                     disabled={isSubmitting || (activeTab === 'analysis' && !jsxCode)}
                                 >
                                     <Send className="w-4 h-4 mr-2" />
-                                    {isSubmitting ? '업로드 중...' : activeTab === 'column' ? '칼럼 등록' : '분석글 등록'}
+                                    {isSubmitting ? '저장 중...' : isEditMode ? '수정 완료' : activeTab === 'column' ? '칼럼 등록' : '분석글 등록'}
                                 </Button>
                             </div>
                         </form>
