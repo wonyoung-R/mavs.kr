@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { prisma } from '@/lib/db/prisma';
 import { notFound, redirect } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
