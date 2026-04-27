@@ -808,6 +808,25 @@ function ArticleScreen({ item, lang, onBack }: { item: NewsItem; lang: Lang; onB
   const body = (lang === 'ko' && item.contentKr) ? item.contentKr : item.content;
   const tone = toneForSource(item.source);
   const [modalOpen, setModalOpen] = useState(false);
+  const [checking, setChecking] = useState(false);
+
+  const handleOpenArticle = useCallback(async () => {
+    if (!item.sourceUrl) return;
+    setChecking(true);
+    try {
+      const res = await fetch(`/api/check-embed?url=${encodeURIComponent(item.sourceUrl)}`);
+      const data = await res.json();
+      if (data.embedAllowed) {
+        setModalOpen(true);
+      } else {
+        window.open(item.sourceUrl, '_blank', 'noopener,noreferrer');
+      }
+    } catch {
+      window.open(item.sourceUrl, '_blank', 'noopener,noreferrer');
+    } finally {
+      setChecking(false);
+    }
+  }, [item.sourceUrl]);
 
   return (
     <>
@@ -844,15 +863,20 @@ function ArticleScreen({ item, lang, onBack }: { item: NewsItem; lang: Lang; onB
             </div>
           )}
           <button
-            onClick={() => setModalOpen(true)}
+            onClick={handleOpenArticle}
+            disabled={checking}
             style={{
               display: 'block', width: '100%', marginTop: 24,
-              fontFamily: MONO, fontSize: 10, letterSpacing: 1.5, color: C.blueGlow,
-              background: 'none', border: `1px solid ${C.blueGlow}`,
-              borderRadius: 4, padding: '10px 16px', textAlign: 'center', cursor: 'pointer',
+              fontFamily: MONO, fontSize: 10, letterSpacing: 1.5,
+              color: checking ? C.mute : C.blueGlow,
+              background: 'none', border: `1px solid ${checking ? C.mute : C.blueGlow}`,
+              borderRadius: 4, padding: '10px 16px', textAlign: 'center',
+              cursor: checking ? 'default' : 'pointer', opacity: checking ? 0.6 : 1,
             }}
           >
-            {lang === 'ko' ? '원문 보기 ↗' : 'Read original ↗'}
+            {checking
+              ? (lang === 'ko' ? '확인 중...' : 'Checking...')
+              : (lang === 'ko' ? '원문 보기 ↗' : 'Read original ↗')}
           </button>
         </div>
       </div>
@@ -860,23 +884,33 @@ function ArticleScreen({ item, lang, onBack }: { item: NewsItem; lang: Lang; onB
       {modalOpen && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 200,
-          background: 'rgba(10,10,11,0.92)',
+          background: C.ink,
           display: 'flex', flexDirection: 'column',
         }}>
           <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
-            padding: '10px 12px',
+            display: 'flex', alignItems: 'center',
+            padding: '10px 12px', gap: 10,
             borderBottom: `1px solid ${C.line}`,
             background: C.ink2,
+            flexShrink: 0,
           }}>
-            <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: 1.5, color: C.mute, marginRight: 'auto' }}>
+            <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: 1.5, color: C.mute, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {shortSource(item.source)}
             </span>
+            <button
+              onClick={() => window.open(item.sourceUrl, '_blank', 'noopener,noreferrer')}
+              style={{
+                background: 'none', border: `1px solid ${C.line}`, borderRadius: 3, cursor: 'pointer',
+                color: C.mute, fontFamily: MONO, fontSize: 8, letterSpacing: 1, padding: '3px 7px',
+              }}
+            >
+              {lang === 'ko' ? '새탭' : 'NEW TAB'}
+            </button>
             <button
               onClick={() => setModalOpen(false)}
               style={{
                 background: 'none', border: 'none', cursor: 'pointer',
-                color: C.text, fontSize: 18, lineHeight: 1, padding: '4px 6px',
+                color: C.text, fontSize: 18, lineHeight: 1, padding: '2px 4px',
               }}
               aria-label="닫기"
             >
