@@ -113,6 +113,11 @@ body {
   transform-style: preserve-3d;
 }
 
+@keyframes mq {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-33.3333%); }
+}
+
 /* Hide scrollbar but keep scrolling functionality */
 .scrollbar-hide {
   -ms-overflow-style: none;  /* IE and Edge */

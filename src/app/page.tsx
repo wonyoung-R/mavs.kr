@@ -1,5 +1,5 @@
-import NewHomePage from '@/components/home/NewHomePage';
+import MavsApp from '@/components/mavs/MavsApp';
 
 export default function HomePage() {
-  return <NewHomePage />;
+  return <MavsApp />;
 }
