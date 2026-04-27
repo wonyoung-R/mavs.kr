@@ -808,25 +808,9 @@ function ArticleScreen({ item, lang, onBack }: { item: NewsItem; lang: Lang; onB
   const body = (lang === 'ko' && item.contentKr) ? item.contentKr : item.content;
   const tone = toneForSource(item.source);
   const [modalOpen, setModalOpen] = useState(false);
-  const [checking, setChecking] = useState(false);
-
-  const handleOpenArticle = useCallback(async () => {
-    if (!item.sourceUrl) return;
-    setChecking(true);
-    try {
-      const res = await fetch(`/api/check-embed?url=${encodeURIComponent(item.sourceUrl)}`);
-      const data = await res.json();
-      if (data.embedAllowed) {
-        setModalOpen(true);
-      } else {
-        window.open(item.sourceUrl, '_blank', 'noopener,noreferrer');
-      }
-    } catch {
-      window.open(item.sourceUrl, '_blank', 'noopener,noreferrer');
-    } finally {
-      setChecking(false);
-    }
-  }, [item.sourceUrl]);
+  const proxyUrl = item.sourceUrl
+    ? `/api/proxy?url=${encodeURIComponent(item.sourceUrl)}`
+    : null;
 
   return (
     <>
@@ -863,20 +847,15 @@ function ArticleScreen({ item, lang, onBack }: { item: NewsItem; lang: Lang; onB
             </div>
           )}
           <button
-            onClick={handleOpenArticle}
-            disabled={checking}
+            onClick={() => setModalOpen(true)}
             style={{
               display: 'block', width: '100%', marginTop: 24,
-              fontFamily: MONO, fontSize: 10, letterSpacing: 1.5,
-              color: checking ? C.mute : C.blueGlow,
-              background: 'none', border: `1px solid ${checking ? C.mute : C.blueGlow}`,
-              borderRadius: 4, padding: '10px 16px', textAlign: 'center',
-              cursor: checking ? 'default' : 'pointer', opacity: checking ? 0.6 : 1,
+              fontFamily: MONO, fontSize: 10, letterSpacing: 1.5, color: C.blueGlow,
+              background: 'none', border: `1px solid ${C.blueGlow}`,
+              borderRadius: 4, padding: '10px 16px', textAlign: 'center', cursor: 'pointer',
             }}
           >
-            {checking
-              ? (lang === 'ko' ? '확인 중...' : 'Checking...')
-              : (lang === 'ko' ? '원문 보기 ↗' : 'Read original ↗')}
+            {lang === 'ko' ? '원문 보기 ↗' : 'Read original ↗'}
           </button>
         </div>
       </div>
@@ -918,7 +897,7 @@ function ArticleScreen({ item, lang, onBack }: { item: NewsItem; lang: Lang; onB
             </button>
           </div>
           <iframe
-            src={item.sourceUrl}
+            src={proxyUrl ?? ''}
             style={{ flex: 1, border: 'none', width: '100%', background: '#fff' }}
             title={title}
           />
