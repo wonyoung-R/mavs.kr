@@ -113,6 +113,11 @@ body {
   transform-style: preserve-3d;
 }
 
+@keyframes mq {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-33.3333%); }
+}
+
 /* Hide scrollbar but keep scrolling functionality */
 .scrollbar-hide {
   -ms-overflow-style: none;  /* IE and Edge */
@@ -167,7 +172,6 @@ body {
   word-wrap: break-word;
 }
 
-/* 문단 기본 스타일 - 연속 엔터(빈 줄) 지원 */
 .ProseMirror p {
   margin: 0;
   padding: 0.25em 0;
@@ -175,7 +179,6 @@ body {
   line-height: 1.6;
 }
 
-/* 빈 paragraph에 공백 문자 추가하여 높이 유지 */
 .ProseMirror p:empty::before {
   content: '\00a0';
   color: transparent;
@@ -186,20 +189,26 @@ body {
   display: block;
 }
 
-/* br 태그 스타일 (Shift+Enter 줄바꿈) */
 .ProseMirror br {
   display: block;
   content: "";
   margin-top: 0;
 }
 
-/* 글씨 크기 스타일이 적용된 텍스트 */
 .ProseMirror span[style*="font-size"] {
   display: inline;
   line-height: 1.4;
 }
 
-/* Prose 내부 빈 줄(paragraph) 스타일 - 저장된 글에서도 줄바꿈 유지 */
+/* Tiptap Placeholder */
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: #adb5bd;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
 .prose p {
   min-height: 1.5em;
   margin-top: 0.5em;
@@ -217,7 +226,6 @@ body {
   visibility: hidden;
 }
 
-/* br 태그 스타일 */
 .prose br {
   display: block;
   content: "";

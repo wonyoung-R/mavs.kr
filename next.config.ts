@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: __dirname,
+  },
   serverExternalPackages: ['@prisma/client'],
   images: {
     remotePatterns: [
@@ -19,6 +22,10 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'nycoldtrqbkevvgoajlq.supabase.co',
       },
       {
         protocol: 'https',

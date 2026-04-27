@@ -1,6 +1,10 @@
 {
   "crons": [
     {
+      "path": "/api/cron/crawl-news",
+      "schedule": "0 */2 * * *"
+    },
+    {
       "path": "/api/cron/update-box-scores",
       "schedule": "0 6 * * *"
     }

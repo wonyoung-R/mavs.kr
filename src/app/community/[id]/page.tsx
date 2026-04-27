@@ -196,14 +196,13 @@ export default async function CommunityDetailPage({ params }: PageProps) {
             </Button>
           </Link>
           <div className="flex items-center gap-2">
-            <ShareStoryButton
-              title={post.title}
-              content={post.content}
-              author={post.author.name || post.author.username || '익명'}
-              category={categoryInfo.name}
-              categoryIcon={categoryInfo.icon}
-              className="p-2 hover:bg-white/10 rounded-lg"
-            />
+            {canDelete && (
+              <Link href={`/community/${post.id}/edit`}>
+                <Button variant="outline" size="sm" className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white h-9">
+                  수정
+                </Button>
+              </Link>
+            )}
             {canDelete && <CommunityDeleteButton postId={post.id} />}
           </div>
         </div>

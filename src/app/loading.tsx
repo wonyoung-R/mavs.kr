@@ -1,6 +1,9 @@
-import MavericksLoading from '@/components/ui/MavericksLoading';
-
 export default function Loading() {
-  return <MavericksLoading />;
+  return (
+    <div style={{ background: '#0a0a0b', height: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, color: '#2da7ff', letterSpacing: 2 }}>
+        LOADING...
+      </div>
+    </div>
+  );
 }
-
