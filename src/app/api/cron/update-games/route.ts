@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
           update: {
             homeScore: game.homeScore,
             awayScore: game.awayScore,
-            status: game.status,
+            status: game.status as any,
             quarter: game.quarter,
             timeRemaining: game.timeRemaining,
             updatedAt: new Date(),
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
             awayTeam: game.awayTeam,
             homeScore: game.homeScore,
             awayScore: game.awayScore,
-            status: game.status,
+            status: game.status as any,
             scheduledAt: game.scheduledAt,
             quarter: game.quarter,
             timeRemaining: game.timeRemaining,

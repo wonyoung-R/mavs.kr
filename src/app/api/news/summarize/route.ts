@@ -387,7 +387,7 @@ function extractFromText(text: string, originalTitle: string) {
 function fallbackSummary(title: string, content: string) {
   try {
     // 간단한 규칙 기반 요약 (기존 로직)
-    const sentences = content.match(/[^.!?]+[.!?]+/g) || [];
+    const sentences: string[] = content.match(/[^.!?]+[.!?]+/g) || [];
 
     // Mavericks 관련 문장들 우선 추출
     const mavsSentences = sentences.filter(s =>

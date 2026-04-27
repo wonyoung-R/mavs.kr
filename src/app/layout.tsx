@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 export const metadata: Metadata = {
   title: "MAVS.KR - 댈러스 매버릭스 한국 팬 커뮤니티",
@@ -40,7 +41,9 @@ export default function RootLayout({
         />
       </head>
       <body style={{ margin: 0, padding: 0, background: '#0a0a0b', overscrollBehavior: 'none' }}>
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
