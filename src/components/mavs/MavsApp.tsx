@@ -807,55 +807,90 @@ function ArticleScreen({ item, lang, onBack }: { item: NewsItem; lang: Lang; onB
   const altTitle = (lang === 'ko') ? item.title : item.titleKr;
   const body = (lang === 'ko' && item.contentKr) ? item.contentKr : item.content;
   const tone = toneForSource(item.source);
+  const [modalOpen, setModalOpen] = useState(false);
 
   return (
-    <div>
-      <BackBar lang={lang} onBack={onBack} title={shortSource(item.source)} />
+    <>
+      <div>
+        <BackBar lang={lang} onBack={onBack} title={shortSource(item.source)} />
 
-      <div style={{ position: 'relative', width: '100%', height: 200, overflow: 'hidden' }}>
-        {item.imageUrl ? (
-          <img src={item.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        ) : (
-          <ToneBlock tone={tone} h={200} />
-        )}
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 40%, rgba(10,10,11,0.9) 100%)' }} />
-        <div style={{
-          position: 'absolute', bottom: 12, left: 14, right: 14,
-          fontFamily: MONO, fontSize: 9, letterSpacing: 1.5, color: C.blueGlow,
-        }}>
-          {shortSource(item.source)} · {rel(item.publishedAt, lang)}
+        <div style={{ position: 'relative', width: '100%', height: 200, overflow: 'hidden' }}>
+          {item.imageUrl ? (
+            <img src={item.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            <ToneBlock tone={tone} h={200} />
+          )}
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 40%, rgba(10,10,11,0.9) 100%)' }} />
+          <div style={{
+            position: 'absolute', bottom: 12, left: 14, right: 14,
+            fontFamily: MONO, fontSize: 9, letterSpacing: 1.5, color: C.blueGlow,
+          }}>
+            {shortSource(item.source)} · {rel(item.publishedAt, lang)}
+          </div>
+        </div>
+
+        <div style={{ padding: '18px 14px' }}>
+          <h1 style={{ fontFamily: SANS_KR, fontSize: 20, fontWeight: 600, lineHeight: 1.3, letterSpacing: -0.3, color: C.text, margin: '0 0 10px' }}>
+            {title}
+          </h1>
+          {altTitle && (
+            <p style={{ fontFamily: SANS_KR, fontSize: 13, color: C.mute, lineHeight: 1.5, margin: '0 0 18px', fontStyle: 'italic' }}>
+              {altTitle}
+            </p>
+          )}
+          {body && (
+            <div style={{ fontFamily: SANS_KR, fontSize: 14, lineHeight: 1.7, color: C.text, opacity: 0.85 }}>
+              {body.slice(0, 600)}{body.length > 600 ? '...' : ''}
+            </div>
+          )}
+          <button
+            onClick={() => setModalOpen(true)}
+            style={{
+              display: 'block', width: '100%', marginTop: 24,
+              fontFamily: MONO, fontSize: 10, letterSpacing: 1.5, color: C.blueGlow,
+              background: 'none', border: `1px solid ${C.blueGlow}`,
+              borderRadius: 4, padding: '10px 16px', textAlign: 'center', cursor: 'pointer',
+            }}
+          >
+            {lang === 'ko' ? '원문 보기 ↗' : 'Read original ↗'}
+          </button>
         </div>
       </div>
 
-      <div style={{ padding: '18px 14px' }}>
-        <h1 style={{ fontFamily: SANS_KR, fontSize: 20, fontWeight: 600, lineHeight: 1.3, letterSpacing: -0.3, color: C.text, margin: '0 0 10px' }}>
-          {title}
-        </h1>
-        {altTitle && (
-          <p style={{ fontFamily: SANS_KR, fontSize: 13, color: C.mute, lineHeight: 1.5, margin: '0 0 18px', fontStyle: 'italic' }}>
-            {altTitle}
-          </p>
-        )}
-        {body && (
-          <div style={{ fontFamily: SANS_KR, fontSize: 14, lineHeight: 1.7, color: C.text, opacity: 0.85 }}>
-            {body.slice(0, 600)}{body.length > 600 ? '...' : ''}
+      {modalOpen && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 200,
+          background: 'rgba(10,10,11,0.92)',
+          display: 'flex', flexDirection: 'column',
+        }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+            padding: '10px 12px',
+            borderBottom: `1px solid ${C.line}`,
+            background: C.ink2,
+          }}>
+            <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: 1.5, color: C.mute, marginRight: 'auto' }}>
+              {shortSource(item.source)}
+            </span>
+            <button
+              onClick={() => setModalOpen(false)}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: C.text, fontSize: 18, lineHeight: 1, padding: '4px 6px',
+              }}
+              aria-label="닫기"
+            >
+              ✕
+            </button>
           </div>
-        )}
-        <a
-          href={item.sourceUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: 'block', marginTop: 24,
-            fontFamily: MONO, fontSize: 10, letterSpacing: 1.5, color: C.blueGlow,
-            textDecoration: 'none', border: `1px solid ${C.blueGlow}`,
-            borderRadius: 4, padding: '10px 16px', textAlign: 'center',
-          }}
-        >
-          {lang === 'ko' ? '원문 보기 ↗' : 'Read original ↗'}
-        </a>
-      </div>
-    </div>
+          <iframe
+            src={item.sourceUrl}
+            style={{ flex: 1, border: 'none', width: '100%', background: '#fff' }}
+            title={title}
+          />
+        </div>
+      )}
+    </>
   );
 }
 
