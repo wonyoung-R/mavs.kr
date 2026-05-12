@@ -25,14 +25,10 @@ export async function GET(request: Request) {
   console.log('🕐 Cron job started: crawl-news');
 
   try {
-    // 로컬 개발 환경에서는 request URL에서 호스트 추출
-    let baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-
-    if (isDevelopment) {
-      const requestUrl = new URL(request.url);
-      baseUrl = `${requestUrl.protocol}//${requestUrl.host}`;
-      console.log(`🔧 Development mode - using baseUrl: ${baseUrl}`);
-    }
+    // baseUrl: request URL에서 추출 (production/dev 모두 동작)
+    const requestUrl = new URL(request.url);
+    const baseUrl = `${requestUrl.protocol}//${requestUrl.host}`;
+    console.log(`🔧 Using baseUrl: ${baseUrl}`);
 
     // Fetch from all news sources
     const sources = [

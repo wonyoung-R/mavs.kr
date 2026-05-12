@@ -1,5 +1,6 @@
 // src/app/api/nba/espn-schedule/route.ts
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/db/prisma';
 
 interface ESPNGame {
   id: string;
@@ -178,6 +179,83 @@ export async function GET() {
         time_remaining: competition.status.displayClock,
       };
     }).filter(Boolean);
+
+    // ESPN이 경기 데이터를 반환하지 않으면 DB 폴백
+    if (processedGames.length === 0) {
+      const dbGames = await prisma.game.findMany({
+        where: {
+          OR: [
+            { homeTeam: { contains: 'Mavericks' } },
+            { awayTeam: { contains: 'Mavericks' } },
+            { homeTeam: { contains: 'Dallas' } },
+            { awayTeam: { contains: 'Dallas' } },
+          ],
+        },
+        orderBy: { scheduledAt: 'asc' },
+      });
+
+      const today = new Date();
+      const dbProcessed = dbGames.map(game => {
+        const isMavsHome = game.homeTeam.includes('Mavericks') || game.homeTeam.includes('Dallas');
+        const opponent = isMavsHome ? game.awayTeam : game.homeTeam;
+        const mavsScore = isMavsHome ? game.homeScore : game.awayScore;
+        const oppScore = isMavsHome ? game.awayScore : game.homeScore;
+
+        const kstFormatter = new Intl.DateTimeFormat('ko-KR', {
+          timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit', hour12: false,
+        });
+        const parts = kstFormatter.formatToParts(game.scheduledAt);
+        const getPart = (type: string) => parts.find(p => p.type === type)?.value || '00';
+        const gameDateKst = `${getPart('year')}-${getPart('month')}-${getPart('day')}`;
+        const gameTimeKst = `${getPart('hour')}:${getPart('minute')}`;
+
+        const isToday = game.scheduledAt.toDateString() === today.toDateString();
+        let status: 'finished' | 'upcoming' | 'today' | 'live' = 'upcoming';
+        if (game.status === 'FINAL') status = 'finished';
+        else if (game.status === 'LIVE') status = 'live';
+        else if (isToday) status = 'today';
+
+        let result: string | null = null;
+        if (mavsScore !== null && oppScore !== null) {
+          result = mavsScore > oppScore ? 'W' : 'L';
+        }
+
+        return {
+          game_id: game.gameId.replace('ESPN-', ''),
+          game_date: game.scheduledAt.toISOString(),
+          game_date_kst: gameDateKst,
+          game_time_kst: gameTimeKst,
+          opponent,
+          is_home: isMavsHome,
+          mavs_score: mavsScore,
+          opponent_score: oppScore,
+          mavs_record: '',
+          opponent_record: '',
+          result,
+          status,
+          matchup: `${isMavsHome ? 'vs' : '@'} ${opponent}`,
+          venue: 'NBA',
+        };
+      });
+
+      const upcomingGames = dbProcessed.filter(g => g.status === 'upcoming').slice(0, 5);
+      const todayGame = dbProcessed.find(g => g.status === 'today');
+      const latestGame = dbProcessed.filter(g => g.status === 'finished').slice(-1)[0];
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          all_games: dbProcessed,
+          upcoming_games: upcomingGames,
+          today_game: todayGame,
+          latest_game: latestGame,
+          next_game: upcomingGames[0],
+        },
+        last_updated: new Date().toISOString(),
+        source: 'db',
+      });
+    }
 
     // 다음 경기와 오늘 경기 찾기
     const upcomingGames = processedGames.filter(game => game.status === 'upcoming').slice(0, 5);
