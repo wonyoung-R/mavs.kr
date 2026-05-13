@@ -3,6 +3,30 @@
     {
       "path": "/api/cron/update-box-scores",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/update-news",
+      "schedule": "0 */3 * * *"
+    },
+    {
+      "path": "/api/cron/translate-news",
+      "schedule": "15 */3 * * *"
+    },
+    {
+      "path": "/api/cron/nba-recap",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/mavsmoneyball-rss",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/injury-report",
+      "schedule": "30 22 * * *"
+    },
+    {
+      "path": "/api/cron/daily-digest",
+      "schedule": "30 0 * * *"
     }
   ]
 }
