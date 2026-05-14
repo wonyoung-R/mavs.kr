@@ -1,4 +1,4 @@
-import { callGeminiJSON } from '../gemini';
+import { callLLMJSON } from '../claude';
 import { buildSystemPrompt } from '../prompt/system';
 import type { TeamTag } from '../publisher';
 
@@ -50,7 +50,7 @@ JSON으로만 응답:
 ---`;
 
 export async function critiquePerspective(article: string, perspective: string, team?: TeamTag): Promise<CritiqueOutput> {
-  const raw = await callGeminiJSON<CritiqueOutput>(
+  const raw = await callLLMJSON<CritiqueOutput>(
     PROMPT.replace('{ARTICLE}', article.slice(0, 3000)).replace('{PERSPECTIVE}', perspective),
     {
       systemInstruction: buildSystemPrompt('너는 검수만 한다. 시각 박스 자체를 다시 쓰지 않는다.', team),

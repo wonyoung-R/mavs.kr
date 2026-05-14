@@ -1,15 +1,16 @@
 import { prisma } from '@/lib/db/prisma';
 
 /**
- * Gemini 가격 (2026-05 기준, USD)
- * - gemini-2.0-flash: input $0.10/M tokens, output $0.40/M tokens
- * - gemini-2.5-flash: input $0.30/M, output $2.50/M (thinking 끄면 절반)
- * 안전하게 평균 사용량으로 추정.
+ * Claude 가격 (2026-05 기준, USD per 1M tokens)
+ * - claude-haiku-4-5 (기본): input $1.00, output $5.00
+ * - claude-sonnet-4-6: input $3.00, output $15.00
+ * Prompt caching 적용 시 cache read는 ~0.1x로 떨어지므로 실제 비용은 더 낮음.
+ * 여기서는 캐시 미적용 기준 보수적 추정.
  */
 const AVG_INPUT_TOKENS_PER_CALL = 4000;
 const AVG_OUTPUT_TOKENS_PER_CALL = 800;
-const COST_INPUT_PER_M = 0.10;  // USD
-const COST_OUTPUT_PER_M = 0.40; // USD
+const COST_INPUT_PER_M = 1.00;  // USD — claude-haiku-4-5
+const COST_OUTPUT_PER_M = 5.00; // USD — claude-haiku-4-5
 const USD_TO_KRW = 1400;
 
 export interface StatsRange {

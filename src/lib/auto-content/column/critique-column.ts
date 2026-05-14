@@ -1,4 +1,4 @@
-import { callGeminiJSON } from '../gemini';
+import { callLLMJSON } from '../claude';
 import { buildSystemPrompt } from '../prompt/system';
 import type { TeamTag } from '../publisher';
 import type { ColumnOutput } from './generate-column';
@@ -11,15 +11,11 @@ export interface CritiqueColumnOutput {
   hallucinations?: string[];
 }
 
-function buildPrompt(article: string, column: ColumnOutput): string {
-  const fullText = [
-    column.titleKr,
-    column.leadParagraph,
-    ...column.bodyParagraphs,
-    column.closingParagraph,
-  ].join('\n\n');
-
-  return `너는 MAVS.KR 자동 칼럼의 엄격한 검수자다.
+/**
+ * 안정적 검수 지시문 — 매 호출 동일하므로 system 프롬프트(캐시 prefix)에 들어간다.
+ */
+const CRITIQUE_TASK_INSTRUCTIONS = `
+## 작업: 자동 칼럼 엄격 검수 (너는 검수만 한다. 칼럼을 다시 쓰지 않는다.)
 
 **핵심 검증: 환각(hallucination) 탐지**
 
@@ -51,9 +47,17 @@ JSON으로만 응답:
   "result": "PASS" | "REVISE" | "REJECT",
   "reason": "<짧고 구체적 이유>",
   "hallucinations": ["<환각 항목 1>", "<환각 항목 2>"]
-}
+}`;
 
-출처 기사:
+function buildUserPrompt(article: string, column: ColumnOutput): string {
+  const fullText = [
+    column.titleKr,
+    column.leadParagraph,
+    ...column.bodyParagraphs,
+    column.closingParagraph,
+  ].join('\n\n');
+
+  return `출처 기사:
 ---
 ${article.slice(0, 4000)}
 ---
@@ -69,8 +73,8 @@ export async function critiqueColumn(
   column: ColumnOutput,
   team?: TeamTag,
 ): Promise<CritiqueColumnOutput> {
-  const raw = await callGeminiJSON<CritiqueColumnOutput>(buildPrompt(article, column), {
-    systemInstruction: buildSystemPrompt('너는 검수만 한다. 칼럼을 다시 쓰지 않는다.', team),
+  const raw = await callLLMJSON<CritiqueColumnOutput>(buildUserPrompt(article, column), {
+    systemInstruction: buildSystemPrompt(CRITIQUE_TASK_INSTRUCTIONS, team),
     temperature: 0.1,
     maxOutputTokens: 400,
   });

@@ -1,4 +1,4 @@
-import { callGeminiJSON } from '../gemini';
+import { callLLMJSON } from '../claude';
 import { buildSystemPrompt } from '../prompt/system';
 import type { RiskLevel, TeamTag } from '../publisher';
 
@@ -31,15 +31,14 @@ export interface ColumnOutput {
   closingParagraph: string;
 }
 
-function buildPrompt(article: string, team: TeamTag, sourceLabel: string): string {
-  const teamName = team === 'wings' ? '댈러스 윙스 (WNBA)' : '댈러스 매버릭스 (NBA)';
-  const audienceTone = team === 'wings'
-    ? '댈러스 윙스를 응원하는 한국 팬덤의 시각'
-    : '한국 매버릭스 팬덤의 시각';
+/**
+ * 안정적 지시문 — 매 호출 동일하므로 system 프롬프트(캐시 prefix)에 들어간다.
+ * volatile한 것은 기사 본문뿐 → user 메시지에만 둔다.
+ */
+const COLUMN_TASK_INSTRUCTIONS = `
+## 작업: 영문 외신 → 한국어 칼럼 재창조
 
-  return `다음 영문 ${sourceLabel} 기사를 한국 ${teamName} 팬덤이 읽을 한국어 칼럼으로 재창조해라.
-
-이 글은 단순 번역이 아니라 **${audienceTone}**에서 자연스럽게 쓴 칼럼이어야 한다.
+단순 번역이 아니라 한국 팬덤의 시각에서 자연스럽게 쓴 칼럼을 만든다.
 사실은 출처 기사에서만 가져오고, MAVS.KR의 톤으로 자연스러운 한국 스포츠 기사처럼 작성한다.
 
 ## 출력 항목 (모두 채워라)
@@ -77,7 +76,10 @@ function buildPrompt(article: string, team: TeamTag, sourceLabel: string): strin
   "leadParagraph": "<리드>",
   "bodyParagraphs": ["<단락1>", "<단락2>", "<단락3>"],
   "closingParagraph": "<마무리>"
-}
+}`;
+
+function buildUserPrompt(article: string, sourceLabel: string): string {
+  return `출처: ${sourceLabel}
 
 출처 기사:
 ---
@@ -90,10 +92,11 @@ export async function generateColumn(
   team: TeamTag = 'mavericks',
   sourceLabel: string = '외신',
 ): Promise<ColumnOutput> {
-  const raw = await callGeminiJSON<Omit<ColumnOutput, 'riskLevel'>>(
-    buildPrompt(article, team, sourceLabel),
+  const raw = await callLLMJSON<Omit<ColumnOutput, 'riskLevel'>>(
+    buildUserPrompt(article, sourceLabel),
     {
-      systemInstruction: buildSystemPrompt(undefined, team),
+      // system = VOICE_SPEC + team 컨텍스트 + 안정적 작업 지시문 → 캐시 prefix
+      systemInstruction: buildSystemPrompt(COLUMN_TASK_INSTRUCTIONS, team),
       temperature: 0.6,
       maxOutputTokens: 2400,
     },

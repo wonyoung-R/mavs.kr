@@ -1,4 +1,4 @@
-import { callGeminiJSON } from '../gemini';
+import { callLLMJSON } from '../claude';
 import { buildSystemPrompt } from '../prompt/system';
 import type { RiskLevel } from '../publisher';
 
@@ -48,7 +48,7 @@ JSON으로만 응답:
 
 export async function classifyArticle(article: string): Promise<ClassifyResult> {
   const truncated = article.slice(0, 4000);
-  const raw = await callGeminiJSON<{ category: TopicCategory; reason?: string }>(
+  const raw = await callLLMJSON<{ category: TopicCategory; reason?: string }>(
     PROMPT.replace('{ARTICLE}', truncated),
     {
       systemInstruction: buildSystemPrompt('너는 분류 작업만 수행한다. 의견 작성 금지.'),

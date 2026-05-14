@@ -1,4 +1,4 @@
-import { callGemini } from '../gemini';
+import { callLLM } from '../claude';
 import { buildSystemPrompt } from '../prompt/system';
 import type { RiskLevel, TeamTag } from '../publisher';
 
@@ -70,7 +70,7 @@ const TEMPLATES: Record<RiskLevel, string> = {
 
 export async function generatePerspective(article: string, riskLevel: RiskLevel, team?: TeamTag): Promise<string> {
   const prompt = TEMPLATES[riskLevel].replace('{ARTICLE}', article.slice(0, 4000));
-  const text = await callGemini(prompt, {
+  const text = await callLLM(prompt, {
     systemInstruction: buildSystemPrompt(undefined, team),
     temperature: 0.6,
     maxOutputTokens: 400,
