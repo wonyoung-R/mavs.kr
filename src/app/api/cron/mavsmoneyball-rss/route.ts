@@ -10,7 +10,9 @@ import {
   detectTeam,
 } from '@/lib/auto-content/sources/mavsmoneyball';
 
-const MAX_PER_RUN = 3;
+// cron이 하루 3회(KST 8/14/18시) 실행 → 각 실행당 1건 = 하루 최대 3건
+// 중복 방지: sourceId(mmb_<guid>) 기준으로 이미 발행된 글은 skip
+const MAX_PER_RUN = 1;
 
 export async function GET(request: Request) {
   const authErr = checkCronAuth(request);
