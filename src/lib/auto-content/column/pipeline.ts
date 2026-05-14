@@ -11,6 +11,8 @@ export interface ColumnPipelineInput {
   team?: TeamTag;
   dryRun?: boolean;
   newsId?: string;
+  /** 모델 오버라이드 — 비교 테스트용. 미지정 시 ANTHROPIC_MODEL env */
+  model?: string;
 }
 
 export interface ColumnPipelineResult {
@@ -43,9 +45,9 @@ function fullText(col: ColumnOutput): string {
 }
 
 export async function runColumnPipeline(input: ColumnPipelineInput): Promise<ColumnPipelineResult> {
-  const { article, sourceUrl, sourceLabel = '외신', team = 'mavericks', dryRun = false, newsId } = input;
+  const { article, sourceUrl, sourceLabel = '외신', team = 'mavericks', dryRun = false, newsId, model } = input;
 
-  const draft1 = await generateColumn(article, team, sourceLabel);
+  const draft1 = await generateColumn(article, team, sourceLabel, model);
 
   // 정규식 사전 차단 — 본문 전체 검사
   const lint1 = lintPerspectiveText(fullText(draft1));
@@ -62,7 +64,7 @@ export async function runColumnPipeline(input: ColumnPipelineInput): Promise<Col
     return result;
   }
 
-  const crit1 = await critiqueColumn(article, draft1, team);
+  const crit1 = await critiqueColumn(article, draft1, team, model);
   if (crit1.result === 'PASS') {
     const result = {
       status: 'passed' as PerspectiveStatus,
@@ -93,7 +95,7 @@ export async function runColumnPipeline(input: ColumnPipelineInput): Promise<Col
   }
 
   // REVISE → 재생성 1회
-  const draft2 = await generateColumn(article, team, sourceLabel);
+  const draft2 = await generateColumn(article, team, sourceLabel, model);
   const lint2 = lintPerspectiveText(fullText(draft2));
   if (!lint2.ok) {
     const fb = FALLBACK_BY_TEAM[team];
@@ -111,7 +113,7 @@ export async function runColumnPipeline(input: ColumnPipelineInput): Promise<Col
     return result;
   }
 
-  const crit2 = await critiqueColumn(article, draft2, team);
+  const crit2 = await critiqueColumn(article, draft2, team, model);
   if (crit2.result === 'PASS') {
     const result = {
       status: 'passed' as PerspectiveStatus,

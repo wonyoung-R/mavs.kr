@@ -75,6 +75,11 @@ const COLUMN_TASK_INSTRUCTIONS = `
 
 - 출처에 없는 선수명/감독명/스탯/시즌 위치/부상/트레이드 이력 → 추가 절대 금지
 - 너의 사전 지식(트레이닝 데이터) 사용 금지. 출처에 없으면 모르는 것으로 취급하고 뺀다.
+- **출처 매체명(Mavs Moneyball, ESPN 등)을 본문에 인용 금지.** "OO 매체가 분석했다",
+  "해당 매체는~" 같은 표현을 쓰지 마라. 출처 매체명은 user 메시지의 메타 정보일 뿐
+  기사 본문 사실이 아니다. 분석 내용은 매체 인용 없이 그대로 서술한다.
+- 영문 표현을 한국어로 옮길 때 정확히: "second half"는 "후반전"(2쿼터 아님),
+  "just under 30 minutes"는 "30분 가까이"(구체 수치로 단정 금지)
 - 처방형("~해야 한다"), 단정 미래("~할 것이다") 금지
 - 이모지 / 과장 어휘(충격적, 폭발적, 미친) / 메타 언급(조회수 등) 금지
 - 마크다운/HTML 태그 없이 순수 텍스트
@@ -148,9 +153,10 @@ const COLUMN_TASK_INSTRUCTIONS = `
 }`;
 
 function buildUserPrompt(article: string, sourceLabel: string): string {
-  return `출처: ${sourceLabel}
+  return `아래는 영문 외신 기사 본문이다.
+(출처 매체: ${sourceLabel} — 참고용 메타 정보. 이 매체명을 칼럼 본문에 인용하지 말 것.)
 
-출처 기사:
+기사 본문:
 ---
 ${article.slice(0, 8000)}
 ---`;
@@ -160,6 +166,7 @@ export async function generateColumn(
   article: string,
   team: TeamTag = 'mavericks',
   sourceLabel: string = '외신',
+  model?: string,
 ): Promise<ColumnOutput> {
   const raw = await callLLMJSON<Omit<ColumnOutput, 'riskLevel'>>(
     buildUserPrompt(article, sourceLabel),
@@ -168,6 +175,7 @@ export async function generateColumn(
       systemInstruction: buildSystemPrompt(COLUMN_TASK_INSTRUCTIONS, team),
       temperature: 0.6,
       maxOutputTokens: 2400,
+      model,
     },
   );
 

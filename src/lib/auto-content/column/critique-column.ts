@@ -128,11 +128,14 @@ export async function critiqueColumn(
   article: string,
   column: ColumnOutput,
   team?: TeamTag,
+  model?: string,
 ): Promise<CritiqueColumnOutput> {
   const raw = await callLLMJSON<CritiqueColumnOutput>(buildUserPrompt(article, column), {
     systemInstruction: buildSystemPrompt(CRITIQUE_TASK_INSTRUCTIONS, team),
     temperature: 0.1,
-    maxOutputTokens: 400,
+    // 환각 다수 탐지 시 reason+hallucinations가 길어짐 — 잘림 방지로 충분히 확보
+    maxOutputTokens: 1024,
+    model,
   });
 
   if (!['PASS', 'REVISE', 'REJECT'].includes(raw.result)) {
