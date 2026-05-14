@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/db/prisma';
+import { pingIndexing } from './indexing-ping';
 
 const SYSTEM_AUTHOR_EMAIL = 'system@mavs.kr';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://mavs.kr';
 
 let cachedSystemAuthorId: string | null = null;
 
@@ -21,12 +23,19 @@ export async function getSystemAuthorId(): Promise<string> {
 
 export type AutoNewsSource = 'nba_api' | 'mavsmoneyball' | 'smokingcuban' | 'espn' | 'injury_report';
 export type RiskLevel = 'low' | 'medium' | 'high';
+/**
+ * passed: critique 통과, 정상 발행
+ * fallback: lint 또는 critique이 경미한 위반 발견 → closing만 fallback 텍스트로 교체 후 발행
+ * rejected: critique이 환각/심각 위반 발견 → 발행 skip + 로그만 남김
+ */
 export type PerspectiveStatus = 'passed' | 'fallback' | 'rejected';
+export type TeamTag = 'mavericks' | 'wings';
 
 export interface PublishAutoNewsInput {
   title: string;
-  body: string;
-  perspectiveText: string;
+  body: string;          // 본문 (HTML)
+  summary?: string;      // 메타 description / 검색 결과 요약
+  perspectiveText?: string; // (legacy) 시각박스 — 통합형 칼럼에선 closingParagraph로 대체
   perspectiveStatus: PerspectiveStatus;
   riskLevel: RiskLevel;
   source: AutoNewsSource;
@@ -34,6 +43,7 @@ export interface PublishAutoNewsInput {
   sourceUrl?: string;
   imageUrl?: string;
   publishedAt?: Date;
+  team?: TeamTag;
 }
 
 export interface PublishResult {
@@ -56,7 +66,9 @@ export async function publishAutoNews(input: PublishAutoNewsInput): Promise<Publ
       title: input.title,
       titleKr: input.title,
       content: input.body,
-      contentKr: composeFinalBody(input),
+      contentKr: input.body,
+      summary: input.summary,
+      summaryKr: input.summary,
       source: sourceEnum,
       sourceUrl: input.sourceUrl ?? '',
       imageUrl: input.imageUrl,
@@ -66,9 +78,13 @@ export async function publishAutoNews(input: PublishAutoNewsInput): Promise<Publ
       riskLevel: input.riskLevel,
       perspectiveStatus: input.perspectiveStatus,
       perspectiveText: input.perspectiveText,
+      team: input.team ?? 'mavericks',
     },
     select: { id: true },
   });
+
+  // 발행 즉시 검색엔진 ping (fire-and-forget)
+  void pingIndexing([`${SITE_URL}/news/${created.id}`]).catch(() => {});
 
   return { newsId: created.id, skipped: false };
 }
@@ -83,6 +99,3 @@ function mapToNewsSourceEnum(s: AutoNewsSource): 'ESPN' | 'MAVS_MONEYBALL' | 'SM
   }
 }
 
-function composeFinalBody(input: PublishAutoNewsInput): string {
-  return input.body;
-}

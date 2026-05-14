@@ -4,13 +4,14 @@ import { generatePerspective } from './generate';
 import { critiquePerspective } from './critique';
 import { lintPerspectiveText } from './banned-patterns';
 import { getFallbackPerspective } from './fallback';
-import type { PerspectiveStatus, RiskLevel } from '../publisher';
+import type { PerspectiveStatus, RiskLevel, TeamTag } from '../publisher';
 
 export interface PerspectivePipelineInput {
   article: string;
   sourceUrl?: string;
   newsId?: string;
   dryRun?: boolean;
+  team?: TeamTag;
 }
 
 export interface PerspectivePipelineResult {
@@ -27,20 +28,20 @@ export interface PerspectivePipelineResult {
 }
 
 export async function runPerspectivePipeline(input: PerspectivePipelineInput): Promise<PerspectivePipelineResult> {
-  const { article, sourceUrl, newsId, dryRun = false } = input;
+  const { article, sourceUrl, newsId, dryRun = false, team } = input;
 
   // (1) classify
   const cls = await classifyArticle(article);
   const riskLevel = cls.riskLevel;
 
   // (2) first generate
-  const draft1 = await generatePerspective(article, riskLevel);
+  const draft1 = await generatePerspective(article, riskLevel, team);
 
   // (3) lint draft1
   const lint1 = lintPerspectiveText(draft1);
   if (!lint1.ok) {
     return finalize({
-      text: getFallbackPerspective(riskLevel),
+      text: getFallbackPerspective(riskLevel, team),
       status: 'fallback',
       riskLevel,
       category: cls.category,
@@ -54,7 +55,7 @@ export async function runPerspectivePipeline(input: PerspectivePipelineInput): P
   }
 
   // (4) critique draft1
-  const crit1 = await critiquePerspective(article, draft1);
+  const crit1 = await critiquePerspective(article, draft1, team);
 
   if (crit1.result === 'PASS') {
     return finalize({
@@ -73,7 +74,7 @@ export async function runPerspectivePipeline(input: PerspectivePipelineInput): P
 
   if (crit1.result === 'REJECT') {
     return finalize({
-      text: getFallbackPerspective(riskLevel),
+      text: getFallbackPerspective(riskLevel, team),
       status: 'fallback',
       riskLevel,
       category: cls.category,
@@ -87,11 +88,11 @@ export async function runPerspectivePipeline(input: PerspectivePipelineInput): P
   }
 
   // REVISE → regenerate once
-  const draft2 = await generatePerspective(article, riskLevel);
+  const draft2 = await generatePerspective(article, riskLevel, team);
   const lint2 = lintPerspectiveText(draft2);
   if (!lint2.ok) {
     return finalize({
-      text: getFallbackPerspective(riskLevel),
+      text: getFallbackPerspective(riskLevel, team),
       status: 'fallback',
       riskLevel,
       category: cls.category,
@@ -106,7 +107,7 @@ export async function runPerspectivePipeline(input: PerspectivePipelineInput): P
     });
   }
 
-  const crit2 = await critiquePerspective(article, draft2);
+  const crit2 = await critiquePerspective(article, draft2, team);
   if (crit2.result === 'PASS') {
     return finalize({
       text: draft2,

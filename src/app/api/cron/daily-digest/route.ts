@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { checkCronAuth, parseDryRun } from '@/lib/auto-content/cron-auth';
+import { computeLastNDays } from '@/lib/auto-content/stats';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://mavs.kr';
 const RECIPIENT = 'mavsdotkr@gmail.com';
@@ -40,8 +41,13 @@ export async function GET(request: Request) {
     if (p.perspectiveStatus && p.perspectiveStatus in byStatus) byStatus[p.perspectiveStatus]++;
   });
 
-  const subject = `[MAVS.KR 자동발행] ${new Date().toISOString().slice(0, 10)} — ${total}건 발행`;
-  const html = renderHtml(posts, { total, bySource, byRisk, byStatus });
+  const [stats1, stats7] = await Promise.all([
+    computeLastNDays(1),
+    computeLastNDays(7),
+  ]);
+
+  const subject = `[MAVS.KR 자동발행] ${new Date().toISOString().slice(0, 10)} — ${total}건 발행 (₩${stats1.estimatedCostKrw})`;
+  const html = renderHtml(posts, { total, bySource, byRisk, byStatus }, { stats1, stats7 });
 
   if (dry || !RESEND_API_KEY) {
     return NextResponse.json({
@@ -49,6 +55,7 @@ export async function GET(request: Request) {
       dry: dry || !RESEND_API_KEY,
       reason: !RESEND_API_KEY ? 'RESEND_API_KEY missing — skipping email send' : 'dry-run',
       summary: { total, bySource, byRisk, byStatus },
+      stats: { day1: stats1, day7: stats7 },
       subject,
       html_preview: html.slice(0, 500),
     });
@@ -78,6 +85,7 @@ export async function GET(request: Request) {
 function renderHtml(
   posts: Array<{ id: string; title: string; titleKr: string | null; riskLevel: string | null; perspectiveStatus: string | null; perspectiveText: string | null }>,
   summary: { total: number; bySource: Record<string, number>; byRisk: Record<string, number>; byStatus: Record<string, number> },
+  extra?: { stats1: import('@/lib/auto-content/stats').StatsRange; stats7: import('@/lib/auto-content/stats').StatsRange },
 ): string {
   const high = posts.filter(p => p.riskLevel === 'high');
   const medium = posts.filter(p => p.riskLevel === 'medium');
@@ -98,6 +106,16 @@ function renderHtml(
     <li>Risk: ${riskLine}</li>
     <li>Status: ${statusLine}</li>
   </ul>
+  ${extra ? `
+  <div style="background:#f6f8fa;border-radius:6px;padding:12px 16px;margin:16px 0;">
+    <strong>💰 비용/호출 통계</strong>
+    <ul style="margin:6px 0 0 0;line-height:1.6;font-size:13px;">
+      <li>오늘: ${extra.stats1.estimatedCalls}회 호출, 추정 비용 <strong>₩${extra.stats1.estimatedCostKrw}</strong> ($${extra.stats1.estimatedCostUsd})</li>
+      <li>최근 7일: ${extra.stats7.estimatedCalls}회 호출, 추정 비용 <strong>₩${extra.stats7.estimatedCostKrw}</strong> ($${extra.stats7.estimatedCostUsd})</li>
+      <li>월 환산(예상): ₩${Math.round(extra.stats7.estimatedCostKrw * 30 / 7)}</li>
+    </ul>
+  </div>
+  ` : ''}
   ${high.length > 0 ? `
   <h3 style="color:#c00;">🚨 HIGH (${high.length}건) — 전문 확인 필요</h3>
   ${high.map(p => `

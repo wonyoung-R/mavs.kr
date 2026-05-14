@@ -8,6 +8,8 @@ export interface NewsArticleInput {
   titleKr?: string | null;
   content: string;
   contentKr?: string | null;
+  summary?: string | null;
+  summaryKr?: string | null;
   imageUrl?: string | null;
   publishedAt: Date | string;
   crawledAt?: Date | string | null;
@@ -18,7 +20,7 @@ export interface NewsArticleInput {
 export function buildNewsArticleSchema(article: NewsArticleInput) {
   const url = `${SITE_URL}/news/${article.id}`;
   const headline = article.titleKr ?? article.title;
-  const description = stripHtml(article.contentKr ?? article.content).slice(0, 240);
+  const description = (article.summaryKr ?? article.summary ?? stripHtml(article.contentKr ?? article.content)).slice(0, 240);
   const datePublished = toISO(article.publishedAt);
   const dateModified = toISO(article.crawledAt ?? article.publishedAt);
 

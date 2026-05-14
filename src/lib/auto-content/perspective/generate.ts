@@ -1,6 +1,6 @@
 import { callGemini } from '../gemini';
 import { buildSystemPrompt } from '../prompt/system';
-import type { RiskLevel } from '../publisher';
+import type { RiskLevel, TeamTag } from '../publisher';
 
 const TEMPLATE_LOW = `너는 MAVS.KR의 시각 박스를 작성한다.
 
@@ -13,8 +13,10 @@ const TEMPLATE_LOW = `너는 MAVS.KR의 시각 박스를 작성한다.
 절대 금지:
 - 처방형: "~해야 한다"
 - 단정 미래: "~할 것이다"
-- 출처에 없는 사실 주장
+- **출처에 없는 선수명/코치명/스탯/팀 상황 일체 추가 금지**
+- 너의 사전 지식 사용 금지 (트레이드 이력, 선수 부상, 시즌 위치 등 출처에 없으면 언급 X)
 - 선수/코치 비판
+- 출처가 단순한 점수/날짜뿐이면, 특정 선수 이름이나 활약을 추측해서 채우지 않는다
 
 출처 기사:
 ---
@@ -66,10 +68,10 @@ const TEMPLATES: Record<RiskLevel, string> = {
   high: TEMPLATE_HIGH,
 };
 
-export async function generatePerspective(article: string, riskLevel: RiskLevel): Promise<string> {
+export async function generatePerspective(article: string, riskLevel: RiskLevel, team?: TeamTag): Promise<string> {
   const prompt = TEMPLATES[riskLevel].replace('{ARTICLE}', article.slice(0, 4000));
   const text = await callGemini(prompt, {
-    systemInstruction: buildSystemPrompt(),
+    systemInstruction: buildSystemPrompt(undefined, team),
     temperature: 0.6,
     maxOutputTokens: 400,
   });

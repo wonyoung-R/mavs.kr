@@ -29,6 +29,7 @@ export async function GET() {
       published: true,
       retractedAt: true,
       retractReason: true,
+      team: true,
     },
     take: 200,
   });

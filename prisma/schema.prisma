@@ -55,6 +55,7 @@ model News {
   published         Boolean   @default(true)
   retractedAt       DateTime?
   retractReason     String?
+  team              String?   // "mavericks" | "wings" — 자동 글 도메인 라벨
 
   @@index([source, publishedAt])
   @@index([crawledAt])

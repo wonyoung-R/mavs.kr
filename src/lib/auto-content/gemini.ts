@@ -1,5 +1,5 @@
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const MODEL = 'gemini-2.0-flash';
+const MODEL = process.env.GEMINI_MODEL ?? 'gemini-2.0-flash';
 const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
 export interface GeminiOptions {
@@ -35,6 +35,8 @@ export async function callGemini(prompt: string, opts: GeminiOptions = {}): Prom
       temperature,
       maxOutputTokens,
       responseMimeType,
+      // Gemini 2.5 thinking 비활성화 (응답 잘림 방지). 2.0에서는 무시됨.
+      thinkingConfig: { thinkingBudget: 0 },
     },
   };
 
@@ -49,6 +51,11 @@ export async function callGemini(prompt: string, opts: GeminiOptions = {}): Prom
 
       if (!res.ok) {
         const text = await res.text();
+        if (res.status === 429 && attempt < retries) {
+          // rate limit: 5s, 10s 백오프
+          await new Promise(r => setTimeout(r, 5000 * (attempt + 1)));
+          continue;
+        }
         throw new GeminiError(`Gemini ${res.status}`, res.status, text);
       }
 
@@ -70,9 +77,26 @@ export async function callGemini(prompt: string, opts: GeminiOptions = {}): Prom
 
 export async function callGeminiJSON<T>(prompt: string, opts: Omit<GeminiOptions, 'responseMimeType'> = {}): Promise<T> {
   const text = await callGemini(prompt, { ...opts, responseMimeType: 'application/json' });
+  const cleaned = extractJsonBlock(text);
   try {
-    return JSON.parse(text) as T;
+    return JSON.parse(cleaned) as T;
   } catch (e) {
     throw new GeminiError(`JSON parse failed: ${text.slice(0, 200)}`);
   }
+}
+
+function extractJsonBlock(raw: string): string {
+  const trimmed = raw.trim();
+  // ```json ... ``` 또는 ``` ... ``` 코드블록 제거
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  if (fenced) return fenced[1].trim();
+  // 첫 { ~ 마지막 } 구간 추출
+  const first = trimmed.indexOf('{');
+  const last = trimmed.lastIndexOf('}');
+  if (first >= 0 && last > first) return trimmed.slice(first, last + 1);
+  // 배열 형태
+  const firstA = trimmed.indexOf('[');
+  const lastA = trimmed.lastIndexOf(']');
+  if (firstA >= 0 && lastA > firstA) return trimmed.slice(firstA, lastA + 1);
+  return trimmed;
 }
