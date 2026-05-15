@@ -2,7 +2,8 @@ import { prisma } from '@/lib/db/prisma';
 import { pingIndexing } from './indexing-ping';
 
 const SYSTEM_AUTHOR_EMAIL = 'system@mavs.kr';
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://mavs.kr';
+// `||` 사용 의도적: 빈 문자열("")로 설정돼도 기본값으로 폴백 (`??`는 ""를 유효값 취급)
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://mavs.kr';
 
 let cachedSystemAuthorId: string | null = null;
 

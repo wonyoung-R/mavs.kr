@@ -36,7 +36,7 @@ export async function computeStats(from: Date, to: Date): Promise<StatsRange> {
     }),
     prisma.perspectiveLog.findMany({
       where: { createdAt: { gte: from, lte: to } },
-      select: { id: true, usedFallback: true, draft2: true },
+      select: { id: true, usedFallback: true, draft2: true, critique1: true },
     }),
   ]);
 
@@ -53,17 +53,18 @@ export async function computeStats(from: Date, to: Date): Promise<StatsRange> {
     if (n.perspectiveStatus === 'passed') passedCount++;
   }
 
-  // 호출 수 추정:
-  // - generateColumn 1회/글
-  // - critique 1회 기본, draft2 있으면 critique 1회 추가 + generate 1회 추가
+  // 호출 수 추정 (B안 리스크 라우팅 반영):
+  // - generateColumn 1회/글 (항상)
+  // - critique 1회: low-risk 자기검증 통과 글은 생략됨 → critique1이 'SKIP:'으로 시작하면 0
+  // - draft2 있으면 (REVISE 경로) generate2 + critique2 추가 = +2
   let calls = 0;
   for (const log of logs) {
-    calls += 1; // generate1
-    calls += 1; // critique1
+    calls += 1; // generate1 — 항상
+    if (!log.critique1?.startsWith('SKIP:')) calls += 1; // critique1 — low-risk 생략 시 제외
     if (log.draft2) calls += 2; // generate2 + critique2
   }
-  // 만약 perspective_logs가 없으면 (자동 글이 마이그레이션 전 발행됐을 때) 글 수 × 2 추정
-  if (calls === 0 && news.length > 0) calls = news.length * 2;
+  // 만약 perspective_logs가 없으면 (자동 글이 마이그레이션 전 발행됐을 때) 글 수 × 1.5 추정
+  if (calls === 0 && news.length > 0) calls = Math.round(news.length * 1.5);
 
   const inputTokens = calls * AVG_INPUT_TOKENS_PER_CALL;
   const outputTokens = calls * AVG_OUTPUT_TOKENS_PER_CALL;

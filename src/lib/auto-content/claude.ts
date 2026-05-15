@@ -7,12 +7,15 @@ import Anthropic from '@anthropic-ai/sdk';
  * - claude-haiku-4-5 (기본): 저렴 + 빠름, 고볼륨 자동화에 적합
  * - claude-sonnet-4-6: 환각 critique 품질이 더 필요할 때
  *
- * Prompt caching: 시스템 프롬프트(VOICE_SPEC)는 stable prefix이므로
- * cache_control을 붙여 같은 cron 실행 내 반복 호출 시 input cost를 절감한다.
- * (Haiku 최소 캐시 prefix 4096 tokens — 시스템 프롬프트가 그보다 짧으면 silent no-cache)
+ * Prompt caching: 시스템 프롬프트는 stable prefix이므로 cache_control을 붙인다.
+ * 같은 cron 실행 내(5분 TTL)에서 같은 task의 호출이 반복될 때만 적중한다.
+ * cron이 시간 단위로 떨어져 실행되면 run 간 캐시는 적중하지 않으므로,
+ * 시스템 프롬프트는 캐시를 노려 인위적으로 키우지 않고 필요한 만큼만 유지한다.
  */
 
-const MODEL = process.env.ANTHROPIC_MODEL ?? 'claude-haiku-4-5';
+// `||` 사용 의도적: ANTHROPIC_MODEL이 빈 문자열("")로 설정돼도 기본값으로 폴백한다.
+// (`??`는 ""를 유효값으로 취급 → model:"" 로 API 호출 시 400)
+const MODEL = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5';
 
 const client = new Anthropic(); // ANTHROPIC_API_KEY from env
 
