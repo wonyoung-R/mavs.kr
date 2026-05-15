@@ -284,7 +284,13 @@ export function NewsView() {
                 </h3>
                 
                 <p className="text-sm text-slate-400 line-clamp-2 mb-3">
-                  {getDisplayContent(article)?.substring(0, 150)}...
+                  {/* 카드 프리뷰: 자동 생성 칼럼은 본문이 HTML(<p>...)이라 substring으로 자르면
+                      <p> 태그가 그대로 보임 → 태그 제거 후 자른다. */}
+                  {(getDisplayContent(article) ?? '')
+                    .replace(/<[^>]+>/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim()
+                    .substring(0, 150)}…
                 </p>
                 
                 <div className="flex items-center justify-between text-xs text-slate-500">
@@ -410,12 +416,26 @@ export function NewsView() {
                   )}
                 </div>
                 
-                {/* Content */}
+                {/* Content
+                  자동 생성 칼럼은 본문이 <p>...</p> HTML — dangerouslySetInnerHTML로 렌더.
+                  기존 크롤 뉴스는 plain text — innerHTML로도 동일하게 보임(HTML 특수문자 없음).
+                  HTML 태그 패턴 감지 시 innerHTML, 아니면 text 렌더(보수적 fallback). */}
                 <div className="prose prose-invert prose-lg max-w-none">
-                  <div className="text-slate-300 leading-relaxed whitespace-pre-wrap">
-                    {getDisplayContent(selectedArticle)}
-                  </div>
-                  
+                  {(() => {
+                    const body = getDisplayContent(selectedArticle) ?? '';
+                    const isHtml = /<\/?(p|div|br|h[1-6]|ul|ol|li|a|strong|em|img|figure)\b/i.test(body);
+                    return isHtml ? (
+                      <div
+                        className="text-slate-300 leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: body }}
+                      />
+                    ) : (
+                      <div className="text-slate-300 leading-relaxed whitespace-pre-wrap">
+                        {body}
+                      </div>
+                    );
+                  })()}
+
                   {/* Show original content if showing Korean */}
                   {selectedArticle.contentKr && showKorean && (
                     <div className="mt-8 pt-6 border-t border-white/10">
