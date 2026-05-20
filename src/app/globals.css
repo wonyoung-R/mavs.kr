@@ -166,6 +166,27 @@ body {
   border-left-color: #475569;
 }
 
+/* MavsApp 자동 칼럼 본문: HTML <p> 단락 간격 (Tailwind preflight가 p margin을 0으로 리셋하므로 명시) */
+.mavs-article-body p {
+  margin: 0 0 0.9em;
+}
+.mavs-article-body p:last-child {
+  margin-bottom: 0;
+}
+.mavs-article-body h2,
+.mavs-article-body h3 {
+  margin: 1.4em 0 0.5em;
+  font-weight: 600;
+}
+.mavs-article-body ul,
+.mavs-article-body ol {
+  margin: 0 0 0.9em;
+  padding-left: 1.2em;
+}
+.mavs-article-body li {
+  margin-bottom: 0.3em;
+}
+
 /* TiptapEditor 스타일 */
 .ProseMirror {
   white-space: pre-wrap;

@@ -841,11 +841,19 @@ function ArticleScreen({ item, lang, onBack }: { item: NewsItem; lang: Lang; onB
               {altTitle}
             </p>
           )}
-          {body && (
-            <div style={{ fontFamily: SANS_KR, fontSize: 14, lineHeight: 1.7, color: C.text, opacity: 0.85 }}>
-              {body.slice(0, 600)}{body.length > 600 ? '...' : ''}
-            </div>
-          )}
+          {body && (() => {
+            // 자동 생성 칼럼 본문은 <p>...</p> HTML — 태그 노출 없이 단락으로 렌더하고 전문을 보여준다.
+            // 크롤 뉴스 content는 평문 요약 — 줄바꿈 보존 + 600자 프리뷰 유지.
+            const isHtml = /<\/?(p|div|br|h[1-6]|ul|ol|li|a|strong|em|img|figure)\b/i.test(body);
+            const baseStyle = { fontFamily: SANS_KR, fontSize: 14, lineHeight: 1.7, color: C.text, opacity: 0.85 } as const;
+            return isHtml ? (
+              <div className="mavs-article-body" style={baseStyle} dangerouslySetInnerHTML={{ __html: body }} />
+            ) : (
+              <div style={{ ...baseStyle, whiteSpace: 'pre-wrap' }}>
+                {body.slice(0, 600)}{body.length > 600 ? '...' : ''}
+              </div>
+            );
+          })()}
           <button
             onClick={() => setModalOpen(true)}
             style={{
