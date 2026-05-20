@@ -362,9 +362,16 @@ function WRow({ item, lang, onClick }: { item: NewsItem; lang: Lang; onClick: ()
   const timeStr = rel(item.publishedAt, lang);
   const srcLabel = shortSource(item.source);
 
+  // 크롤러·LLM 봇이 따라갈 수 있는 실제 내부 링크(href) + SPA 동작 유지(progressive enhancement).
+  // 일반 좌클릭은 preventDefault로 인앱 ArticleScreen 열기, cmd/ctrl/새탭은 /news/[id]로 이동 허용.
   return (
-    <div
-      onClick={onClick}
+    <a
+      href={`/news/${item.id}`}
+      onClick={(e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+        e.preventDefault();
+        onClick();
+      }}
       style={{
         display: 'grid', gridTemplateColumns: '52px 56px 1fr',
         gap: 10, padding: '10px 14px',
@@ -372,6 +379,7 @@ function WRow({ item, lang, onClick }: { item: NewsItem; lang: Lang; onClick: ()
         alignItems: 'flex-start',
         cursor: 'pointer',
         background: 'transparent',
+        textDecoration: 'none', color: 'inherit',
       }}
     >
       <div style={{ paddingTop: 2 }}>
@@ -405,7 +413,7 @@ function WRow({ item, lang, onClick }: { item: NewsItem; lang: Lang; onClick: ()
           WebkitBoxOrient: 'vertical', overflow: 'hidden',
         }}>{title}</div>
       </div>
-    </div>
+    </a>
   );
 }
 
