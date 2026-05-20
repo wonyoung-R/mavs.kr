@@ -67,9 +67,16 @@ export async function fetchArticleBody(url: string): Promise<{ text: string; ima
     if (t.length > 20) paragraphs.push(t);
   });
 
+  // og:image가 가장 안정적 (SB Nation/Vox는 항상 존재, hero 원본 이미지).
+  // 구버전 .c-entry-hero/article img 셀렉터는 현재 MMB에서 GA 픽셀·사이트 로고를 잡으므로 폴백으로만.
   let imageUrl: string | undefined;
-  const lead = $('article img, .c-entry-hero img, .c-picture img').first().attr('src');
-  if (lead && lead.startsWith('http')) imageUrl = lead;
+  const og = $('meta[property="og:image"]').attr('content') || $('meta[name="og:image"]').attr('content');
+  if (og && og.startsWith('http')) {
+    imageUrl = og;
+  } else {
+    const lead = $('article img, .c-entry-hero img, .c-picture img').first().attr('src');
+    if (lead && lead.startsWith('http') && !/logo|sprite|avatar|google-analytics/i.test(lead)) imageUrl = lead;
+  }
 
   return { text: paragraphs.join('\n\n'), imageUrl };
 }
