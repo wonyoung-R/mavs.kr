@@ -873,6 +873,25 @@ function ArticleScreen({ item, lang, onBack }: { item: NewsItem; lang: Lang; onB
           >
             {lang === 'ko' ? '원문 보기 ↗' : 'Read original ↗'}
           </button>
+
+          <a
+            href="https://www.instagram.com/mavs.kr"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'block', marginTop: 16, padding: '14px 16px',
+              borderRadius: 8, border: `1px solid ${C.line}`,
+              background: 'linear-gradient(135deg, rgba(225,48,108,0.10), rgba(64,93,230,0.08))',
+              textDecoration: 'none', textAlign: 'center',
+              fontFamily: SANS_KR, fontSize: 13, lineHeight: 1.5, color: C.text,
+            }}
+          >
+            {lang === 'ko' ? (
+              <>📷 더 깊은 분석과 카드뉴스는 <span style={{ color: '#E1306C', fontWeight: 600 }}>@mavs.kr 인스타그램</span>에서</>
+            ) : (
+              <>📷 More analysis & card news on <span style={{ color: '#E1306C', fontWeight: 600 }}>@mavs.kr Instagram</span></>
+            )}
+          </a>
         </div>
       </div>
 
