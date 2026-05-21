@@ -20,7 +20,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     const news = await prisma.news.findMany({
-      where: { published: true },
+      // 윙스(WNBA)는 사이트맵에서 제외. team=null 크롤 뉴스는 유지(OR로 null 명시).
+      where: { published: true, OR: [{ team: null }, { team: { not: 'wings' } }] },
       select: { id: true, crawledAt: true, publishedAt: true },
       orderBy: { publishedAt: 'desc' },
       take: 1000,

@@ -113,6 +113,9 @@ export async function processFirstNewMmbItem(opts: ProcessOneOptions): Promise<P
     const sourceId = `mmb_${item.guid}`;
     const team = detectTeam(item.link);
 
+    // 윙스(WNBA)는 자동 칼럼 생성 대상에서 제외 — 매버릭스 콘텐츠만 발행
+    if (team === 'wings') continue;
+
     if (!opts.skipDuplicateCheck && !opts.dryRun) {
       const existing = await prisma.news.findFirst({ where: { sourceId }, select: { id: true } }).catch(() => null);
       if (existing) continue;

@@ -25,9 +25,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       imageUrl: true,
       publishedAt: true,
       published: true,
+      team: true,
     },
   });
-  if (!article || !article.published) return { title: '뉴스를 찾을 수 없습니다 | MAVS.KR' };
+  if (!article || !article.published || article.team === 'wings') return { title: '뉴스를 찾을 수 없습니다 | MAVS.KR' };
 
   const title = article.titleKr ?? article.title;
   // summaryKr이 있으면 우선 사용 (column metaDescription) — 더 자연스러운 SEO
@@ -59,7 +60,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function NewsArticlePage({ params }: Props) {
   const { id } = await params;
   const article = await prisma.news.findUnique({ where: { id } });
-  if (!article || !article.published) notFound();
+  if (!article || !article.published || article.team === 'wings') notFound();
 
   const schema = buildNewsArticleSchema({
     id: article.id,

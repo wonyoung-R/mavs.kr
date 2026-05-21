@@ -108,7 +108,11 @@ export async function saveNewsMany(articles: NewsArticleInput[]) {
 export async function getNews(options: NewsQueryOptions = {}) {
   const { limit = 20, offset = 0, source, onlyTranslated = false, orderBy = 'publishedAt' } = options;
 
-  const where: Prisma.NewsWhereInput = {};
+  // 윙스(WNBA) 자동 글은 뉴스 피드에서 제외. team이 null인 크롤 뉴스(316건)는 유지해야 하므로
+  // OR로 null을 명시 — Prisma {not:'wings'}는 SQL에서 NULL을 제외하는 함정이 있음.
+  const where: Prisma.NewsWhereInput = {
+    OR: [{ team: null }, { team: { not: 'wings' } }],
+  };
   if (source) where.source = source;
   if (onlyTranslated) where.titleKr = { not: null };
 
@@ -131,7 +135,9 @@ export async function getNewsById(id: string) {
 
 // 뉴스 개수 조회
 export async function getNewsCount(options: { source?: NewsSource; onlyTranslated?: boolean } = {}) {
-  const where: Prisma.NewsWhereInput = {};
+  const where: Prisma.NewsWhereInput = {
+    OR: [{ team: null }, { team: { not: 'wings' } }],
+  };
   if (options.source) where.source = options.source;
   if (options.onlyTranslated) where.titleKr = { not: null };
   return await prisma.news.count({ where });
