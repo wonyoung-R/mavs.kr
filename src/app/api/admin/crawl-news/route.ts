@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     console.log(`📰 Manual news crawl started by admin: ${userEmail}`);
 
     // 로컬 개발 환경에서는 request URL에서 호스트 추출
-    let baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://mavs.kr';
+    let baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.mavs.kr';
 
     if (isDevelopment) {
       const requestUrl = new URL(request.url);

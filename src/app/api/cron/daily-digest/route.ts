@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db/prisma';
 import { checkCronAuth, parseDryRun } from '@/lib/auto-content/cron-auth';
 import { computeLastNDays } from '@/lib/auto-content/stats';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://mavs.kr';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.mavs.kr';
 const RECIPIENT = 'mavsdotkr@gmail.com';
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 

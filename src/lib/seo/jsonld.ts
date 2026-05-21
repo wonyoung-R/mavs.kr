@@ -1,4 +1,4 @@
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://mavs.kr';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.mavs.kr';
 const SITE_NAME = 'MAVS.KR';
 const SITE_LOGO = `${SITE_URL}/logo.png`;
 

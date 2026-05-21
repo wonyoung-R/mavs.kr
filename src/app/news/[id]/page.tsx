@@ -7,7 +7,7 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://mavs.kr';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.mavs.kr';
 
 export const revalidate = 600;
 

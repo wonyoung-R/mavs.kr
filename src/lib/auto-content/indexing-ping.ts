@@ -8,7 +8,7 @@
  * - INDEXNOW_API_KEY: IndexNow 키 (https://www.indexnow.org/)
  */
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://mavs.kr';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.mavs.kr';
 
 export async function pingIndexing(urls: string[]): Promise<{ ok: boolean; provider?: string; error?: string }> {
   if (urls.length === 0) return { ok: true };
