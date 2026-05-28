@@ -3,8 +3,25 @@ import { google } from 'googleapis';
 
 const CHANNEL_HANDLE = 'PandaHank41';
 
-// 채널 외 수동 핀 영상 — 리스트 맨 앞에 prepend (썸네일·제목·duration은 YouTube에서 그대로 가져옴).
-const PINNED_VIDEO_IDS = ['N-XvUHyOOhY'];
+// 수동 핀 영상 — 리스트 맨 앞에 prepend. 런타임 YouTube API 호출 없이 하드코드.
+// 썸네일은 YouTube 표준 URL(i.ytimg.com/vi/{id}/mqdefault.jpg)을 그대로 사용.
+// 채널 업로드와 중복되면 자동 스킵.
+const PINNED_VIDEOS = [
+  {
+    id: 'N-XvUHyOOhY',
+    title: '누워보는 Mavs : 프리시즌 0화. 26 드래프트와 팰러스',
+    channelTitle: '누워보는Mavs와 NBA',
+    duration: '',
+    publishedAt: '2026-05-29T00:00:00Z',
+  },
+  {
+    id: 't5L_DhRgPec',
+    title: "Watch This Video if You Can't Stop Thinking About Cooper Flagg & Kyrie Irving Playing Together",
+    channelTitle: 'PandaHank41',
+    duration: '',
+    publishedAt: '2026-05-29T00:00:00Z',
+  },
+];
 
 function parseDuration(iso: string): string {
   const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
@@ -82,33 +99,14 @@ export async function GET() {
       };
     });
 
-    // 핀 영상 메타데이터 (채널 업로드와 중복되면 스킵).
-    let pinned: typeof videos = [];
-    if (PINNED_VIDEO_IDS.length) {
-      const channelIds = new Set(videos.map((v) => v.id));
-      const idsToFetch = PINNED_VIDEO_IDS.filter((id) => !channelIds.has(id));
-      if (idsToFetch.length) {
-        try {
-          const pinRes = await youtube.videos.list({
-            part: ['snippet', 'contentDetails'],
-            id: idsToFetch,
-          });
-          pinned = (pinRes.data.items ?? []).map((it) => ({
-            id: it.id ?? '',
-            title: it.snippet?.title ?? '',
-            channelTitle: it.snippet?.channelTitle ?? '',
-            thumbnail:
-              it.snippet?.thumbnails?.medium?.url ??
-              it.snippet?.thumbnails?.default?.url ??
-              '',
-            duration: it.contentDetails?.duration ? parseDuration(it.contentDetails.duration) : '0:00',
-            publishedAt: it.snippet?.publishedAt ?? '',
-          }));
-        } catch (e) {
-          console.warn('[YouTube API] pinned fetch failed:', e);
-        }
-      }
-    }
+    // 핀 영상 하드코드 prepend — 채널 업로드와 중복되면 스킵.
+    const channelIds = new Set(videos.map((v) => v.id));
+    const pinned = PINNED_VIDEOS
+      .filter((p) => !channelIds.has(p.id))
+      .map((p) => ({
+        ...p,
+        thumbnail: `https://i.ytimg.com/vi/${p.id}/mqdefault.jpg`,
+      }));
 
     return NextResponse.json(
       { success: true, videos: [...pinned, ...videos] },
