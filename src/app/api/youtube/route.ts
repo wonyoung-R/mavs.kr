@@ -3,6 +3,9 @@ import { google } from 'googleapis';
 
 const CHANNEL_HANDLE = 'PandaHank41';
 
+// 채널 외 수동 핀 영상 — 리스트 맨 앞에 prepend (썸네일·제목·duration은 YouTube에서 그대로 가져옴).
+const PINNED_VIDEO_IDS = ['N-XvUHyOOhY'];
+
 function parseDuration(iso: string): string {
   const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
   if (!m) return '0:00';
@@ -79,8 +82,36 @@ export async function GET() {
       };
     });
 
+    // 핀 영상 메타데이터 (채널 업로드와 중복되면 스킵).
+    let pinned: typeof videos = [];
+    if (PINNED_VIDEO_IDS.length) {
+      const channelIds = new Set(videos.map((v) => v.id));
+      const idsToFetch = PINNED_VIDEO_IDS.filter((id) => !channelIds.has(id));
+      if (idsToFetch.length) {
+        try {
+          const pinRes = await youtube.videos.list({
+            part: ['snippet', 'contentDetails'],
+            id: idsToFetch,
+          });
+          pinned = (pinRes.data.items ?? []).map((it) => ({
+            id: it.id ?? '',
+            title: it.snippet?.title ?? '',
+            channelTitle: it.snippet?.channelTitle ?? '',
+            thumbnail:
+              it.snippet?.thumbnails?.medium?.url ??
+              it.snippet?.thumbnails?.default?.url ??
+              '',
+            duration: it.contentDetails?.duration ? parseDuration(it.contentDetails.duration) : '0:00',
+            publishedAt: it.snippet?.publishedAt ?? '',
+          }));
+        } catch (e) {
+          console.warn('[YouTube API] pinned fetch failed:', e);
+        }
+      }
+    }
+
     return NextResponse.json(
-      { success: true, videos },
+      { success: true, videos: [...pinned, ...videos] },
       { headers: { 'Cache-Control': 'public, max-age=3600, stale-while-revalidate=300' } }
     );
   } catch (err) {
