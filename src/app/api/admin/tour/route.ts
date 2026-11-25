@@ -1,7 +1,7 @@
 import type { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { getTourPrisma } from '@/lib/db/tour-prisma';
-import { supabase } from '@/lib/db/supabase';
+import { createTourAuthClient } from '@/lib/tour-auth';
 import { tourAdminNoteLimit, tourLeadStatuses, type TourLeadStatus } from '@/lib/tour-admin-types';
 
 export const runtime = 'nodejs';
@@ -42,15 +42,13 @@ async function authorize(request: Request) {
   if (!authorization.startsWith('Bearer ') || authorization.length <= 7 || authorization.length > 8192) {
     return failure(401, '관리자 계정으로 로그인해 주세요.');
   }
-  const authUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!authUrl || authUrl.includes('placeholder') || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    return requestError();
-  }
+  const supabase = createTourAuthClient(false);
+  if (!supabase) return requestError();
   const { data, error } = await supabase.auth.getUser(authorization.slice(7));
   if (error?.name === 'AuthRetryableFetchError' || (error?.status && error.status >= 500)) return requestError();
   if (error || !data.user) return failure(401, '관리자 계정으로 로그인해 주세요.');
   // Contact data is restricted to the verified operator used by the site's existing protected admin flow.
-  if (data.user.email?.toLowerCase() !== operatorEmail || !data.user.email_confirmed_at) {
+  if (data.user.email?.toLowerCase() !== operatorEmail || !data.user.email_confirmed_at || data.user.app_metadata?.tour_admin !== true) {
     return failure(403, '팬투어 접수 내역을 조회할 권한이 없습니다.');
   }
 }

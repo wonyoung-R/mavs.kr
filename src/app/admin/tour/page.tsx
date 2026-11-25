@@ -3,7 +3,8 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import Link from 'next/link';
 import { ChevronDown } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import type { Session } from '@supabase/supabase-js';
+import { getTourBrowserAuth } from '@/lib/tour-auth';
 import { tourAdminNoteLimit, tourLeadStatuses, type TourAdminLead, type TourLeadStatus } from '@/lib/tour-admin-types';
 
 import styles from './tour-admin.module.css';
@@ -220,15 +221,63 @@ function LeadManager({ token }: { token: string }) {
 }
 
 export default function TourAdminPage() {
-  const { user, session, loading, isAdmin } = useAuth();
+  const [session, setSession] = useState<Session | null>(null);
+  const [ready, setReady] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const client = getTourBrowserAuth();
+    if (!client) {
+      setReady(true);
+      setError('관리자 로그인 연결을 준비 중입니다.');
+      return;
+    }
+    const { data } = client.auth.onAuthStateChange((_event, current) => {
+      setSession(current);
+      setReady(true);
+    });
+    return () => data.subscription.unsubscribe();
+  }, []);
+
+  async function login(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const fields = new FormData(form);
+    const client = getTourBrowserAuth();
+    if (!client || busy) return;
+    setBusy(true);
+    setError('');
+    try {
+      const result = await client.auth.signInWithPassword({
+        email: String(fields.get('email')).trim(),
+        password: String(fields.get('password')),
+      });
+      if (result.error) setError('로그인하지 못했습니다. 이메일과 비밀번호를 확인해 주세요.');
+    } catch {
+      setError('인증 서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <section className={styles.page} aria-labelledby="tour-admin-title">
-      <h2 id="tour-admin-title">팬투어 접수 관리</h2>
-      {loading ? <p role="status" className={styles.message}>로그인 상태를 확인하는 중입니다.</p>
-        : !user || !session ? <Link href="/login" className={styles.loginLink}>관리자 계정으로 로그인</Link>
-          : !isAdmin || user.id !== session.user.id ? <p className={styles.message}>관리자 계정으로 접속해 주세요.</p>
-            : <LeadManager key={user.id} token={session.access_token} />}
+      <Link href="/" className={styles.loginLink}>MAVS.KR 홈</Link>
+      <h1 id="tour-admin-title">팬투어 접수 관리</h1>
+      {error && <p role="alert" className={styles.error}>{error}</p>}
+      {!ready ? <p role="status">로그인 상태를 확인하는 중입니다.</p>
+        : session ? <>
+          <button className={styles.button} type="button" onClick={async () => {
+            const result = await getTourBrowserAuth()?.auth.signOut({ scope: 'local' });
+            if (result?.error) setError('로그아웃하지 못했습니다. 다시 시도해 주세요.');
+          }}>로그아웃</button>
+          <LeadManager key={session.user.id} token={session.access_token} />
+        </> : <form className={styles.manager} onSubmit={login}>
+          <label className={styles.filter}>이메일<input className={styles.control} type="email" name="email" autoComplete="username" required /></label>
+          <label className={styles.filter}>비밀번호<input className={styles.control} type="password" name="password" autoComplete="current-password" required /></label>
+          <button className={styles.button} disabled={busy || !getTourBrowserAuth()} type="submit">{busy ? '로그인 중…' : '관리자 로그인'}</button>
+        </form>}
     </section>
   );
 }
