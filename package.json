@@ -22,7 +22,15 @@
     "generate:icons": "tsx scripts/generate-icons.ts",
     "crawl:news": "curl -X POST http://localhost:3000/api/news/crawl -H 'Authorization: Bearer $CRON_SECRET'",
     "update:games": "curl -X GET http://localhost:3000/api/cron/update-games -H 'Authorization: Bearer $CRON_SECRET'",
-    "translate:batch": "curl 'http://localhost:3000/api/batch/translate-news?limit=5&delay=10000'"
+    "translate:batch": "curl 'http://localhost:3000/api/batch/translate-news?limit=5&delay=10000'",
+    "records:test": "node --import tsx --test tests/records/*.test.ts",
+    "records:test-data": "python3 tests/records/test_normalize.py",
+    "records:collect": "python3 scripts/records/collect.py",
+    "records:normalize": "python3 scripts/records/normalize.py",
+    "records:db": "node --import tsx scripts/records/database.mjs",
+    "records:verify-live": "node --import tsx scripts/records/verify-live.ts",
+    "records:import": "tsx scripts/records/import.ts",
+    "records:sync": "tsx scripts/records/sync-season.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.96.0",

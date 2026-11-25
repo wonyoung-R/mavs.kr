@@ -7,13 +7,22 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.mavs.kr';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticEntries: MetadataRoute.Sitemap = [
-    { url: SITE_URL, changeFrequency: 'hourly', priority: 1.0 },
-    { url: `${SITE_URL}/?tab=news`, changeFrequency: 'hourly', priority: 0.9 },
-    { url: `${SITE_URL}/?tab=community`, changeFrequency: 'hourly', priority: 0.8 },
-    { url: `${SITE_URL}/?tab=schedule`, changeFrequency: 'daily', priority: 0.7 },
-    { url: `${SITE_URL}/?tab=column`, changeFrequency: 'daily', priority: 0.7 },
-    { url: `${SITE_URL}/?tab=stats`, changeFrequency: 'daily', priority: 0.6 },
+    { url: SITE_URL, changeFrequency: 'weekly', priority: 1.0 },
+    { url: `${SITE_URL}/matzip`, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${SITE_URL}/comm`, changeFrequency: 'hourly', priority: 0.8 },
+    { url: `${SITE_URL}/column`, changeFrequency: 'daily', priority: 0.7 },
   ];
+
+  for (const path of ['', '/seasons', '/players', '/records', '/history', '/data']) {
+    const ko = `${SITE_URL}/stat${path}`;
+    const en = `${SITE_URL}/stat/en${path}`;
+    const alternates = { languages: { ko, en } };
+    const existing = staticEntries.find(entry => entry.url === ko);
+    if (existing) existing.alternates = alternates;
+    else staticEntries.push({url:ko,changeFrequency:'weekly',priority:0.7,alternates});
+    staticEntries.push({url:en,changeFrequency:'weekly',priority:path ? 0.7 : 0.9,alternates});
+  }
+  staticEntries.push({url:`${SITE_URL}/fan`,changeFrequency:'daily',priority:0.8});
 
   let newsEntries: MetadataRoute.Sitemap = [];
   let postEntries: MetadataRoute.Sitemap = [];

@@ -1,0 +1,210 @@
+// Archived initial proposal, not the active records schema. Do not db-push this file.
+// Active Supabase DDL: scripts/records/sql/001_records.sql (applied 2026-10-03).
+generator client {
+  provider = "prisma-client-js"
+  output = "../generated/records"
+}
+datasource db {
+  provider = "postgresql"
+  url = env("RECORDS_DATABASE_URL")
+}
+model Season {
+  id Int @id
+  label String
+  games Game[]
+}
+model Team {
+  id String @id
+  abbreviation String @unique
+  name String
+  nameKo String
+  aliases String[]
+  names TeamName[]
+  stints PlayerTeamStint[]
+  homeGames Game[] @relation("HomeTeam")
+  awayGames Game[] @relation("AwayTeam")
+  teamStats TeamGameStat[]
+  playerStats PlayerGameStat[]
+}
+model TeamName {
+  id String @id @default(cuid())
+  teamId String
+  team Team @relation(fields: [teamId], references: [id])
+  name String
+  abbreviation String
+  validFrom DateTime
+  validTo DateTime?
+}
+model Player {
+  id String @id
+  name String
+  nameKo String
+  aliases String[]
+  stints PlayerTeamStint[]
+  stats PlayerGameStat[]
+}
+model PlayerTeamStint {
+  id String @id @default(cuid())
+  playerId String
+  player Player @relation(fields: [playerId], references: [id])
+  teamId String
+  team Team @relation(fields: [teamId], references: [id])
+  startDate DateTime
+  endDate DateTime?
+  jersey String?
+  sourceId String
+  source Source @relation(fields: [sourceId], references: [id])
+  @@index([playerId, teamId, startDate])
+}
+model Game {
+  id String @id
+  seasonId Int
+  season Season @relation(fields: [seasonId], references: [id])
+  competition String
+  cup Boolean @default(false)
+  date DateTime @db.Date
+  originalTipoffUtc DateTime?
+  tipoffUtc DateTime?
+  neutral Boolean
+  status String
+  homeTeamId String
+  homeTeam Team @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeamId String
+  awayTeam Team @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  homeScore Int?
+  awayScore Int?
+  sourceId String
+  source Source @relation(fields: [sourceId], references: [id])
+  sourceGameId String
+  playerStats PlayerGameStat[]
+  teamStats TeamGameStat[]
+  @@unique([sourceId, sourceGameId])
+  @@index([seasonId, competition, date])
+}
+model PlayerGameStat {
+  id String @id @default(cuid())
+  gameId String
+  game Game @relation(fields: [gameId], references: [id])
+  playerId String
+  player Player @relation(fields: [playerId], references: [id])
+  teamId String
+  team Team @relation(fields: [teamId], references: [id])
+  participation String
+  reason String?
+  starter Boolean?
+  minSeconds Int?
+  pts Int?
+  reb Int?
+  ast Int?
+  stl Int?
+  blk Int?
+  tov Int?
+  pf Int?
+  fgm Int?
+  fga Int?
+  fg3m Int?
+  fg3a Int?
+  ftm Int?
+  fta Int?
+  oreb Int?
+  dreb Int?
+  plusMinus Int?
+  sourceId String
+  source Source @relation(fields: [sourceId], references: [id])
+  missingReasons Json
+  @@unique([gameId, playerId, teamId])
+}
+model TeamGameStat {
+  id String @id @default(cuid())
+  gameId String
+  game Game @relation(fields: [gameId], references: [id])
+  teamId String
+  team Team @relation(fields: [teamId], references: [id])
+  minSeconds Int?
+  pts Int?
+  reb Int?
+  ast Int?
+  stl Int?
+  blk Int?
+  tov Int?
+  pf Int?
+  fgm Int?
+  fga Int?
+  fg3m Int?
+  fg3a Int?
+  ftm Int?
+  fta Int?
+  oreb Int?
+  dreb Int?
+  plusMinus Int?
+  teamRebounds Int?
+  teamTurnovers Int?
+  sourceId String
+  source Source @relation(fields: [sourceId], references: [id])
+  missingReasons Json
+  @@unique([gameId, teamId])
+}
+model Source {
+  id String @id
+  name String
+  url String
+  retrievedAt DateTime
+  asOf DateTime?
+  transformVersion String
+  storageAllowed Boolean
+  displayAllowed Boolean
+  commercialAllowed Boolean
+  rightsEvidence String
+  retentionUntil DateTime?
+  games Game[]
+  stints PlayerTeamStint[]
+  playerStats PlayerGameStat[]
+  teamStats TeamGameStat[]
+  mappings SourceMapping[]
+  observations Observation[]
+}
+model SourceMapping {
+  id String @id @default(cuid())
+  sourceId String
+  source Source @relation(fields: [sourceId], references: [id])
+  entityType String
+  externalId String
+  internalId String
+  verifiedAt DateTime?
+  @@unique([sourceId, entityType, externalId])
+}
+model Coverage {
+  id String @id @default(cuid())
+  season Int
+  competition String
+  dataset String
+  field String
+  expected Int?
+  observed Int
+  status String
+  evidence String
+  checkedAt DateTime
+  @@unique([season, competition, dataset, field])
+}
+model Observation {
+  id String @id @default(cuid())
+  sourceId String
+  source Source @relation(fields: [sourceId], references: [id])
+  entityType String
+  entityId String
+  field String
+  status String
+  detail String
+  observedAt DateTime
+}
+model Correction {
+  id String @id @default(cuid())
+  entityType String
+  entityId String
+  field String
+  previous Json?
+  replacement Json?
+  reason String
+  evidence String
+  correctedAt DateTime
+}

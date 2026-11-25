@@ -4,11 +4,14 @@ import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft, Shield, Users, Newspaper, RefreshCw, Megaphone, Settings } from 'lucide-react';
+import { ArrowLeft, Shield, Users, Megaphone, Settings, ClipboardList } from 'lucide-react';
+import tourStyles from './tour/tour-admin.module.css';
 
 const ADMIN_MENU = [
     { href: '/admin', label: '대시보드', icon: Settings, exact: true },
     { href: '/admin/user', label: '사용자 관리', icon: Users },
+    { href: '/admin/matzip', label: '맛집 승인', icon: Megaphone },
+    { href: '/admin/tour', label: '팬투어 접수', icon: ClipboardList },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -17,6 +20,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const pathname = usePathname();
 
     const isDevelopment = process.env.NODE_ENV === 'development';
+    const isTour = pathname === '/admin/tour' || pathname.startsWith('/admin/tour/');
 
     useEffect(() => {
         if (!isDevelopment) {
@@ -30,8 +34,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     if (!isDevelopment && (loading || !isAdmin)) {
         return (
-            <div className="min-h-screen bg-[#050510] flex items-center justify-center">
-                <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+            <div className={isTour ? tourStyles.shellLoading : 'min-h-screen bg-[#050510] flex items-center justify-center'}>
+                <div className={isTour ? tourStyles.spinner : 'animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full'}></div>
             </div>
         );
     }
@@ -44,20 +48,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     };
 
     return (
-        <div className="min-h-screen bg-[#050510]">
+        <div className={isTour ? tourStyles.shell : 'min-h-screen bg-[#050510]'}>
             {/* Background */}
-            <div className="absolute inset-0 z-0">
+            <div className="absolute inset-0 z-0" hidden={isTour}>
                 <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-[#050510] to-[#050510]"></div>
             </div>
 
-            <div className="relative z-10 max-w-6xl mx-auto px-4 py-8">
+            <div className={isTour ? tourStyles.shellContent : 'relative z-10 max-w-6xl mx-auto px-4 py-8'}>
                 {/* Header */}
-                <div className="flex items-center gap-4 mb-8">
+                <div className={isTour ? tourStyles.shellHeader : 'flex items-center gap-4 mb-8'}>
                     <Link
                         href="/"
-                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                        className={isTour ? tourStyles.backLink : 'p-2 hover:bg-white/10 rounded-lg transition-colors'}
+                        aria-label="홈으로 돌아가기"
                     >
-                        <ArrowLeft className="w-5 h-5 text-white" />
+                        <ArrowLeft aria-hidden="true" className="w-5 h-5 text-white" />
                     </Link>
                     <div className="flex-1">
                         <h1 className="text-2xl font-bold text-white flex items-center gap-2">
@@ -67,7 +72,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         <p className="text-slate-400">사이트 관리 및 설정</p>
                     </div>
                     {user && (
-                        <div className="bg-slate-800/50 border border-white/10 rounded-lg px-4 py-2">
+                        <div className={isTour ? tourStyles.account : 'bg-slate-800/50 border border-white/10 rounded-lg px-4 py-2'}>
                             <div className="text-xs text-slate-400">로그인:</div>
                             <div className="text-sm text-white font-medium">{user.email}</div>
                         </div>
@@ -75,7 +80,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </div>
 
                 {/* Navigation Tabs */}
-                <div className="flex gap-2 mb-8 border-b border-white/10 pb-4">
+                <div className={isTour ? tourStyles.shellMenu : 'flex flex-wrap gap-2 mb-8 border-b border-white/10 pb-4'}>
                     {ADMIN_MENU.map((item) => {
                         const Icon = item.icon;
                         const active = isActive(item.href, item.exact);
@@ -83,7 +88,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             <Link
                                 key={item.href}
                                 href={item.href}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                                aria-current={isTour && active ? 'page' : undefined}
+                                className={isTour ? tourStyles.menuLink : `flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                                     active
                                         ? 'bg-blue-600 text-white'
                                         : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700 hover:text-white'

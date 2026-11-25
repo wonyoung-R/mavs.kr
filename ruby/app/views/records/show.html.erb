@@ -1,0 +1,12 @@
+<% if @section != "home" %>
+  <p class="kicker">DALLAS MAVERICKS / <%= @section.upcase %></p>
+  <h1 class="pageTitle"><%= @page_heading %></h1>
+<% end %>
+<% if @snapshot["status"] == "invalid" %>
+  <section class="panel" role="alert"><div class="empty">
+    <h2><%= t2("기록 데이터를 표시할 수 없습니다", "Record data cannot be displayed") %></h2>
+    <p><%= t2("검증을 통과하지 못한 데이터는 공개하지 않습니다. 잠시 후 다시 확인하세요.", "Data that fails validation is not displayed. Please check again later.") %></p>
+  </div></section>
+<% elsif %w[home search seasons players player records compare history data game].include?(@section) %>
+  <%= render "records/#{@section}" %>
+<% end %>

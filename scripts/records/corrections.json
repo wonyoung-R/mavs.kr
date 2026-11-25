@@ -1,0 +1,22 @@
+[
+  {
+    "gameId": "nba:game:0021000028",
+    "entityType": "game",
+    "entityId": "nba:game:0021000028",
+    "field": "awayScore",
+    "previous": 90,
+    "replacement": 91,
+    "evidence": "https://www.mavs.com/wp-content/uploads/2020/12/2021-mediaguide.pdf",
+    "reason": "Official Dallas media guide Memphis series ledger lists 10/29/10 DAL L 90-91. Kaggle/NBA online ledger incorrectly records a tied final. Memphis source quarter totals and made shots also total 91."
+  },
+  {
+    "gameId": "nba:game:0021000028",
+    "entityType": "teamGameStat",
+    "entityId": "nba:team:1610612763",
+    "field": "PTS",
+    "previous": 90,
+    "replacement": 91,
+    "evidence": "https://www.mavs.com/wp-content/uploads/2020/12/2021-mediaguide.pdf",
+    "reason": "Same evidenced score correction; preserve the supplied shooting counts, which agree with 91 points."
+  }
+]

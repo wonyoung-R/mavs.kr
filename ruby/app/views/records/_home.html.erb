@@ -1,0 +1,18 @@
+<div class="hero"><div>
+  <p class="kicker">DALLAS MAVERICKS / RECORD BOOK</p><h1><%= @page_heading %></h1>
+  <p><%= t2("한 경기부터 한 시대까지. 선수와 시즌, 그리고 매버릭스의 역사를 기록으로 탐색하세요.", "From one game to an entire era. Explore players, seasons, and Mavericks history through the numbers.") %></p>
+  <%= render "records/search_form" %>
+</div><aside class="scope">
+  <h2><%= t2("현재 탐색 범위", "Current coverage") %></h2><strong><%= @snapshot["totalGames"] %></strong>
+  <p><%= t2("확보된 경기 기록 · 전체 역사 확보를 뜻하지 않습니다", "Available games · not a claim of complete history") %></p>
+  <p><%= t2("1980–81 이후 전체 역사를 목표로, 확보된 범위와 남은 공백을 투명하게 안내합니다.", "Working toward the history since 1980–81, with transparent coverage and remaining gaps.") %></p>
+  <a class="small" href="<%= record_path('/data') %>"><%= t2("범위와 출처 보기 →", "Coverage and sources →") %></a>
+</aside></div>
+<div class="grid">
+  <% [["seasons", "시즌을 따라 읽기", "Explore by season", "정규시즌과 플레이오프를 구분하고 한 경기의 양 팀 기록까지 확인합니다.", "Browse separate competitions and see both teams in each game."], ["players", "선수의 DAL 기록", "A player’s DAL years", "재적 기간의 경기 기록을 살펴보세요. 다른 팀 기록과 구분합니다.", "Explore Mavericks appearances, separate from other teams."], ["compare", "같은 기준으로 비교", "Compare on equal terms", "시즌과 상대, 홈·원정 조건을 맞춰 비교합니다.", "Use matching season, opponent, and venue filters."]].each do |section, ko, en, ko_description, en_description| %>
+    <article class="card"><p class="kicker"><%= section.upcase %></p><h2><%= t2(ko, en) %></h2><p><%= t2(ko_description, en_description) %></p><a href="<%= record_path("/#{section}") %>"><%= t2("살펴보기 →", "Explore →") %></a></article>
+  <% end %>
+</div>
+<section class="panel"><div class="panelHead"><h2><%= t2("경기 기록", "Game archive") %></h2><a href="<%= record_path('/seasons') %>"><%= t2("시즌별 보기 →", "Browse seasons →") %></a></div>
+  <%= render "records/game_list", games: @dataset.fetch("games", []).sort_by { |game| game["date"] }.reverse.first(8) %>
+</section>

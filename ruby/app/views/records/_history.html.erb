@@ -1,0 +1,7 @@
+<p class="intro"><%= t2("추측으로 역사를 채우지 않습니다. 확보된 경기 기록을 시즌별로 탐색하세요.", "History is not filled with guesses. Explore available game records by season.") %></p>
+<section class="panel"><div class="panelHead"><h2><%= t2("시즌별 구단 기록", "Franchise records by season") %></h2></div>
+  <% if Array(@snapshot["availableSeasons"]).any? %><div class="sourceList"><% @snapshot["availableSeasons"].each do |season| %>
+    <% observed = @dataset.fetch("coverage", []).select { |coverage| coverage["season"] == season && coverage["dataset"] == "games" && coverage["field"] == "all" }.sum { |coverage| coverage["observed"] } %>
+    <div class="source"><div><h3><%= season_label(season) %></h3><p><%= fmt(observed) %> <%= t2("경기 확보 · 전체 시즌 미검증", "games available · full season unverified") %></p></div><a href="<%= record_path('/seasons') %>?<%= { season: season }.to_query %>"><%= t2("경기 보기 →", "View games →") %></a></div>
+  <% end %></div><% else %><%= render "records/empty" %><% end %>
+</section>

@@ -1,0 +1,28 @@
+# Allow only application code, configuration and versioned static assets.
+# The build context must be ruby/, not the repository root.
+**
+!Gemfile
+!Gemfile.lock
+!Rakefile
+!config.ru
+!app/
+!app/**
+!bin/
+!bin/**
+!config/
+!config/**
+!public/
+!public/assets/
+!public/assets/**
+
+# Never bake credentials, local bundle configuration, or private media into images.
+.env*
+**/.env*
+.bundle
+**/.bundle/**
+config/master.key
+config/credentials*
+config/credentials/**
+**/*.pem
+**/*.key
+**/.DS_Store

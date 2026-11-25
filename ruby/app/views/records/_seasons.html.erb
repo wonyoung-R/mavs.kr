@@ -1,0 +1,15 @@
+<% dal_id = @dataset.fetch("teams", []).find { |team| team["abbreviation"] == "DAL" }&.dig("id") %>
+<% games = @dataset.fetch("games", []); finals = games.select { |game| game["status"] == "final" && !game["homeScore"].nil? && !game["awayScore"].nil? && [game["homeTeamId"], game["awayTeamId"]].include?(dal_id) } %>
+<% wins = finals.count { |game| game["homeTeamId"] == dal_id ? game["homeScore"] > game["awayScore"] : game["awayScore"] > game["homeScore"] }; points = finals.sum { |game| game[game["homeTeamId"] == dal_id ? "homeScore" : "awayScore"] }; against = finals.sum { |game| game[game["homeTeamId"] == dal_id ? "awayScore" : "homeScore"] } %>
+<section class="panel"><div class="panelHead"><h2><%= t2("경기 찾아보기", "Browse games") %></h2></div>
+  <%= render "records/filters" %>
+  <div class="meaning">
+    <span><%= t2("확보 경기 기준", "Available games only") %></span>
+    <span><%= t2("경기", "Games") %>: <strong><%= finals.any? ? finals.size : "—" %></strong></span>
+    <span><%= t2("승 / 패", "W / L") %>: <strong><%= finals.any? ? "#{wins} / #{finals.size - wins}" : "—" %></strong></span>
+    <span><%= t2("승률", "Win percentage") %>: <strong><%= finals.any? ? "#{format('%.1f', wins.to_f / finals.size * 100)}%" : "—" %></strong></span>
+    <span><%= t2("득점 / 실점", "Points for / against") %>: <strong><%= finals.any? ? "#{points} / #{against}" : "—" %></strong></span>
+  </div>
+  <div class="note"><%= t2("최종 점수가 있는 확보 경기만 계산합니다. 전체 시즌 성적을 뜻하지 않으며 점수가 미기록인 경기는 제외합니다.", "Only available final games with both scores are included. This is not a complete season record; games with missing scores are excluded.") %></div>
+  <%= render "records/game_list", games: games %>
+</section>

@@ -44,3 +44,8 @@ next-env.d.ts
 venv/
 .venv/
 .playwright-mcp
+
+# Downloaded historical records and reproducible release artifacts
+/data/records/
+/data/migrations/
+/scripts/migration/__pycache__/

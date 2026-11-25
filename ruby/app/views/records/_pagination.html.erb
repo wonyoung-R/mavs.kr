@@ -1,0 +1,6 @@
+<% current_page = @page.to_i.clamp(1, 100); has_next = current_page < 100 && (@snapshot.key?("scopeTotal") ? current_page * 200 < @snapshot["scopeTotal"].to_i : @dataset.fetch("playerStats", []).size >= 200) %>
+<nav class="pagination" aria-label="<%= t2('경기 기록 페이지', 'Game log pages') %>">
+  <% if current_page > 1 %><a href="<%= request.path %>?<%= request.query_parameters.merge('page' => current_page - 1).to_query %>" rel="prev"><%= t2("이전", "Previous") %></a><% else %><span aria-disabled="true"><%= t2("이전", "Previous") %></span><% end %>
+  <span><%= current_page %> · <%= t2("페이지당 최대 200경기", "Up to 200 games per page") %></span>
+  <% if has_next %><a href="<%= request.path %>?<%= request.query_parameters.merge('page' => current_page + 1).to_query %>" rel="next"><%= t2("다음", "Next") %></a><% else %><span aria-disabled="true"><%= t2("다음", "Next") %></span><% end %>
+</nav>

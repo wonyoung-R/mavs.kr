@@ -1,0 +1,11 @@
+<section class="panel"><div class="panelHead"><h2><%= t2("확보 기록 순위", "Available record leaders") %></h2><span class="badge"><%= @metric %></span></div>
+  <%= render "records/filters" %>
+  <% entries = Array(@leaderboard).select { |entry| @dataset.fetch("players", []).any? { |player| player["id"] == entry["playerId"] } } %>
+  <% if entries.any? %><div class="tableWrap"><table class="table">
+    <caption><%= t2("동일 합계는 공동 순위로 표시합니다. 누락 기록이 있으면 합계는 —입니다.", "Equal totals share a rank. A total with missing records is shown as —.") %></caption>
+    <thead><tr><th scope="col">#</th><th scope="col"><%= t2("선수", "Player") %></th><th class="number" scope="col"><%= t2("출전 경기", "Games played") %></th><th class="number" scope="col"><%= @metric == "PLUS_MINUS" ? "+/−" : @metric %></th><th class="number" scope="col"><%= t2("미기록 경기", "Missing games") %></th></tr></thead>
+    <tbody><% entries.each do |entry| %><tr><td><%= entries.index { |candidate| candidate["value"] == entry["value"] } + 1 %></td><td><a href="<%= record_id_path('players', entry['playerId']) %>"><%= player_name(entry["playerId"]) %></a></td><td class="number"><%= fmt(entry["games"]) %></td><td class="number"><%= fmt(entry["value"]) %></td><td class="number"><%= fmt(entry["games"] - entry["known"]) %></td></tr><% end %></tbody>
+  </table></div><% else %><%= render "records/empty", filtered: true %><% end %>
+  <div class="note"><%= t2("확보된 DAL 출전 기록의 합계입니다. 누락 값이 포함된 합계는 —로 표시합니다. 미확보 경기·행은 집계되지 않으므로 공식 통산 순위와 다를 수 있습니다.", "Totals from available DAL appearances. Totals with missing values are —. Unavailable games and rows are excluded, so these may differ from official career leaders.") %></div>
+  <%= render "records/source_note", source_ids: @dataset.fetch("sources", []).map { |source| source["id"] } %>
+</section>

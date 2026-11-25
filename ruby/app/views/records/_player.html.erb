@@ -1,0 +1,19 @@
+<% if @player %>
+  <h2><%= player_name(@player["id"]) %></h2>
+  <% games = @dataset.fetch("games", []).index_by { |game| game["id"] }; dal_id = @dataset.fetch("teams", []).find { |team| team["abbreviation"] == "DAL" }&.dig("id") %>
+  <% rows = @dataset.fetch("playerStats", []).select { |row| row["playerId"] == @player["id"] && row["teamId"] == dal_id && games.key?(row["gameId"]) }.sort_by { |row| [games[row["gameId"]]["date"], row["gameId"]] }.reverse %>
+  <section class="panel"><%= render "records/filters" %>
+    <div class="note"><%= t2("확보된 DAL 경기 기록이며 미검증·미확보 범위가 있습니다. 이 페이지의 행 수는 선수의 공식 통산 경기 수가 아닙니다.", "Available DAL game records, with unverified coverage and gaps. Rows on this page are not the player's official career game count.") %></div>
+    <% if rows.any? %><div class="tableWrap"><table class="table">
+      <caption><%= t2("DAL 재적 경기 기록 · 출전 상태별 행을 보존합니다.", "DAL game log · Participation states are preserved.") %></caption>
+      <thead><tr><th scope="col"><%= t2("경기", "Game") %></th><th scope="col"><%= t2("출전", "Participation") %></th><th class="number" scope="col">MIN</th><% stat_columns.each do |key| %><th class="number" scope="col"><%= key == "PLUS_MINUS" ? "+/−" : key %></th><% end %></tr></thead>
+      <tbody><% rows.each do |row| %><tr>
+        <td><a href="<%= record_id_path('games', row['gameId']) %>"><%= games[row["gameId"]]["date"] %></a></td>
+        <td><%= { "played" => t2("출전", "Played"), "dnp" => "DNP", "inactive" => t2("비활성", "Inactive") }.fetch(row["participation"], t2("미확인", "Unknown")) %><% if row["reason"].present? %><span class="absenceReason"><%= row["reason"] %></span><% end %></td>
+        <td class="number"><%= minutes(row.dig("values", "MIN_SECONDS")) %></td><%= render "records/stat_cells", values: row.fetch("values", {}) %>
+      </tr><% end %></tbody>
+    </table></div><% else %><%= render "records/empty", filtered: true %><% end %>
+    <%= render "records/pagination" %>
+    <%= render "records/source_note", source_ids: rows.map { |row| row["sourceId"] } %>
+  </section>
+<% else %><%= render "records/empty" %><% end %>

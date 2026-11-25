@@ -1,0 +1,15 @@
+<section class="panel"><div class="panelHead"><h2><%= t2("같은 조건에서 비교", "Compare with the same filters") %></h2></div>
+  <%= render "records/filters" %>
+  <% player_ids = [params["p1"], params["p2"]] %>
+  <% if player_ids.all?(&:present?) %><div class="tableWrap"><table class="table">
+    <caption><%= t2("동일한 시즌·유형·장소·상대 조건의 DAL 출전 경기 평균. 미기록 값이 포함된 평균은 —로 표시합니다.", "Per-game averages in DAL games under identical filters. An average with missing values is shown as —.") %></caption>
+    <thead><tr><th scope="col"><%= t2("지표", "Statistic") %></th><% player_ids.each do |id| %><th class="number" scope="col"><%= player_name(id) %></th><% end %></tr></thead>
+    <tbody><% ["GP", *stat_columns].each do |key| %><tr><th scope="row"><%= key == "PLUS_MINUS" ? "+/−" : key %></th>
+      <% player_ids.each do |id| %><% summary = Array(@comparison).find { |item| item["playerId"] == id }; value = key == "GP" ? summary&.dig("games").presence : summary&.dig("values", key); value = nil if key == "GP" && value == 0 %>
+        <td class="number"><%= fmt(value) %><% unless key == "GP" %> <span class="small">(<%= summary&.dig("known", key) || 0 %>)</span><% end %></td>
+      <% end %>
+    </tr><% end %></tbody>
+  </table></div><% else %><%= render "records/empty", filtered: true %><% end %>
+  <div class="note"><%= t2("괄호는 값이 기록된 경기 수입니다. 확보 범위가 불완전하며 선수의 전체 통산 성적을 뜻하지 않습니다.", "Parentheses show games with recorded values. Coverage is incomplete; these are not full career statistics.") %></div>
+  <%= render "records/source_note", source_ids: @dataset.fetch("sources", []).map { |source| source["id"] } %>
+</section>

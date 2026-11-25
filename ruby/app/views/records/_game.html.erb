@@ -1,0 +1,38 @@
+<% if @game %>
+  <p class="intro"><%= @game["date"] %> · <%= season_label(@game["season"]) %> · <%= competition_label(@game["competition"]) %> · <%= @game["arenaName"].presence || t2("경기장 미확인", "Arena unknown") %><%= " · #{t2('중립 경기', 'Neutral venue')}" if @game["neutral"] == true %></p>
+  <section class="scoreboard" aria-label="<%= t2('경기 점수 · 원정 대 홈', 'Game score · away versus home') %>">
+    <div class="scoreTeam"><span class="venueBadge"><%= t2("AWAY · 원정", "AWAY") %></span><h2><%= team_name(@game["awayTeamId"], @game) %></h2></div>
+    <div class="scoreNumbers"><strong><%= fmt(@game["awayScore"]) %></strong><span>:</span><strong><%= fmt(@game["homeScore"]) %></strong></div>
+    <div class="scoreTeam"><span class="venueBadge"><%= t2("HOME · 홈", "HOME") %></span><h2><%= team_name(@game["homeTeamId"], @game) %></h2></div>
+  </section>
+  <p class="gameContext"><%= t2("홈·원정은 원본 경기 기록의 팀 지정을 따릅니다.", "Home and away follow the source's game designations.") %> <%= t2("중립구장 여부는 미확인입니다.", "Neutral-site status is unverified.") if @game["neutral"].nil? %></p>
+  <% [@game["awayTeamId"], @game["homeTeamId"]].each do |team_id| %>
+    <% rows = @dataset.fetch("playerStats", []).select { |row| row["gameId"] == @game["id"] && row["teamId"] == team_id }; total = @dataset.fetch("teamStats", []).find { |row| row["gameId"] == @game["id"] && row["teamId"] == team_id }; lineup = Records::Lineup.organize(rows) %>
+    <% participants = rows.select { |row| %w[played unknown].include?(row["participation"]) }; known_points = participants.filter_map { |row| row.dig("values", "PTS") }; player_points = known_points.any? ? known_points.sum : nil; team_points = total&.dig("values", "PTS"); difference = !player_points.nil? && !team_points.nil? ? player_points - team_points : nil; missing_points = participants.size - known_points.size; unknown_participation = rows.count { |row| row["participation"] == "unknown" }; points_warning = !difference.nil? && difference != 0 %>
+    <section class="panel">
+      <div class="panelHead"><h2><span class="venueBadge"><%= team_id == @game["homeTeamId"] ? t2("HOME · 홈", "HOME") : t2("AWAY · 원정", "AWAY") %></span> <%= team_name(team_id, @game) %></h2><span class="small"><%= lineup["lineupKnown"] ? t2("Starter 5명 · G / F / C", "5 starters · G / F / C") : t2("선발 구분 미확인", "Starting lineup unverified") %></span></div>
+      <%= render "records/source_note", source_ids: [@game["sourceId"], *rows.map { |row| row["sourceId"] }, total&.dig("sourceId")] %>
+      <% if rows.any? || total %><div class="tableWrap"><table class="table">
+        <caption><%= t2("Starter는 G → F → C 순서, Bench는 출전시간 순서입니다. 미출전 선수는 아래에 표시합니다.", "Starters: G → F → C. Bench: minutes played, descending. Non-participants appear last.") %></caption>
+        <thead><tr><th scope="col"><%= t2("선수", "Player") %></th><th scope="col"><%= t2("구분", "Role") %></th><th scope="col" title="<%= t2('원본 경기 포지션 · G 가드 / F 포워드 / C 센터', 'Source game position · G Guard / F Forward / C Center') %>">POS</th><th class="number" scope="col">MIN</th><% stat_columns.each do |key| %><th class="number" scope="col"><%= key == "PLUS_MINUS" ? "+/−" : key %></th><% end %></tr></thead>
+        <tbody><% lineup["rows"].each_with_index do |item, index| %><% row = item["row"]; role = item["role"] %>
+          <tr data-lineup-role="<%= role %>" data-position="<%= row['starterPosition'] %>" class="<%= 'lineupDivider' if index.positive? && role != lineup['rows'][index - 1]['role'] %>">
+            <td><% if Array(@snapshot["dalPlayerIds"]).include?(row["playerId"]) %><a href="<%= record_id_path('players', row['playerId']) %>"><%= player_name(row["playerId"]) %></a><% else %><%= player_name(row["playerId"]) %><% end %></td>
+            <td><span class="<%= role == 'Starter' ? 'starterBadge' : 'roleBadge' %>"><%= role == "Unknown" ? t2("미확인", "Unknown") : role %></span><% if row["reason"].present? %><span class="absenceReason"><%= row["reason"] %></span><% end %></td>
+            <td><%= row["starterPosition"] || "—" %></td><td class="number"><%= minutes(row.dig("values", "MIN_SECONDS")) %></td><%= render "records/stat_cells", values: row.fetch("values", {}) %>
+          </tr>
+        <% end %><% if total %><tr data-team-total="true"><td><%= t2("팀 합계", "Team total") %></td><td></td><td></td><td></td><%= render "records/stat_cells", values: total.fetch("values", {}) %></tr><% end %></tbody>
+      </table></div><% else %><%= render "records/empty" %><% end %>
+      <% if points_warning || missing_points.positive? || unknown_participation.positive? || (rows.any? && (player_points.nil? || team_points.nil?)) %>
+        <div class="note" role="note"><% if points_warning %><strong><%= t2("제공된 선수 득점과 팀 합계가 일치하지 않습니다.", "Provided player points do not match the team total.") %></strong><% end %>
+          <%= t2("제공 선수 득점 합계 #{fmt(player_points)} · 팀 기록 득점 #{fmt(team_points)} · 차이(선수−팀) #{fmt(difference)}.", "Provided player points #{fmt(player_points)} · reported team points #{fmt(team_points)} · difference (players−team) #{fmt(difference)}.") %>
+          <%= t2("득점 미제공 #{missing_points}명 · 출전 상태 미확인 #{unknown_participation}명. 출전·미확인 행의 제공값으로 계산하며 팀 합계는 원본 그대로 표시합니다.", "Points unavailable for #{missing_points} players · participation unknown for #{unknown_participation}. The sum uses available values in played/unknown rows; the reported team total is preserved.") %>
+        </div>
+      <% end %>
+      <% if rows.any? && !lineup["lineupKnown"] %><div class="note"><%= t2("원본에서 선발 5명을 확정할 수 없어 Starter / Bench를 추정하지 않았습니다. 출전 선수는 출전시간 순으로 표시합니다.", "The source does not establish a starting five. Starter/bench roles are not inferred; participants are ordered by minutes.") %></div><% end %>
+      <div class="note"><%= t2("POS: G 가드 · F 포워드 · C 센터 · — 미제공. 원본의 경기별 포지션이며, 포지션 값만으로 선발 여부를 판단하지 않습니다.", "POS: G Guard · F Forward · C Center · — unavailable. These are source game positions; a position alone does not establish starter status.") %></div>
+      <% if rows.empty? %><div class="note"><%= t2("선수별 기록은 미확보입니다.", "Player-level records are unavailable.") %></div><% end %>
+      <div class="note"><%= total ? t2("팀 전용 리바운드 #{fmt(total['teamRebounds'])} · 턴오버 #{fmt(total['teamTurnovers'])}", "Team-only rebounds #{fmt(total['teamRebounds'])} · turnovers #{fmt(total['teamTurnovers'])}") : t2("팀 합계 미확보 — 선수 기록의 합계를 공식 팀 합계로 대체하지 않습니다.", "Team totals unavailable — player sums do not replace official team totals.") %></div>
+    </section>
+  <% end %>
+<% else %><%= render "records/empty" %><% end %>

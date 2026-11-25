@@ -1,0 +1,51 @@
+<% values = summary.fetch("values", {}); percentages = summary.fetch("percentages", {}); missing = summary.fetch("missing", {}).select { |_stat, count| count.to_i.positive? } %>
+<section class="searchProfile" aria-label="<%= t2('선수 평균 기록', 'Player per-game averages') %>">
+  <header class="searchProfileHeader">
+    <div>
+      <p class="searchProfileEyebrow"><%= t2("경기당 평균", "Per-game averages") %></p>
+      <h3><%= player_name(summary["playerId"]) %></h3>
+      <p class="searchProfileMeta"><span><%= season_label(plan["season"]) %></span><span><%= competition_label(plan["competition"]) %></span></p>
+    </div>
+    <p class="searchProfileGames"><strong><%= fmt(summary["games"]) %></strong><span><%= t2("경기 출전", "games played") %></span></p>
+  </header>
+
+  <dl class="searchProfileStats searchProfilePrimary" aria-label="<%= t2('주요 기록', 'Key stats') %>">
+    <% %w[PTS REB AST].each do |stat| %>
+      <div data-stat="<%= stat %>"><dt><%= search_metric_label(stat) %></dt><dd><%= fmt(values[stat]) %></dd></div>
+    <% end %>
+  </dl>
+  <dl class="searchProfileStats searchProfileSecondary" aria-label="<%= t2('출전시간과 기타 기록', 'Minutes and other stats') %>">
+    <% %w[MIN_SECONDS STL BLK TOV].each do |stat| %>
+      <div data-stat="<%= stat %>"><dt><%= search_metric_label(stat) %></dt><dd><%= stat == "MIN_SECONDS" ? (values[stat].nil? ? "—" : "#{fmt(values[stat] / 60.0)} #{t2('분', 'min')}") : fmt(values[stat]) %></dd></div>
+    <% end %>
+  </dl>
+
+  <div class="searchProfileBreakdown">
+  <table class="searchProfileShooting">
+    <caption><%= t2("슈팅", "Shooting") %><span><%= t2("성공·시도는 경기당 평균", "Makes and attempts per game") %></span></caption>
+    <thead><tr><th scope="col"><%= t2("종류", "Shot") %></th><th scope="col"><%= t2("성공 / 시도", "Made / attempted") %></th><th scope="col"><%= t2("성공률", "Percentage") %></th></tr></thead>
+    <tbody>
+      <% [["FGM", "FGA", "FG_PCT", t2("야투", "Field goals")], ["FG3M", "FG3A", "FG3_PCT", t2("3점슛", "3-pointers")], ["FTM", "FTA", "FT_PCT", t2("자유투", "Free throws")]].each do |made, attempted, percentage, label| %>
+        <tr>
+          <th scope="row"><%= label %></th>
+          <td><span data-stat="<%= made %>"><%= fmt(values[made]) %></span><span class="searchProfileSlash" aria-hidden="true"> / </span><span class="sr-only"> / </span><span data-stat="<%= attempted %>"><%= fmt(values[attempted]) %></span></td>
+          <td data-stat="<%= percentage %>"><%= percentages[percentage].nil? ? "—" : "#{fmt(percentages[percentage] * 100)}%" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <dl class="searchProfileStats searchProfileSecondary searchProfileDetail" aria-label="<%= t2('세부 기록', 'Detailed stats') %>">
+    <% %w[OREB DREB PF PLUS_MINUS].each do |stat| %>
+      <div data-stat="<%= stat %>"><dt><%= search_metric_label(stat) %></dt><dd><%= fmt(values[stat]) %></dd></div>
+    <% end %>
+  </dl>
+  </div>
+  <% if missing.any? %><p class="note searchProfileMissing" role="note"><%= t2("일부 기록이 누락되어 평균을 확정할 수 없습니다:", "Some averages are unavailable because records are missing:") %> <%= missing.map { |stat, count| "#{search_metric_label(stat)} #{count}#{t2('경기', ' games')}" }.join(" · ") %></p><% end %>
+  <details class="searchProfileNotes">
+    <summary><%= t2("집계 기준과 기록 읽는 법", "How these stats are calculated") %></summary>
+    <p><%= t2("조건에 맞는 모든 출전 경기의 평균입니다.", "Averages include every appearance matching the selected filters.") %></p>
+    <% if plan["season"] %><p><%= t2("시즌은 시작 연도 기준입니다. #{plan['season']}시즌은 #{season_label(plan['season'])}입니다.", "Seasons use the starting year: #{plan['season']} means #{season_label(plan['season'])}.") %></p><% end %>
+    <p><%= t2("슛 성공률은 해당 경기의 총 성공 수 ÷ 총 시도 수입니다. 시도가 없거나 필요한 기록이 누락된 값은 —로 표시합니다.", "Shooting percentages use total makes ÷ total attempts. No attempts or missing source values are shown as —.") %></p>
+  </details>
+</section>

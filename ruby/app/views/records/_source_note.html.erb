@@ -1,0 +1,6 @@
+<% sources = Array(source_ids).compact.uniq.filter_map { |id| @dataset.fetch("sources", []).find { |source| source["id"] == id } } %>
+<% if sources.any? %><div class="note">
+  <% sources.each_with_index do |source, index| %>
+    <span><%= " / " if index.positive? %><% if (url = safe_external_url(source['url'])) %><a href="<%= url %>" target="_blank" rel="noopener noreferrer"><%= source["name"] %> ↗</a><% else %><%= source["name"] %><% end %> · <%= t2("수집", "Retrieved") %>: <%= source["retrievedAt"] %></span>
+  <% end %>
+</div><% end %>

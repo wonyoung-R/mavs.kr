@@ -1,0 +1,21 @@
+<p class="intro"><%= t2("기록의 출처, 확보 범위와 미기록 값의 의미를 공개합니다. 확인되지 않은 범위를 완전한 기록으로 표시하지 않습니다.", "Sources, coverage, and missing-value definitions are public. Unverified coverage is not presented as a complete record.") %></p>
+<div class="grid">
+  <% [["경기", "Games", @snapshot["totalGames"]], ["선수 경기 행", "Player-game rows", @snapshot["totalPlayerStatRows"]], ["출처", "Sources", @dataset.fetch("sources", []).size]].each do |ko, en, value| %><article class="card"><p><%= t2(ko, en) %></p><h2><%= fmt(value) %></h2></article><% end %>
+</div>
+<section class="panel"><div class="panelHead"><h2><%= t2("시즌별 커버리지", "Coverage by season") %></h2></div>
+  <% if @dataset.fetch("coverage", []).any? %><div class="tableWrap"><table class="table"><thead><tr><th scope="col"><%= t2("시즌", "Season") %></th><th scope="col"><%= t2("유형", "Competition") %></th><th scope="col"><%= t2("데이터셋 · 필드", "Dataset · field") %></th><th class="number" scope="col"><%= t2("관측 / 기대", "Observed / expected") %></th><th scope="col"><%= t2("검증", "Validation") %></th></tr></thead><tbody>
+    <% @dataset["coverage"].each do |row| %><tr><td><%= season_label(row["season"]) %></td><td><%= competition_label(row["competition"]) %></td><td><%= row["dataset"] %> · <%= row["field"] %></td><td class="number"><%= fmt(row["observed"]) %> / <%= fmt(row["expected"]) %></td><td><%= row["status"] == "complete" ? t2("완료", "Complete") : row["status"] == "partial" ? t2("일부", "Partial") : t2("미검증", "Unverified") %></td></tr><% end %>
+  </tbody></table></div><% else %><%= render "records/empty" %><% end %>
+  <div class="note"><%= t2("기대 경기 수가 확인되지 않으면 커버리지 백분율을 표시하지 않습니다. 확보 범위와 필드별 누락은 위 표에서 확인하세요.", "Coverage percentages are not shown without a verified denominator. See the table for available seasons and field-level gaps.") %></div>
+</section>
+<section class="panel"><div class="panelHead"><h2><%= t2("출처와 이용 범위", "Sources and usage") %></h2></div>
+  <% if @dataset.fetch("sources", []).any? %><div class="sourceList"><% @dataset["sources"].each do |source| %><div class="source"><div>
+    <h3><%= source["name"] %></h3><p><%= t2("수집일", "Retrieved") %>: <%= source["retrievedAt"] %> · <%= t2("변환 버전", "Transform") %>: <%= source["transformVersion"] %></p>
+    <p><%= t2("공개 표시", "Display") %>: <%= source.dig("rights", "display") ? t2("허용", "Allowed") : t2("미확인", "Unverified") %> · <%= t2("상업 이용", "Commercial") %>: <%= source.dig("rights", "commercial") ? t2("허용", "Allowed") : t2("미확인", "Unverified") %></p><p><%= source.dig("rights", "evidence") %></p>
+  </div><% if (url = safe_external_url(source['url'])) %><a href="<%= url %>" target="_blank" rel="noopener noreferrer"><%= t2("출처 보기 ↗", "View source ↗") %></a><% end %></div><% end %></div>
+  <% else %><div class="empty"><h3><%= t2("공개용 공급원이 아직 연결되지 않았습니다", "No display data source is connected yet") %></h3><p><%= t2("저장·공개 권리가 확인된 기록만 표시합니다.", "Only records with verified storage and display rights are displayed.") %></p></div><% end %>
+</section>
+<section class="panel"><div class="panelHead"><h2><%= t2("기록을 읽는 방법", "Reading the records") %></h2></div>
+  <div class="meaning"><span><strong>0</strong> · <%= t2("실제 기록된 0", "Recorded zero") %></span><span><strong>—</strong> · <%= t2("값 미제공 / 미기록", "Unavailable / unrecorded") %></span><span><strong>DNP</strong> · <%= t2("명단 포함 · 미출전", "Listed, did not play") %></span><span><strong>Inactive</strong> · <%= t2("비활성 선수", "Inactive player") %></span></div>
+  <div class="note"><%= t2("출전 기록이 없는 선수와 누락 선수 행은 서로 다른 상태입니다. 정규시즌과 컵 결승은 별도 집계하며 컵 표시가 있는 정규시즌 경기를 중복 합산하지 않습니다.", "Non-participation and a missing player row are different states. Cup finals are separate; regular-season Cup games are counted once.") %></div>
+</section>

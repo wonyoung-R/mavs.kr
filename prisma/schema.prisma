@@ -245,3 +245,34 @@ enum VoteType {
   UPVOTE
   DOWNVOTE
 }
+
+enum TourLeadStatus {
+  NEW
+  IN_PROGRESS
+  CONTACTED
+  ON_HOLD
+}
+
+model TourLead {
+  id                String         @id @default(cuid())
+  submissionKey     String         @unique @db.Char(64)
+  name              String         @db.VarChar(80)
+  phone             String         @db.VarChar(16)
+  email             String?        @db.VarChar(254)
+  instagram         String?        @db.VarChar(30)
+  partySize         Int
+  intent            String         @db.VarChar(20)
+  inquiry           String?        @db.VarChar(1000)
+  attribution       String?        @db.Text
+  consentVersion    String         @db.VarChar(80)
+  consentedAt       DateTime       @default(now()) @db.Timestamptz(3)
+  marketingConsent Boolean        @default(false)
+  status            TourLeadStatus @default(NEW)
+  adminNote         String         @default("") @db.VarChar(2000)
+  createdAt         DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime       @updatedAt @db.Timestamptz(3)
+
+  @@index([createdAt, id])
+  @@index([status, createdAt, id])
+  @@map("tour_leads")
+}

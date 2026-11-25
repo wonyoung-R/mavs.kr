@@ -1,0 +1,22 @@
+<% game_rows = result.fetch("gameRows", []); summary = result["teamSummary"] %>
+<% if result["unknownDateGames"].to_i.positive? %><p class="note"><%= t2("시작시각을 확인하지 못한 #{result['unknownDateGames']}경기는 한국시간 날짜 조건에 포함하지 않았습니다.", "#{result['unknownDateGames']} games with unknown tipoff times could not be checked against the Korea-time date filter.") %></p><% end %>
+<% if result["unknownVenueGames"].to_i.positive? %><p class="note"><%= t2("장소 분류가 미확인인 #{result['unknownVenueGames']}경기는 장소 조건에 포함하지 않았습니다.", "#{result['unknownVenueGames']} games with unknown venue classification could not be included in the venue filter.") %></p><% end %>
+<% if result["unknownPlayerGames"].to_i.positive? %><p class="note"><%= t2("선택 범위에서 선수 출전 여부가 미확인인 기록이 #{result['unknownPlayerGames']}건 있습니다. 미확인 기록은 평균의 출전 경기 수에 포함하지 않습니다.", "#{result['unknownPlayerGames']} player-game participation records are unknown in this scope. They are excluded from the played-game average denominator.") %></p><% end %>
+<% if summary && summary["games"].to_i.positive? %>
+  <p class="meaning" data-team-record><strong><%= t2("댈러스", "Dallas") %>: <%= fmt(summary["wins"]) %> <%= t2("승", "wins") %> · <%= fmt(summary["losses"]) %> <%= t2("패", "losses") %></strong> · <%= fmt(summary["games"]) %> <%= t2("확보 경기 기준", "available games") %><% if summary["unknown"].to_i.positive? %> · <%= fmt(summary["unknown"]) %> <%= t2("승패 미확인", "unknown outcomes") %><% end %></p>
+<% end %>
+<% if game_rows.any? %>
+  <% if summary && summary["games"].to_i > game_rows.length %><p class="note"><%= t2("대상 #{summary['games']}경기 중 최근 #{game_rows.length}경기를 표시합니다. 집계는 전체 대상 경기 기준입니다.", "Showing the latest #{game_rows.length} of #{summary['games']} matching games. Aggregates use all matching games.") %></p><% end %>
+  <div class="tableWrap"><table class="table" data-search-games>
+    <caption><%= t2("확보된 완료 경기 기준입니다. 시작시각이 있는 경기는 한국 날짜, 없으면 원천 날짜를 표시합니다.", "Available completed games. Dates use Korea time when tipoff is known; otherwise the source date is shown.") %></caption>
+    <thead><tr><% [["날짜", "Date"], ["원정", "Away"], ["점수", "Score"], ["홈", "Home"], ["댈러스 결과", "Dallas result"]].each do |ko, en| %><th scope="col"><%= t2(ko, en) %></th><% end %><% if Array(plan["playerIds"]).any? %><th scope="col"><%= t2("선수 출전 상태", "Player participation") %></th><% end %></tr></thead>
+    <tbody><% game_rows.each do |game| %><tr>
+      <td><a href="<%= record_id_path('games', game['gameId']) %>"><%= search_game_date(game) %></a><% unless game["tipoffUtc"].present? %> · <%= t2("원천 날짜", "Source date") %><% end %></td>
+      <td><%= team_name(game["awayTeamId"]) %></td>
+      <td class="number"><%= fmt(game["awayScore"]) %> : <%= fmt(game["homeScore"]) %></td>
+      <td><%= team_name(game["homeTeamId"]) %></td>
+      <td><%= { "W" => t2("승", "Win"), "L" => t2("패", "Loss") }.fetch(game["outcome"], t2("미확인", "Unknown")) %></td>
+      <% if Array(plan["playerIds"]).any? %><td><% Array(plan["playerIds"]).each do |id| %><% stat = Array(game["playerStats"]).find { |row| row["playerId"] == id } %><div><%= player_name(id) %>: <%= search_participation_label(stat&.[]("participation")) %></div><% end %></td><% end %>
+    </tr><% end %></tbody>
+  </table></div>
+<% end %>

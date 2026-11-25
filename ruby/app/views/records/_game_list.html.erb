@@ -1,0 +1,12 @@
+<% if games.any? %><div class="tableWrap"><table class="table">
+  <caption><%= t2("확보된 경기만 표시합니다. 전체 시즌이나 전체 역사 기록을 뜻하지 않습니다.", "Available games only; this is not a complete season or historical record.") %></caption>
+  <thead><tr><% [["날짜", "Date"], ["시즌", "Season"], ["원정", "Away"], ["점수", "Score"], ["홈", "Home"], ["상태", "Status"]].each do |ko, en| %><th scope="col"><%= t2(ko, en) %></th><% end %></tr></thead>
+  <tbody><% games.each do |game| %><tr>
+    <td><a href="<%= record_id_path('games', game['id']) %>"><%= game["date"] %></a></td>
+    <td><%= season_label(game["season"]) %></td><td><%= team_name(game["awayTeamId"], game) %></td>
+    <td class="number"><%= fmt(game["awayScore"]) %> : <%= fmt(game["homeScore"]) %></td><td><%= team_name(game["homeTeamId"], game) %></td>
+    <td><span class="badge"><%= { "final" => t2("종료", "Final"), "scheduled" => t2("예정", "Scheduled"), "postponed" => t2("연기", "Postponed"), "cancelled" => t2("취소", "Cancelled") }.fetch(game["status"], t2("미확인", "Unknown")) %></span>
+      <% if game["neutral"].nil? %> · <%= t2("장소 분류 미확인", "Venue unknown") %><% elsif game["neutral"] %> · <%= t2("중립", "Neutral") %><% end %>
+    </td>
+  </tr><% end %></tbody>
+</table></div><% else %><%= render "records/empty", filtered: @section != "home" %><% end %>

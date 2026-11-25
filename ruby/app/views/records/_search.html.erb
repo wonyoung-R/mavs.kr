@@ -1,0 +1,46 @@
+<p class="intro"><%= t2("선수 기록이나 댈러스 경기 결과·승패를 물어보세요. 최근 N경기와 한국시간 날짜 조건을 사용할 수 있습니다. 적용된 조건과 출처를 함께 확인하세요.", "Ask about player stats, Dallas results or wins and losses. Filter by recent games or Korea-time dates, and review the applied conditions and sources.") %></p>
+<%= render "records/search_form" %>
+<% if @query_result %><% result = @query_result; rows = result.fetch("rows", []); summaries = result.fetch("summaries", []); plan = result["plan"] %>
+  <section class="panel searchResult" aria-labelledby="search-result-title" data-search-status="<%= result['status'] %>">
+    <div class="panelHead"><h2 id="search-result-title"><%= @query %></h2><% unless search_failure?(result) %><span class="badge"><%= fmt(result["total"]) %> <%= plan&.[]("stat") == "BOX_SCORE" || %w[team_games team_record].include?(plan&.[]("intent")) ? t2("경기", "games") : t2("경기 행", "game rows") %></span><% end %></div>
+    <% if search_failure?(result) %>
+      <div class="searchFeedback" role="status">
+        <h3><%= search_failure_title(result) %></h3>
+        <% if search_result_message(result).present? %><p><%= search_result_message(result) %></p><% end %>
+        <% if result["status"] == "unavailable" %>
+          <p><%= t2("아래 기본 조건 검색은 계속 사용할 수 있습니다. 질문을 바꿔 다시 시도할 수도 있습니다.", "Basic-filter searches below are still available. You can also rephrase your question and try again.") %></p>
+        <% else %>
+          <p><%= t2("질문을 위에서 수정하거나 아래 질문을 선택해 주세요.", "Edit your question above or choose one below.") %></p>
+          <div class="searchExamples" role="group" aria-label="<%= t2('추천 질문', 'Suggested questions') %>">
+            <% search_retry_choices(result).each do |choice| %>
+              <form action="<%= record_path('/search') %>" method="post">
+                <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+                <button type="submit" name="q" value="<%= choice['query'] %>"><%= choice["label"] %></button>
+              </form>
+            <% end %>
+          </div>
+        <% end %>
+        <div class="searchBasics"><p class="searchLabel"><%= t2("기본 조건으로 바로 찾기", "Browse with basic filters") %></p><div class="suggestions">
+          <% search_basic_examples.each do |query| %><a href="<%= record_path('/search') %>?<%= { q: query }.to_query %>"><%= query %></a><% end %>
+        </div></div>
+      </div>
+    <% else %>
+      <% if plan.is_a?(Hash) %><section class="searchConditions" aria-labelledby="search-conditions-title">
+        <h3 id="search-conditions-title"><%= t2("적용된 검색 조건", "Applied filters") %></h3>
+        <ul><% search_condition_chips(plan).each do |label, value| %><li><span><%= label %></span><strong><%= value %></strong></li><% end %></ul>
+      </section><% end %>
+      <% if result.key?("gameRows") || result.key?("teamSummary") %><%= render "records/search_games", result: result, plan: plan %><% end %>
+      <% if rows.any? || summaries.any? || result.fetch("gameRows", []).any? %>
+      <% if rows.any? %><div class="tableWrap"><table class="table"><thead><tr><th scope="col"><%= t2("선수", "Player") %></th><th scope="col"><%= t2("경기", "Game") %></th><% stat_columns.each do |key| %><th class="number" scope="col"><%= key == "PLUS_MINUS" ? "+/−" : key %></th><% end %></tr></thead>
+        <tbody><% rows.each do |row| %><tr><td><a href="<%= record_id_path('players', row['playerId']) %>"><%= t2(row["playerNameKo"].presence || row["playerName"], row["playerName"]) %></a></td><td><a href="<%= record_id_path('games', row['gameId']) %>"><%= result.key?("gameRows") ? search_game_date(row) : row["date"] %></a><% if result.key?("gameRows") && !row["tipoffUtc"].present? %> · <%= t2("원천 날짜", "Source date") %><% end %></td><%= render "records/stat_cells", values: row.fetch("values", {}) %></tr><% end %></tbody>
+      </table></div><% end %>
+      <% if plan&.[]("stat") == "BOX_SCORE" %>
+        <% summaries.each do |summary| %><%= render "records/search_average_profile", summary: summary, plan: plan %><% end %>
+      <% elsif summaries.any? %><div class="meaning"><% summaries.each do |summary| %><span><strong><%= summary["playerId"] ? player_name(summary["playerId"]) : t2("집계", "Aggregate") %>: <%= fmt(summary["value"]) %></strong> · <%= summary["games"] %> <%= t2("경기", "games") %> · <%= summary["missing"] %> <%= t2("미기록", "missing") %></span><% end %></div><% end %>
+      <% else %><%= render "records/empty", filtered: true %><% end %>
+      <% if result["message"].present? || result["messageKo"].present? %><div class="note" role="note"><%= t2(result["messageKo"].presence || result["message"], result["message"].presence || result["messageKo"]) %></div><% end %>
+      <%= render "records/source_note", source_ids: @dataset.fetch("sources", []).map { |source| source["id"] } %>
+      <div class="note"><%= result["incomplete"] ? t2("확보 범위가 불완전합니다. 검색 결과는 역사 전체의 공식 기록으로 해석할 수 없습니다.", "Coverage is incomplete. Results are not official records across the full history.") : t2("표시된 출처와 검증 범위 내에서 계산합니다.", "Calculated within the displayed sources and verified scope.") %></div>
+    <% end %>
+  </section>
+<% end %>

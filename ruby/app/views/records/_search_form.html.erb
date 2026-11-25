@@ -1,0 +1,21 @@
+<form class="search" action="<%= record_path('/search') %>" method="post" role="search">
+  <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+  <label class="sr-only" for="records-query"><%= t2("기록 검색", "Search records") %></label>
+  <input id="records-query" name="q" value="<%= @query %>" maxlength="500" aria-describedby="records-query-help" placeholder="<%= t2('선수와 기록을 편하게 물어보세요', 'Ask about a player or a stat') %>" required>
+  <button type="submit"><%= t2("검색", "Search") %></button>
+</form>
+<p id="records-query-help" class="searchHelp"><%= t2("자연어 해석에 Jev를 사용할 수 있습니다. 개인 정보는 입력하지 마세요.", "Jev may help interpret your question. Please do not enter personal information.") %></p>
+<% unless search_failure?(@query_result) %>
+  <div class="searchExamples" role="group" aria-label="<%= t2('질문 예시', 'Example questions') %>">
+    <p class="searchLabel"><%= t2("이렇게 물어보세요", "Try a question") %></p>
+    <% search_natural_examples.each do |example| %>
+      <form action="<%= record_path('/search') %>" method="post">
+        <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+        <button type="submit" name="q" value="<%= example['query'] %>"><%= example["label"] %></button>
+      </form>
+    <% end %>
+  </div>
+  <div class="searchBasics"><p class="searchLabel"><%= t2("기본 조건으로 바로 찾기", "Browse with basic filters") %></p><div class="suggestions">
+    <% search_basic_examples.each do |query| %><a href="<%= record_path('/search') %>?<%= { q: query }.to_query %>"><%= query %></a><% end %>
+  </div></div>
+<% end %>

@@ -1,0 +1,7 @@
+<p class="intro"><%= t2("기록 데이터에 포함된 선수만 표시합니다. DAL 재적 기간의 기록을 탐색하세요.", "Only players present in the record dataset are listed. Explore their DAL appearances.") %></p>
+<% search = params["q"].to_s.downcase; players = @dataset.fetch("players", []).select { |player| [player["name"], player["nameKo"], *player.fetch("aliases", [])].compact.any? { |name| name.downcase.include?(search) } } %>
+<section class="panel">
+  <form class="filters" action="<%= record_path('/players') %>" method="get" role="search"><label><%= t2("선수 이름 검색", "Find a player") %><input name="q" value="<%= params['q'] %>" maxlength="500" placeholder="<%= t2('한글 · 영문 · 별칭', 'Name or alias') %>"></label><button class="primary" type="submit"><%= t2("검색", "Search") %></button></form>
+  <% if players.any? %><div class="sourceList"><% players.each do |player| %><div class="source"><h3><a href="<%= record_id_path('players', player['id']) %>"><%= player_name(player['id']) %></a></h3><p><%= t2(player['name'], player['nameKo'].presence || player['name']) %></p></div><% end %></div>
+  <% else %><%= render "records/empty", filtered: @dataset.fetch("players", []).any? %><% end %>
+</section>

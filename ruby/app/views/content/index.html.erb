@@ -1,0 +1,20 @@
+<p class="kicker">DALLAS MAVERICKS / COMMUNITY</p>
+<h1 class="pageTitle"><%= @page_heading %></h1>
+<nav class="actions" aria-label="게시판"><a href="/news">뉴스</a> · <a href="/comm">커뮤니티</a> · <a href="/column">칼럼</a> · <a href="/analysis">분석</a></nav>
+<div class="contentList">
+<% @articles.each do |article| %>
+  <% kind = @kind == 'comm' ? 'community' : @kind %>
+  <article class="panel contentCard">
+    <h2><a href="/<%= kind %>/<%= ERB::Util.url_encode(article['id']) %>"><%= article['title'] %></a></h2>
+    <p class="small"><time datetime="<%= article['date'].iso8601 %>"><%= article['date'].strftime('%Y-%m-%d') %></time> <%= article['name'].presence || article['username'] %></p>
+    <% if article['summary'].present? %><p><%= strip_tags(article['summary']).squish.first(200) %></p><% end %>
+  </article>
+<% end %>
+</div>
+<% if @articles.empty? %><p class="note">등록된 글이 없습니다.</p><% end %>
+<nav class="pagination" aria-label="페이지 이동">
+  <% if @page > 1 %><a rel="prev" href="/<%= @kind %>?page=<%= @page - 1 %>">이전</a><% end %>
+  <span><%= @page %></span>
+  <% if @has_next %><a rel="next" href="/<%= @kind %>?page=<%= @page + 1 %>">다음</a><% end %>
+</nav>
+<% if @kind != 'news' %><p><a href="/<%= @kind == 'comm' ? 'community' : @kind %>/new">글쓰기</a></p><% end %>

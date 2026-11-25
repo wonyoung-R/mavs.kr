@@ -1,0 +1,31 @@
+<% seasons = Array(@snapshot["availableSeasons"]); seasons = [@selected_season, *seasons] if @selected_season && !seasons.include?(@selected_season) %>
+<% venue_available = @snapshot["venueClassifiedGames"].to_i.positive?; chosen_venue = @filters["venue"].to_s; chosen_opponent = @filters["opponentId"].to_s %>
+<form class="filters" action="<%= @section == 'seasons' ? record_path('/seasons') : request.path %>" method="get">
+  <label><%= t2("시즌", "Season") %><select name="season">
+    <% unless @section == "seasons" %><option value="all" <%= "selected" if @selected_season.nil? %>><%= t2("전체 시즌", "All seasons") %></option><% end %>
+    <% seasons.each do |season| %><option value="<%= season %>" <%= "selected" if season == @selected_season %>><%= season_label(season) %></option><% end %>
+  </select></label>
+  <label><%= t2("경기 유형", "Competition") %><select name="competition">
+    <% %w[regular playoffs playin cup_final preseason summer].each do |competition| %><option value="<%= competition %>" <%= "selected" if competition == @competition %>><%= competition_label(competition) %></option><% end %>
+  </select></label>
+  <label><%= t2("장소", "Venue") %><select name="venue" <%= "disabled" unless venue_available %> aria-describedby="venue-coverage-note">
+    <% [["", "전체", "All"], ["home", "홈", "Home"], ["away", "원정", "Away"], ["neutral", "중립", "Neutral"]].each do |value, ko, en| %><option value="<%= value %>" <%= "selected" if value == chosen_venue %>><%= t2(ko, en) %></option><% end %>
+  </select></label>
+  <label><%= t2("상대", "Opponent") %><select name="opponent">
+    <option value=""><%= t2("전체", "All") %></option>
+    <% @dataset.fetch("teams", []).reject { |team| team["abbreviation"] == "DAL" }.each do |team| %><option value="<%= team['id'] %>" <%= "selected" if team['id'] == chosen_opponent %>><%= team_name(team['id']) %></option><% end %>
+  </select></label>
+  <% if @section == "records" %>
+    <label><%= t2("지표", "Statistic") %><select name="metric"><% stat_columns.each do |metric| %><option value="<%= metric %>" <%= "selected" if @metric == metric %>><%= metric == "PLUS_MINUS" ? "+/−" : metric %></option><% end %></select></label>
+  <% elsif @section == "compare" %>
+    <% [["p1", "선수 A", "Player A"], ["p2", "선수 B", "Player B"]].each do |key, ko, en| %>
+      <label><%= t2(ko, en) %><select name="<%= key %>"><option value=""><%= t2("선수 선택", "Choose a player") %></option>
+        <% @dataset.fetch("players", []).each do |player| %><option value="<%= player['id'] %>" <%= "selected" if params[key] == player['id'] %>><%= player_name(player['id']) %></option><% end %>
+      </select></label>
+    <% end %>
+  <% end %>
+  <button class="primary" type="submit"><%= t2("조건 적용", "Apply filters") %></button>
+</form>
+<% unless venue_available %><div id="venue-coverage-note" class="note"><%= t2("중립구장 여부를 포함한 장소 분류가 미확인인 데이터가 있어 장소 필터를 제공하지 않습니다.", "Venue filtering is unavailable while venue classifications, including neutral sites, remain unverified.") %>
+  <% if chosen_venue.present? %><a href="<%= request.path %>?<%= request.query_parameters.except('venue', 'page').to_query %>"><%= t2("장소 조건 해제", "Clear venue filter") %></a><% end %>
+</div><% end %>

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="<%= I18n.locale %>">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= @seo_title || "MAVS.KR" %></title>
+  <meta name="description" content="<%= @description %>">
+  <meta name="robots" content="<%= @noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large' %>">
+  <% if @canonical %><link rel="canonical" href="<%= @canonical %>"><% end %>
+  <% (@alternates || {}).each do |lang, url| %><link rel="alternate" hreflang="<%= lang %>" href="<%= url %>"><% end %>
+  <meta property="og:site_name" content="MAVS.KR">
+  <meta property="og:title" content="<%= @seo_title %>">
+  <meta property="og:description" content="<%= @description %>">
+  <meta property="og:type" content="<%= @article ? 'article' : 'website' %>">
+  <meta property="og:locale" content="<%= t2('ko_KR', 'en_US') %>">
+  <% if @canonical %><meta property="og:url" content="<%= @canonical %>"><% end %>
+  <% if @image_url %><meta property="og:image" content="<%= @image_url %>"><% end %>
+  <meta name="twitter:card" content="<%= @image_url ? 'summary_large_image' : 'summary' %>">
+  <%= stylesheet_link_tag records_stylesheet_path %>
+  <% if @structured_data %><script type="application/ld+json"><%= jsonld(@structured_data) %></script><% end %>
+</head>
+<body>
+<div class="portal">
+  <a class="skip" href="#records-main"><%= t2('본문으로 이동', 'Skip to content') %></a>
+  <header class="header">
+    <div class="topline"><a class="brand" href="<%= record_path('/') %>">MAVS.KR <span>RECORDS</span></a><div class="utilities"><a href="/news"><%= t2('뉴스 · 커뮤니티', 'News · community') %></a><% if @section %><a class="language" href="<%= language_path(I18n.locale == :ko ? :en : :ko) %>" lang="<%= I18n.locale == :ko ? 'en' : 'ko' %>"><%= t2('English', '한국어') %></a><% end %></div></div>
+    <nav class="nav" aria-label="<%= t2('주 메뉴', 'Main navigation') %>">
+      <% [['search','기록 검색','Search'],['seasons','시즌 · 경기','Seasons'],['players','선수 기록','Players'],['records','순위','Records'],['compare','선수 비교','Compare'],['history','구단 역사','History'],['data','데이터 안내','Data']].each do |path,ko,en| %><a href="<%= record_path('/'+path) %>" <%= 'aria-current=page' if @section == path %>><%= t2(ko,en) %></a><% end %>
+    </nav>
+  </header>
+  <main id="records-main" class="main"><%= yield %></main>
+  <footer class="footer"><span>MAVS.KR · <%= t2('독립 팬 기록 포털', 'Independent fan archive') %></span><div><a href="<%= record_path('/data') %>"><%= t2('출처 · 기록 정의','Sources · definitions') %></a> <a href="/news"><%= t2('뉴스','News') %></a> <a href="/comm"><%= t2('커뮤니티','Community') %></a></div></footer>
+</div>
+</body>
+</html>

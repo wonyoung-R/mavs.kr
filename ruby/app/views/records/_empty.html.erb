@@ -1,0 +1,5 @@
+<div class="empty">
+  <h3><%= local_assigns[:filtered] ? t2("이 조건에 표시할 기록이 없습니다", "No records match these filters") : t2("검증된 기록을 준비하고 있습니다", "Verified records are being prepared") %></h3>
+  <p><%= t2("미확보·미기록 값은 0으로 채우지 않습니다. 확보 범위와 출처를 데이터 안내에서 확인하세요.", "Unavailable or unrecorded values are not filled with zero. Check Data notes for coverage and sources.") %></p>
+  <a href="<%= record_path('/data') %>"><%= t2("데이터 범위와 출처 →", "Coverage and sources →") %></a>
+</div>

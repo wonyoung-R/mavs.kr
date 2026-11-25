@@ -241,8 +241,8 @@ function useGames() {
 }
 
 // ── Router ────────────────────────────────────────────────
-function useRouter() {
-  const [stack, setStack] = useState<RouteState[]>([{ kind: 'tab', tab: 'home' }]);
+function useRouter(initialTab: 'home' | 'feed' | 'podcast' | 'games' = 'home') {
+  const [stack, setStack] = useState<RouteState[]>([{ kind: 'tab', tab: initialTab }]);
   const top = stack[stack.length - 1];
   return {
     route: top,
@@ -1057,9 +1057,9 @@ function BotNav({ active, lang, onTab }: {
 }
 
 // ── MavsApp (root) ────────────────────────────────────────
-export default function MavsApp() {
+export default function MavsApp({initialTab = 'home'}: {initialTab?: 'home' | 'feed' | 'podcast' | 'games'}) {
   const [lang, setLang] = useState<Lang>('ko');
-  const router = useRouter();
+  const router = useRouter(initialTab);
   const { data: news, loading: newsLoading } = useNews();
   const { data: videos, loading: videosLoading } = useYouTube();
   const { upcoming, results, liveGame, loading: gamesLoading } = useGames();
