@@ -40,13 +40,15 @@ export default function LandingHome({ youtubeUrl }: { youtubeUrl?: string }) {
         <p>댈러스의 모든 순간,<br />우리의 시선으로.</p>
       </div>
       <div className={styles.interactionHint} aria-hidden="true"><span className={styles.hintDot} style={{ background: HOME_BLUE }} /><span className={styles.mouseHint}>MOVE TO FIND YOUR COURT</span><span className={styles.touchHint}>TOUCH TO FIND YOUR COURT</span></div>
+      <Link href="/tour" className={styles.tourFloat}>
+        댈러스 팬투어 <Arrow diagonal />
+      </Link>
       <footer className={styles.footer} style={{ color: HOME_BLUE, mixBlendMode: 'normal' }}>
         <p>A HOME FOR<br className={styles.mobileBreak} /> MAVERICKS FANS.</p>
         <nav id="home-links" aria-label="MAVS.KR 바로가기" className={styles.footerLinks}>
           <a href={youtubeUrl ?? 'https://www.youtube.com/@mavsnba9284'} target="_blank" rel="noopener noreferrer">YOUTUBE<Arrow diagonal /></a>
           <a href={instagram} target="_blank" rel="noopener noreferrer">INSTAGRAM<Arrow diagonal /></a>
           <Link href="/stat">STAT ARCHIVE<Arrow /></Link>
-          <Link href="/matzip">MFFL 맛집 지도<Arrow /></Link>
           <Link href="/tour">FAN TOUR<Arrow /></Link>
         </nav>
         <span className={styles.est}>DALLAS ↔ KOREA</span>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 const unit = (value: number) => Math.max(0, Math.min(1, value));
 
@@ -178,8 +178,9 @@ function observeMobileCta(root: HTMLElement) {
 }
 
 export default function TourMotion() {
+  const anchor = useRef<HTMLSpanElement>(null);
   useEffect(() => {
-    const root = document.querySelector<HTMLElement>('[data-tour]');
+    const root = anchor.current?.closest<HTMLElement>('[data-tour]');
     if (!root || !('IntersectionObserver' in window)) return;
     const stopObservingCta = observeMobileCta(root);
 
@@ -209,5 +210,5 @@ export default function TourMotion() {
     };
   }, []);
 
-  return null;
+  return <span hidden ref={anchor} />;
 }

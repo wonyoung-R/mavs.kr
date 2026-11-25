@@ -54,8 +54,9 @@ export default function TourPage() {
           <p className={styles.heroDate}>{tour.date} <span>·</span> {tour.highlights}</p>
           <div className={styles.heroActions}>
             <p>{tour.price} <small>/ 1인</small></p>
-            <a className={styles.button} href="#tour-apply" data-tour-hero-cta>사전 관심 등록</a>
+            <a className={styles.button} href="#tour-apply" data-tour-hero-cta>투어 안내 받기</a>
           </div>
+          <p className={styles.priceNote}>* 상기 비용은 항공요금 및 현지 사정으로 변동될 수 있으며, 변동시 사전 안내 후 진행됩니다.</p>
         </div>
       </section>
 
@@ -99,7 +100,7 @@ export default function TourPage() {
         </figure>
         <div>
           <h2 id="tour-hotel">{tour.hotel}</h2>
-          <p className={styles.note}>페이지 이미지는 AI 콘셉트입니다. 실제 호텔·객실, 경기 및 방문지와 다를 수 있습니다.</p>
+          <p className={styles.note}>AAC 와 도보 15분 내의 거리에 있는 호텔에서.</p>
         </div>
       </section>
 
@@ -108,6 +109,7 @@ export default function TourPage() {
           <div className={styles.priceCopy}>
             <h2 id="tour-price">{tour.price}</h2>
             <p>1인 기준 · {tour.highlights}</p>
+            <p className={styles.priceNote}>*상기 비용은 항공 요금 및 현지 사정으로 변동될 수 있으며, 변동 시 사전 안내 후 진행됩니다.</p>
           </div>
           <div className={styles.skyline} data-tour-reveal>
             <Image src={tourImages.skyline} alt="해질 무렵 댈러스 스카이라인 콘셉트" fill sizes="(max-width: 800px) 90vw, (max-width: 1400px) 36vw, 500px" />
@@ -126,8 +128,8 @@ export default function TourPage() {
 
       <section id="tour-apply" className={`${styles.apply} ${styles.gutter}`} aria-labelledby="tour-apply-title" tabIndex={-1}>
         <div className={styles.applyIntro}>
-          <h2 id="tour-apply-title">댈러스에서 만나요.</h2>
-          <p>관심 등록 후 상세 일정과 예약 절차를 안내드립니다.</p>
+          <h2 id="tour-apply-title">함께가요, 댈러스.</h2>
+          <p>등록해주시면, 카카오톡으로 연락드리겠습니다.</p>
         </div>
         <TourLeadForm consent={consent} available={registrationAvailable} />
       </section>

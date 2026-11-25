@@ -8,7 +8,6 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.mavs.kr';
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticEntries: MetadataRoute.Sitemap = [
     { url: SITE_URL, changeFrequency: 'weekly', priority: 1.0 },
-    { url: `${SITE_URL}/matzip`, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${SITE_URL}/comm`, changeFrequency: 'hourly', priority: 0.8 },
     { url: `${SITE_URL}/column`, changeFrequency: 'daily', priority: 0.7 },
   ];

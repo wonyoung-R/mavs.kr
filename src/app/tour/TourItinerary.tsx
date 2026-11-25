@@ -40,7 +40,7 @@ export default function TourItinerary() {
 
   return (
     <section className={`${styles.itinerary} ${styles.gutter}`} aria-labelledby="tour-itinerary-title">
-      <h2 id="tour-itinerary-title">7일, 오직 댈러스.</h2>
+      <h2 id="tour-itinerary-title">7일간 Only 댈러스 투어!</h2>
       <div className={styles.itineraryLayout}>
         <div className={styles.photoRail} aria-hidden="true">
           {activePhotos && (

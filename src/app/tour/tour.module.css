@@ -297,10 +297,26 @@
   .games[data-tour-motion] .gameImage {
     opacity: var(--game-opacity, 1);
   }
+  .games[data-tour-motion] .game + .game .gameImage {
+    /* The slanted edge travels fully offscreen at either end of the cut. */
+    --edge: calc(118% * var(--game-opacity, 1));
+    clip-path: polygon(0 0, var(--edge) 0, calc(var(--edge) - 18%) 100%, 0 100%);
+  }
   .games[data-tour-motion] .gameImage img {
     transform: scale(var(--game-scale, 1));
   }
   .games[data-tour-motion] .gameCopy { opacity: var(--game-copy-opacity, 1); }
+  .games[data-tour-motion] .gameCopy h2 {
+    transform: translateX(calc((1 - var(--game-copy-opacity, 1)) * clamp(18px, 4vw, 60px)));
+  }
+  .experienceMedia[data-tour-in-view] + figcaption {
+    animation: tour-caption-in .48s cubic-bezier(.16, 1, .3, 1) both;
+  }
+}
+
+@keyframes tour-caption-in {
+  from { opacity: 0; transform: translateY(.45em); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .itinerary {
@@ -487,6 +503,16 @@
 }
 
 .priceCopy p { margin-top: 1.1rem; color: var(--toss-gray-300); font-size: 1.05rem; }
+
+.heroContent .priceNote,
+.priceCopy .priceNote {
+  margin-top: .65rem;
+  color: var(--toss-gray-300);
+  font-size: .8125rem;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+
 
 .skyline {
   position: relative;

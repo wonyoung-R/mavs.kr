@@ -157,9 +157,8 @@ export default function TourLeadForm({ available, consent }: { available: boolea
           )}
           <div className={styles.formEnd}>
             <button className={styles.button} type="submit" disabled={pending || !available || !consent}>
-              {pending ? '등록 중…' : '사전 관심 등록하기'}
+              {pending ? '등록 중…' : '투어 안내 받기'}
             </button>
-            {(!available || !consent) && <p className={styles.note}>현재 관심 등록 접수를 준비 중입니다.</p>}
             {error && <p className={styles.formError} role="alert">{error}</p>}
           </div>
         </form>
